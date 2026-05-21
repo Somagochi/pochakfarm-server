@@ -1,0 +1,8 @@
+* text=auto eol=lf
+
+# Windows command scripts need CRLF to execute cleanly on Windows.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Gradle wrapper script should stay LF for Unix-like environments.
+/gradlew text eol=lf
