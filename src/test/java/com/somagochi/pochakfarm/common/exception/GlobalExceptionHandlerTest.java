@@ -20,7 +20,7 @@ class GlobalExceptionHandlerTest {
     assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     assertEquals(400, response.getBody().status());
     assertEquals("BAD_REQUEST", response.getBody().code());
-    assertEquals("invalid parameter", response.getBody().message());
+    assertEquals("Invalid request", response.getBody().message());
   }
 
   @Test
