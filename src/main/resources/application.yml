@@ -2,4 +2,4 @@ spring:
   profiles:
     active: local
   config:
-    import: classpath:secret/
+    import: optional:classpath:secret/
