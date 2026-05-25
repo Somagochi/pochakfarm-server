@@ -1,0 +1,54 @@
+enable:
+  issues: true
+  prs: true
+
+labels:
+  '🚨 bug':
+    include:
+      - '\bFix\b'
+      - '\bfix\b'
+      - '\bBug[s]?\b'
+      - '\bbug[s]?\b'
+      - '버그'
+      - '오류'
+
+  '🚀 feature':
+    include:
+      - '\bFeat\b'
+      - '\bFeature\b'
+      - '\bfeat\b'
+      - '\bfeature\b'
+      - '\badd(ed|ing)?\b'
+      - '기능 추가'
+      - '새로운 기능'
+
+  '♻️ refactor':
+    include:
+      - '\bRefactor(ing|ed)?\b'
+      - '\brefactor(ing|ed)?\b'
+      - '리팩터링'
+      - '코드 개선'
+
+  '🛠️ docs':
+    include:
+      - '\b(Doc|Docs|Documentation|Readme)\b'
+      - '\b(doc|docs|documentation|readme)\b'
+      - '문서'
+      - '가이드'
+
+  '⚙️ ci/cd':
+    include:
+      - '\b(Ci|Cd|Pipeline|Workflow|Deploy)\b'
+      - '\b(ci|cd|pipeline|workflow|deploy)\b'
+      - '배포'
+      - '파이프라인'
+
+  '✅ test':
+    include:
+      - '\bTest(s|ing)?\b'
+      - '\btest(s|ing)?\b'
+      - '\bunit\b'
+      - '\bintegration\b'
+      - '테스트'
+      - '단위 테스트'
+      - '통합 테스트'
