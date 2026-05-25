@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '4.0.6'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'com.diffplug.spotless' version '7.2.1'
 }
 
 group = 'com.somagochi'
@@ -32,4 +33,25 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+spotless {
+	java {
+		target 'src/*/java/**/*.java'
+		googleJavaFormat()
+		custom 'noWildcardImports', { source ->
+			def wildcardImport = source =~ /(?m)^import\s+(static\s+)?[^;]*\.\*;/
+			if (wildcardImport.find()) {
+				throw new AssertionError("Wildcard imports are not allowed: ${wildcardImport.group()}")
+			}
+			return source
+		}
+		removeUnusedImports()
+		trimTrailingWhitespace()
+		endWithNewline()
+	}
+}
+
+tasks.named('check') {
+	dependsOn tasks.named('spotlessCheck')
 }

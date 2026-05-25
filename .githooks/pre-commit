@@ -1,0 +1,6 @@
+#!/bin/sh
+
+set -e
+
+echo "Applying code style before commit..."
+./gradlew spotlessApply
