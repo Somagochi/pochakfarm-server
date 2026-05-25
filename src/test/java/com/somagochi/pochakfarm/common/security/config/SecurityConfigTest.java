@@ -19,20 +19,20 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(TestController.class)
 @Import({
-    SecurityConfig.class,
-    SecurityAuthenticationEntryPoint.class,
-    SecurityAccessDeniedHandler.class,
-    GlobalExceptionHandler.class,
-    TestController.class
+  SecurityConfig.class,
+  SecurityAuthenticationEntryPoint.class,
+  SecurityAccessDeniedHandler.class,
+  GlobalExceptionHandler.class,
+  TestController.class
 })
 class SecurityConfigTest {
 
-  @Autowired
-  private MockMvc mockMvc;
+  @Autowired private MockMvc mockMvc;
 
   @Test
   void returnsUnauthorizedWhenAuthenticationIsMissing() throws Exception {
-    mockMvc.perform(get("/secure").accept(MediaType.APPLICATION_JSON))
+    mockMvc
+        .perform(get("/secure").accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.status").value(401))
         .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
@@ -41,9 +41,8 @@ class SecurityConfigTest {
 
   @Test
   void allowsAuthenticatedRequest() throws Exception {
-    mockMvc.perform(get("/secure")
-            .with(user("tester").roles("USER"))
-            .accept(MediaType.TEXT_PLAIN))
+    mockMvc
+        .perform(get("/secure").with(user("tester").roles("USER")).accept(MediaType.TEXT_PLAIN))
         .andExpect(status().isOk())
         .andExpect(content().string("ok"));
   }

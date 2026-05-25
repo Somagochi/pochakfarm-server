@@ -9,11 +9,7 @@ class ErrorResponseTest {
 
   @Test
   void createsErrorResponseWithCurrentTimestamp() {
-    ErrorResponse response = ErrorResponse.of(
-        400,
-        "BAD_REQUEST",
-        "Invalid request"
-    );
+    ErrorResponse response = ErrorResponse.of(400, "BAD_REQUEST", "Invalid request");
 
     assertNotNull(response.timestamp());
     assertEquals(400, response.status());

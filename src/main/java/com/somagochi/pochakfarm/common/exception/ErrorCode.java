@@ -1,7 +1,6 @@
 package com.somagochi.pochakfarm.common.exception;
 
 public enum ErrorCode {
-
   ;
 
   private final int status;

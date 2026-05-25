@@ -21,47 +21,28 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException exception) {
     loggingError(exception);
-    return buildResponse(
-        exception.getStatus(),
-        exception.getCode(),
-        exception.getMessage()
-    );
+    return buildResponse(exception.getStatus(), exception.getCode(), exception.getMessage());
   }
 
   @ExceptionHandler(IllegalArgumentException.class)
   public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
-      IllegalArgumentException exception
-  ) {
+      IllegalArgumentException exception) {
     loggingError(exception);
-    return buildResponse(
-        HttpStatus.BAD_REQUEST.value(),
-        "BAD_REQUEST",
-        BAD_REQUEST_MESSAGE
-    );
+    return buildResponse(HttpStatus.BAD_REQUEST.value(), "BAD_REQUEST", BAD_REQUEST_MESSAGE);
   }
 
   @ExceptionHandler(AuthenticationException.class)
   public ResponseEntity<ErrorResponse> handleAuthenticationException(
-      AuthenticationException exception
-  ) {
+      AuthenticationException exception) {
     loggingError(exception);
-    return buildResponse(
-        HttpStatus.UNAUTHORIZED.value(),
-        "UNAUTHORIZED",
-        UNAUTHORIZED_MESSAGE
-    );
+    return buildResponse(HttpStatus.UNAUTHORIZED.value(), "UNAUTHORIZED", UNAUTHORIZED_MESSAGE);
   }
 
   @ExceptionHandler(AccessDeniedException.class)
   public ResponseEntity<ErrorResponse> handleAccessDeniedException(
-      AccessDeniedException exception
-  ) {
+      AccessDeniedException exception) {
     loggingError(exception);
-    return buildResponse(
-        HttpStatus.FORBIDDEN.value(),
-        "FORBIDDEN",
-        FORBIDDEN_MESSAGE
-    );
+    return buildResponse(HttpStatus.FORBIDDEN.value(), "FORBIDDEN", FORBIDDEN_MESSAGE);
   }
 
   @ExceptionHandler(Exception.class)
@@ -70,8 +51,7 @@ public class GlobalExceptionHandler {
     return buildResponse(
         HttpStatus.INTERNAL_SERVER_ERROR.value(),
         "INTERNAL_SERVER_ERROR",
-        INTERNAL_SERVER_ERROR_MESSAGE
-    );
+        INTERNAL_SERVER_ERROR_MESSAGE);
   }
 
   private void loggingError(Exception e) {
@@ -79,8 +59,7 @@ public class GlobalExceptionHandler {
   }
 
   private ResponseEntity<ErrorResponse> buildResponse(int status, String code, String message) {
-    return ResponseEntity
-        .status(HttpStatusCode.valueOf(status))
+    return ResponseEntity.status(HttpStatusCode.valueOf(status))
         .body(ErrorResponse.of(status, code, message));
   }
 }

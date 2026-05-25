@@ -14,8 +14,8 @@ class GlobalExceptionHandlerTest {
   void handlesIllegalArgumentException() {
     IllegalArgumentException exception = new IllegalArgumentException("invalid parameter");
 
-    ResponseEntity<ErrorResponse> response = globalExceptionHandler.handleIllegalArgumentException(
-        exception);
+    ResponseEntity<ErrorResponse> response =
+        globalExceptionHandler.handleIllegalArgumentException(exception);
 
     assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     assertEquals(400, response.getBody().status());
