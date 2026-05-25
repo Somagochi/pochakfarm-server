@@ -2,5 +2,28 @@
 
 set -e
 
+echo "Check submodule before push..."
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+SECRET_SUBMODULE_PATH="src/main/resources/secret"
+SECRET_SUBMODULE_DIR="$REPO_ROOT/$SECRET_SUBMODULE_PATH"
+
+current_head=$(git -C "$SECRET_SUBMODULE_DIR" rev-parse HEAD)
+remote_head=$(git -C "$SECRET_SUBMODULE_DIR" ls-remote origin HEAD | awk '{print $1}')
+
+if [ -z "$remote_head" ]; then
+	echo "Push blocked: failed to resolve remote HEAD for $SECRET_SUBMODULE_PATH."
+	echo "Check submodule remote access, or push again with --no-verify if needed."
+	exit 1
+fi
+
+if [ "$current_head" != "$remote_head" ]; then
+	echo "Push blocked: $SECRET_SUBMODULE_PATH is not at the latest remote commit."
+	echo "Current: $current_head"
+	echo "Remote : $remote_head"
+	echo "Run 'git submodule update --remote $SECRET_SUBMODULE_PATH' and review the change."
+	exit 1
+fi
+
 echo "Running tests and lint checks before push..."
 ./gradlew check
