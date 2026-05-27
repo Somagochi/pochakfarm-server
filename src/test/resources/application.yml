@@ -1,0 +1,5 @@
+app:
+  jwt:
+    secret: 12345678901234567890123456789012
+    access-token-expiration: 1h
+    refresh-token-expiration: 336h
