@@ -1,0 +1,113 @@
+package com.somagochi.pochakfarm.auth.service;
+
+import com.somagochi.pochakfarm.auth.dto.TokenResponse;
+import com.somagochi.pochakfarm.common.exception.ErrorCode;
+import com.somagochi.pochakfarm.common.jwt.JwtExpiredException;
+import com.somagochi.pochakfarm.common.jwt.JwtHelper;
+import com.somagochi.pochakfarm.common.jwt.JwtInvalidException;
+import com.somagochi.pochakfarm.common.jwt.JwtPayload;
+import com.somagochi.pochakfarm.common.properties.JwtProperties;
+import com.somagochi.pochakfarm.common.security.JwtAuthenticationException;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import org.springframework.stereotype.Service;
+
+@Service
+public class TokenService {
+
+  private static final String JTI_CLAIM = "jti";
+  private static final String TOKEN_TYPE_CLAIM = "tokenType";
+  private static final String ACCESS_TOKEN_TYPE = "access";
+  private static final String REFRESH_TOKEN_TYPE = "refresh";
+
+  private final JwtHelper jwtHelper;
+  private final Duration accessTokenTtl;
+  private final Duration refreshTokenTtl;
+
+  public TokenService(JwtHelper jwtHelper, JwtProperties jwtProperties) {
+    this.jwtHelper = jwtHelper;
+    this.accessTokenTtl =
+        requirePositive(jwtProperties.accessTokenExpiration(), "accessTokenExpiration");
+    this.refreshTokenTtl =
+        requirePositive(jwtProperties.refreshTokenExpiration(), "refreshTokenExpiration");
+  }
+
+  public TokenResponse generateTokenPair(String subject) {
+    return generateTokenPair(subject, Map.of(), Map.of());
+  }
+
+  public TokenResponse generateTokenPair(
+      String subject,
+      Map<String, Object> accessTokenClaims,
+      Map<String, Object> refreshTokenClaims) {
+    String accessToken = generateAccessToken(subject, accessTokenClaims);
+    String refreshToken = generateRefreshToken(subject, refreshTokenClaims);
+    return new TokenResponse(accessToken, refreshToken);
+  }
+
+  public String generateAccessToken(String subject) {
+    return generateAccessToken(subject, Map.of());
+  }
+
+  public String generateAccessToken(String subject, Map<String, Object> claims) {
+    return jwtHelper.generateToken(
+        subject, withReservedClaims(claims, ACCESS_TOKEN_TYPE), accessTokenTtl);
+  }
+
+  public String generateRefreshToken(String subject) {
+    return generateRefreshToken(subject, Map.of());
+  }
+
+  public String generateRefreshToken(String subject, Map<String, Object> claims) {
+    return jwtHelper.generateToken(
+        subject, withReservedClaims(claims, REFRESH_TOKEN_TYPE), refreshTokenTtl);
+  }
+
+  public JwtPayload parse(String token) {
+    return parseOrThrow(token);
+  }
+
+  public JwtPayload parseAccessToken(String token) {
+    JwtPayload payload = parseOrThrow(token);
+    validateTokenType(payload, ACCESS_TOKEN_TYPE);
+    return payload;
+  }
+
+  public JwtPayload parseRefreshToken(String token) {
+    JwtPayload payload = parseOrThrow(token);
+    validateTokenType(payload, REFRESH_TOKEN_TYPE);
+    return payload;
+  }
+
+  private JwtPayload parseOrThrow(String token) {
+    try {
+      return jwtHelper.parse(token);
+    } catch (JwtExpiredException exception) {
+      throw new JwtAuthenticationException(ErrorCode.EXPIRED_TOKEN);
+    } catch (JwtInvalidException exception) {
+      throw new JwtAuthenticationException(ErrorCode.INVALID_TOKEN);
+    }
+  }
+
+  private void validateTokenType(JwtPayload payload, String expectedType) {
+    if (!expectedType.equals(payload.claims().get(TOKEN_TYPE_CLAIM))) {
+      throw new JwtAuthenticationException(ErrorCode.INVALID_TOKEN_TYPE);
+    }
+  }
+
+  private Map<String, Object> withReservedClaims(Map<String, Object> claims, String tokenType) {
+    Map<String, Object> tokenClaims = new HashMap<>(claims);
+    tokenClaims.put(JTI_CLAIM, UUID.randomUUID().toString());
+    tokenClaims.put(TOKEN_TYPE_CLAIM, tokenType);
+    return Map.copyOf(tokenClaims);
+  }
+
+  private Duration requirePositive(Duration duration, String fieldName) {
+    if (duration == null || duration.isNegative() || duration.isZero()) {
+      throw new IllegalArgumentException(fieldName + " must be greater than zero");
+    }
+    return duration;
+  }
+}
