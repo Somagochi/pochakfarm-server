@@ -1,6 +1,9 @@
 package com.somagochi.pochakfarm.common.exception;
 
 public enum ErrorCode {
+  INVALID_TOKEN(401, "INVALID_TOKEN", "Invalid token"),
+  EXPIRED_TOKEN(401, "EXPIRED_TOKEN", "Token has expired"),
+  INVALID_TOKEN_TYPE(401, "INVALID_TOKEN_TYPE", "Invalid token type"),
   ;
 
   private final int status;

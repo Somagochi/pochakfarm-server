@@ -1,5 +1,6 @@
 package com.somagochi.pochakfarm.common.exception;
 
+import com.somagochi.pochakfarm.common.security.JwtAuthenticationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -29,6 +30,13 @@ public class GlobalExceptionHandler {
       IllegalArgumentException exception) {
     loggingError(exception);
     return buildResponse(HttpStatus.BAD_REQUEST.value(), "BAD_REQUEST", BAD_REQUEST_MESSAGE);
+  }
+
+  @ExceptionHandler(JwtAuthenticationException.class)
+  public ResponseEntity<ErrorResponse> handleJwtAuthenticationException(
+      JwtAuthenticationException exception) {
+    loggingError(exception);
+    return buildResponse(exception.getStatus(), exception.getCode(), exception.getErrorMessage());
   }
 
   @ExceptionHandler(AuthenticationException.class)

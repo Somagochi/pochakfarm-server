@@ -8,11 +8,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.somagochi.pochakfarm.common.config.SecurityConfig;
 import com.somagochi.pochakfarm.common.exception.GlobalExceptionHandler;
+import com.somagochi.pochakfarm.common.security.JwtAuthenticationFilter;
 import com.somagochi.pochakfarm.common.security.SecurityAccessDeniedHandler;
 import com.somagochi.pochakfarm.common.security.SecurityAuthenticationEntryPoint;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -23,7 +31,8 @@ import org.springframework.test.web.servlet.MockMvc;
   SecurityAuthenticationEntryPoint.class,
   SecurityAccessDeniedHandler.class,
   GlobalExceptionHandler.class,
-  TestController.class
+  TestController.class,
+  SecurityConfigTest.TestConfig.class
 })
 class SecurityConfigTest {
 
@@ -45,5 +54,21 @@ class SecurityConfigTest {
         .perform(get("/secure").with(user("tester").roles("USER")).accept(MediaType.TEXT_PLAIN))
         .andExpect(status().isOk())
         .andExpect(content().string("ok"));
+  }
+
+  @TestConfiguration
+  static class TestConfig {
+
+    @Bean
+    JwtAuthenticationFilter jwtAuthenticationFilter() {
+      return new JwtAuthenticationFilter(null, null) {
+        @Override
+        protected void doFilterInternal(
+            HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+          filterChain.doFilter(request, response);
+        }
+      };
+    }
   }
 }
