@@ -38,6 +38,7 @@ description: Spring Boot, DDD, MySQL 기준으로 변경사항을 리뷰하는 �
 - 함수가 한 가지 책임만 가지는가
 - 이름이 역할을 설명하는가
 - Google Java Format과 기존 스타일을 깨지 않는가
+- 요청 범위를 벗어난 drive-by refactor나 불필요한 확장이 없는가
 
 ## 출력 형식
 
