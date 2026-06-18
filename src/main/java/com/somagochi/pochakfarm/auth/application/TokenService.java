@@ -1,4 +1,4 @@
-package com.somagochi.pochakfarm.auth.service;
+package com.somagochi.pochakfarm.auth.application;
 
 import com.somagochi.pochakfarm.auth.dto.TokenResponse;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;

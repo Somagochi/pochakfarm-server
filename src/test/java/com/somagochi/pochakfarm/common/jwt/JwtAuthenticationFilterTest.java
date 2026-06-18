@@ -6,13 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.BDDMockito.given;
 
-import com.somagochi.pochakfarm.auth.service.TokenService;
+import com.somagochi.pochakfarm.auth.application.TokenService;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationException;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationFilter;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationToken;
 import com.somagochi.pochakfarm.user.domain.User;
-import com.somagochi.pochakfarm.user.service.UserService;
+import com.somagochi.pochakfarm.user.application.UserService;
 import java.time.Instant;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;

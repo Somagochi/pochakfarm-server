@@ -1,4 +1,4 @@
-package com.somagochi.pochakfarm.user.service;
+package com.somagochi.pochakfarm.user.application;
 
 import com.somagochi.pochakfarm.user.domain.User;
 import org.springframework.stereotype.Service;
