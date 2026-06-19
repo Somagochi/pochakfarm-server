@@ -3,8 +3,25 @@ spring:
     active: local
   config:
     import: optional:classpath:secret/
+  datasource:
+    url: ${secret.datasource.url}
+    username: ${secret.datasource.username}
+    password: ${secret.datasource.password}
+    driver-class-name: ${secret.datasource.driver-class-name}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: ${secret.jpa.hibernate.ddl-auto}
+    show-sql: ${secret.jpa.show-sql}
+    properties:
+      hibernate:
+        format_sql: ${secret.jpa.properties.hibernate.format_sql}
 
 app:
+  jwt:
+    secret: ${secret.jwt.secret}
+    access-token-expiration: ${secret.jwt.access-token-expiration}
+    refresh-token-expiration: ${secret.jwt.refresh-token-expiration}
   social:
     kakao:
       base-url: https://kapi.kakao.com
@@ -15,3 +32,8 @@ app:
     apple:
       issuer: https://appleid.apple.com
       jwks-uri: https://appleid.apple.com/auth/keys
+      audience: ${secret.social.apple.audience}
+    oidc:
+      jwks-cache:
+        ttl: ${secret.social.oidc.jwks-cache.ttl}
+        min-refresh-interval: ${secret.social.oidc.jwks-cache.min-refresh-interval}
