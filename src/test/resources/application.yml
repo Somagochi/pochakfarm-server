@@ -7,3 +7,6 @@ app:
     kakao:
       base-url: https://kapi.kakao.com
       user-info-path: /v2/user/me
+    naver:
+      base-url: https://openapi.naver.com
+      user-info-path: /v1/nid/me
