@@ -3,3 +3,9 @@ spring:
     active: local
   config:
     import: optional:classpath:secret/
+
+app:
+  social:
+    kakao:
+      base-url: https://kapi.kakao.com
+      user-info-path: /v2/user/me

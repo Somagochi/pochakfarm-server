@@ -3,3 +3,7 @@ app:
     secret: 12345678901234567890123456789012
     access-token-expiration: 1h
     refresh-token-expiration: 336h
+  social:
+    kakao:
+      base-url: https://kapi.kakao.com
+      user-info-path: /v2/user/me
