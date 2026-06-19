@@ -31,7 +31,8 @@ public class UserService {
   }
 
   private Optional<User> findBySocialAccount(SocialUserInfo userInfo) {
-    return userRepository.findBySocialAccountProviderAndSocialAccountProviderId(userInfo.provider(), userInfo.providerId());
+    return userRepository.findBySocialAccountProviderAndSocialAccountProviderId(
+        userInfo.provider(), userInfo.providerId());
   }
 
   private User register(SocialUserInfo userInfo) {
