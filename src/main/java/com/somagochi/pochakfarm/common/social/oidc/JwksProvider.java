@@ -29,7 +29,10 @@ public class JwksProvider {
   public JwksProvider(JwksCacheProperties properties) {
     this.properties = properties;
     this.cache =
-        Caffeine.newBuilder().expireAfterWrite(properties.ttl()).maximumSize(MAX_JWKS_SOURCES).build();
+        Caffeine.newBuilder()
+            .expireAfterWrite(properties.ttl())
+            .maximumSize(MAX_JWKS_SOURCES)
+            .build();
   }
 
   public Key findKey(String jwksUri, String kid) {
