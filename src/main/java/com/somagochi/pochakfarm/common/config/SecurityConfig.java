@@ -6,6 +6,7 @@ import com.somagochi.pochakfarm.common.security.SecurityAuthenticationEntryPoint
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -37,7 +38,12 @@ public class SecurityConfig {
         .httpBasic(AbstractHttpConfigurer::disable)
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .cors(Customizer.withDefaults())
-        .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+        .authorizeHttpRequests(
+            auth ->
+                auth.requestMatchers(HttpMethod.POST, "/api/auth/login")
+                    .permitAll()
+                    .anyRequest()
+                    .authenticated())
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
         .exceptionHandling(
             ex ->
