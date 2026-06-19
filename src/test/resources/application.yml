@@ -10,3 +10,11 @@ app:
     naver:
       base-url: https://openapi.naver.com
       user-info-path: /v1/nid/me
+    apple:
+      issuer: https://appleid.apple.com
+      jwks-uri: https://appleid.apple.com/auth/keys
+      audience: com.somagochi.pochakfarm
+    oidc:
+      jwks-cache:
+        ttl: 6h
+        min-refresh-interval: 5m
