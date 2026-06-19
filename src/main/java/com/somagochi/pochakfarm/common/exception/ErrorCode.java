@@ -7,6 +7,7 @@ public enum ErrorCode {
   UNSUPPORTED_SOCIAL_PROVIDER(400, "UNSUPPORTED_SOCIAL_PROVIDER", "Unsupported social provider"),
   INVALID_SOCIAL_TOKEN(401, "INVALID_SOCIAL_TOKEN", "Invalid social token"),
   SOCIAL_USER_INFO_FAILED(502, "SOCIAL_USER_INFO_FAILED", "Failed to fetch social user info"),
+  USER_NOT_FOUND(404, "USER_NOT_FOUND", "User not found"),
   ;
 
   private final int status;
