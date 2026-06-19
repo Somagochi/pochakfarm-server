@@ -12,3 +12,6 @@ app:
     naver:
       base-url: https://openapi.naver.com
       user-info-path: /v1/nid/me
+    apple:
+      issuer: https://appleid.apple.com
+      jwks-uri: https://appleid.apple.com/auth/keys
