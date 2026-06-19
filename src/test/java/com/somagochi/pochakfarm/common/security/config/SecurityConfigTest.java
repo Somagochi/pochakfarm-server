@@ -61,7 +61,7 @@ class SecurityConfigTest {
 
     @Bean
     JwtAuthenticationFilter jwtAuthenticationFilter() {
-      return new JwtAuthenticationFilter(null, null) {
+      return new JwtAuthenticationFilter(null) {
         @Override
         protected void doFilterInternal(
             HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
