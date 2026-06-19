@@ -3,7 +3,6 @@ package com.somagochi.pochakfarm.common.social;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import java.util.List;
-
 import org.springframework.stereotype.Component;
 
 @Component

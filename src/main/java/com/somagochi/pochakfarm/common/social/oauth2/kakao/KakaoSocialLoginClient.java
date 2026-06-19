@@ -2,10 +2,10 @@ package com.somagochi.pochakfarm.common.social.oauth2.kakao;
 
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
+import com.somagochi.pochakfarm.common.properties.KakaoProperties;
 import com.somagochi.pochakfarm.common.social.SocialLoginClient;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
 import com.somagochi.pochakfarm.common.social.SocialUserInfo;
-import com.somagochi.pochakfarm.common.properties.KakaoProperties;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
@@ -36,7 +36,8 @@ public class KakaoSocialLoginClient implements SocialLoginClient {
     if (response == null || response.id() == null) {
       throw new BusinessException(ErrorCode.SOCIAL_USER_INFO_FAILED);
     }
-    return new SocialUserInfo(SocialProvider.KAKAO, String.valueOf(response.id()), response.email());
+    return new SocialUserInfo(
+        SocialProvider.KAKAO, String.valueOf(response.id()), response.email());
   }
 
   private KakaoUserResponse requestUserInfo(String token) {
