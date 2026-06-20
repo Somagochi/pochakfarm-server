@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.somagochi.pochakfarm.auth.application.SocialLoginService;
 import com.somagochi.pochakfarm.auth.dto.SocialLoginRequest;
+import com.somagochi.pochakfarm.auth.dto.SocialLoginResponse;
 import com.somagochi.pochakfarm.auth.dto.TokenResponse;
 import com.somagochi.pochakfarm.common.config.SecurityConfig;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
@@ -48,7 +49,8 @@ class AuthControllerTest {
   @Test
   void returnsTokenPairWhenLoginSucceeds() throws Exception {
     given(socialLoginService.login(any(SocialLoginRequest.class)))
-        .willReturn(new TokenResponse("access-token", "refresh-token"));
+        .willReturn(
+            new SocialLoginResponse(new TokenResponse("access-token", "refresh-token"), true));
 
     mockMvc
         .perform(
@@ -56,8 +58,9 @@ class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"provider\":\"kakao\",\"token\":\"social-token\"}"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data.accessToken").value("access-token"))
-        .andExpect(jsonPath("$.data.refreshToken").value("refresh-token"));
+        .andExpect(jsonPath("$.data.token.accessToken").value("access-token"))
+        .andExpect(jsonPath("$.data.token.refreshToken").value("refresh-token"))
+        .andExpect(jsonPath("$.data.isNew").value(true));
   }
 
   @Test
