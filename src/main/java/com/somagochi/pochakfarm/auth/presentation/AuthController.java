@@ -2,7 +2,7 @@ package com.somagochi.pochakfarm.auth.presentation;
 
 import com.somagochi.pochakfarm.auth.application.SocialLoginService;
 import com.somagochi.pochakfarm.auth.dto.SocialLoginRequest;
-import com.somagochi.pochakfarm.auth.dto.TokenResponse;
+import com.somagochi.pochakfarm.auth.dto.SocialLoginResponse;
 import com.somagochi.pochakfarm.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,7 +18,7 @@ public class AuthController {
   private final SocialLoginService socialLoginService;
 
   @PostMapping("/login")
-  public ApiResponse<TokenResponse> login(@RequestBody SocialLoginRequest request) {
+  public ApiResponse<SocialLoginResponse> login(@RequestBody SocialLoginRequest request) {
     return ApiResponse.success(socialLoginService.login(request));
   }
 }

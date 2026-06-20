@@ -4,6 +4,7 @@ import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.social.SocialUserInfo;
 import com.somagochi.pochakfarm.user.domain.User;
+import com.somagochi.pochakfarm.user.dto.UserRegistration;
 import com.somagochi.pochakfarm.user.infrastructure.persistence.UserRepository;
 import java.util.Optional;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -26,8 +27,10 @@ public class UserService {
         .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
   }
 
-  public User getOrRegister(SocialUserInfo userInfo) {
-    return findBySocialAccount(userInfo).orElseGet(() -> register(userInfo));
+  public UserRegistration getOrRegister(SocialUserInfo userInfo) {
+    return findBySocialAccount(userInfo)
+        .map(user -> new UserRegistration(user, false))
+        .orElseGet(() -> new UserRegistration(register(userInfo), true));
   }
 
   private Optional<User> findBySocialAccount(SocialUserInfo userInfo) {

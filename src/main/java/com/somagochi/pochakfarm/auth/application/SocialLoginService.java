@@ -1,12 +1,14 @@
 package com.somagochi.pochakfarm.auth.application;
 
 import com.somagochi.pochakfarm.auth.dto.SocialLoginRequest;
+import com.somagochi.pochakfarm.auth.dto.SocialLoginResponse;
 import com.somagochi.pochakfarm.auth.dto.TokenResponse;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.social.SocialLoginResolver;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
 import com.somagochi.pochakfarm.common.social.SocialUserInfo;
+import com.somagochi.pochakfarm.user.dto.UserRegistration;
 import com.somagochi.pochakfarm.user.application.UserService;
 import com.somagochi.pochakfarm.user.domain.User;
 import org.springframework.stereotype.Service;
@@ -25,14 +27,16 @@ public class SocialLoginService {
     this.tokenService = tokenService;
   }
 
-  public TokenResponse login(SocialLoginRequest request) {
+  public SocialLoginResponse login(SocialLoginRequest request) {
     SocialProvider provider = SocialProvider.from(request.provider());
     validateToken(request.token());
 
     SocialUserInfo userInfo = socialLoginResolver.fetchUserInfo(provider, request.token());
-    User user = userService.getOrRegister(userInfo);
+    UserRegistration registration = userService.getOrRegister(userInfo);
+    User user = registration.user();
 
-    return tokenService.generateTokenPair(String.valueOf(user.getId()));
+    TokenResponse tokenResponse = tokenService.generateTokenPair(String.valueOf(user.getId()));
+    return new SocialLoginResponse(tokenResponse, registration.isNew());
   }
 
   private void validateToken(String token) {
