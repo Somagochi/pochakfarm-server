@@ -19,6 +19,7 @@ spring:
   data:
     redis:
       host: {secret.data.redis.host}
+      username: {secret.data.redis.username}
       password: {secret.data.redis.password}
       port: {secret.data.redis.port}
 
