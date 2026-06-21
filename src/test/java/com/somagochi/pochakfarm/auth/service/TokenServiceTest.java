@@ -1,10 +1,13 @@
 package com.somagochi.pochakfarm.auth.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.somagochi.pochakfarm.auth.dto.TokenResponse;
+import com.somagochi.pochakfarm.auth.infrastructure.InMemoryTokenBlacklist;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.jwt.JwtHelper;
 import com.somagochi.pochakfarm.common.jwt.JwtPayload;
@@ -23,7 +26,9 @@ class TokenServiceTest {
     JwtHelper jwtHelper = new JwtHelper(SECRET);
     TokenService tokenService =
         new TokenService(
-            jwtHelper, new JwtProperties(SECRET, Duration.ofMinutes(30), Duration.ofDays(14)));
+            jwtHelper,
+            new JwtProperties(SECRET, Duration.ofMinutes(30), Duration.ofDays(14)),
+            new InMemoryTokenBlacklist());
 
     TokenResponse tokenResponse =
         tokenService.generateTokenPair(
@@ -53,11 +58,86 @@ class TokenServiceTest {
   }
 
   @Test
+  void blacklistsAccessTokenByJti() {
+    JwtHelper jwtHelper = new JwtHelper(SECRET);
+    InMemoryTokenBlacklist tokenBlacklist = new InMemoryTokenBlacklist();
+    TokenService tokenService =
+        new TokenService(
+            jwtHelper,
+            new JwtProperties(SECRET, Duration.ofMinutes(30), Duration.ofDays(14)),
+            tokenBlacklist);
+
+    String accessToken = tokenService.generateAccessToken("user-1");
+    String jti = tokenService.parseAccessToken(accessToken).tokenId();
+    assertFalse(tokenBlacklist.isBlacklisted(jti));
+
+    tokenService.blacklistToken(accessToken);
+
+    assertTrue(tokenBlacklist.isBlacklisted(jti));
+  }
+
+  @Test
+  void verifyAccessTokenReturnsPayloadWhenNotBlacklisted() {
+    JwtHelper jwtHelper = new JwtHelper(SECRET);
+    TokenService tokenService =
+        new TokenService(
+            jwtHelper,
+            new JwtProperties(SECRET, Duration.ofMinutes(30), Duration.ofDays(14)),
+            new InMemoryTokenBlacklist());
+
+    String accessToken = tokenService.generateAccessToken("user-1");
+
+    JwtPayload payload = tokenService.verifyAccessToken(accessToken);
+
+    assertEquals("user-1", payload.subject());
+  }
+
+  @Test
+  void verifyAccessTokenThrowsWhenBlacklisted() {
+    JwtHelper jwtHelper = new JwtHelper(SECRET);
+    InMemoryTokenBlacklist tokenBlacklist = new InMemoryTokenBlacklist();
+    TokenService tokenService =
+        new TokenService(
+            jwtHelper,
+            new JwtProperties(SECRET, Duration.ofMinutes(30), Duration.ofDays(14)),
+            tokenBlacklist);
+
+    String accessToken = tokenService.generateAccessToken("user-1");
+    tokenService.blacklistToken(accessToken);
+
+    JwtAuthenticationException exception =
+        assertThrows(
+            JwtAuthenticationException.class, () -> tokenService.verifyAccessToken(accessToken));
+
+    assertEquals(ErrorCode.BLACKLISTED_TOKEN.getCode(), exception.getCode());
+  }
+
+  @Test
+  void throwsWhenBlacklistingNonAccessToken() {
+    JwtHelper jwtHelper = new JwtHelper(SECRET);
+    TokenService tokenService =
+        new TokenService(
+            jwtHelper,
+            new JwtProperties(SECRET, Duration.ofMinutes(30), Duration.ofDays(14)),
+            new InMemoryTokenBlacklist());
+
+    String refreshToken = tokenService.generateRefreshToken("user-1");
+
+    JwtAuthenticationException exception =
+        assertThrows(
+            JwtAuthenticationException.class, () -> tokenService.blacklistToken(refreshToken));
+
+    assertEquals(ErrorCode.INVALID_TOKEN_TYPE.getCode(), exception.getCode());
+  }
+
+  @Test
   void throwsWhenTokenTypeDoesNotMatch() {
     JwtHelper jwtHelper = new JwtHelper(SECRET);
     TokenService tokenService =
         new TokenService(
-            jwtHelper, new JwtProperties(SECRET, Duration.ofMinutes(30), Duration.ofDays(14)));
+            jwtHelper,
+            new JwtProperties(SECRET, Duration.ofMinutes(30), Duration.ofDays(14)),
+            new InMemoryTokenBlacklist());
 
     String refreshToken = tokenService.generateRefreshToken("user-1");
 
@@ -73,7 +153,9 @@ class TokenServiceTest {
     JwtHelper jwtHelper = new JwtHelper(SECRET);
     TokenService tokenService =
         new TokenService(
-            jwtHelper, new JwtProperties(SECRET, Duration.ofMillis(1), Duration.ofDays(14)));
+            jwtHelper,
+            new JwtProperties(SECRET, Duration.ofMillis(1), Duration.ofDays(14)),
+            new InMemoryTokenBlacklist());
 
     String accessToken = tokenService.generateAccessToken("user-1");
 

@@ -40,7 +40,7 @@ class JwtAuthenticationFilterTest {
     request.addHeader("Authorization", "Bearer valid-token");
     MockHttpServletResponse response = new MockHttpServletResponse();
 
-    given(tokenService.parseAccessToken("valid-token"))
+    given(tokenService.verifyAccessToken("valid-token"))
         .willReturn(
             new JwtPayload(
                 "token-1",
@@ -63,13 +63,31 @@ class JwtAuthenticationFilterTest {
   }
 
   @Test
+  void rejectsRequestWhenAccessTokenIsBlacklisted() throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.addHeader("Authorization", "Bearer blacklisted-token");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    given(tokenService.verifyAccessToken("blacklisted-token"))
+        .willThrow(new JwtAuthenticationException(ErrorCode.BLACKLISTED_TOKEN));
+
+    JwtAuthenticationException thrown =
+        assertThrows(
+            JwtAuthenticationException.class,
+            () -> jwtAuthenticationFilter.doFilter(request, response, new MockFilterChain()));
+
+    assertNull(SecurityContextHolder.getContext().getAuthentication());
+    assertEquals(ErrorCode.BLACKLISTED_TOKEN.getCode(), thrown.getCode());
+  }
+
+  @Test
   void delegatesExceptionResolutionWhenBearerTokenIsInvalid() throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.addHeader("Authorization", "Bearer invalid-token");
     MockHttpServletResponse response = new MockHttpServletResponse();
     JwtAuthenticationException exception = new JwtAuthenticationException(ErrorCode.INVALID_TOKEN);
 
-    given(tokenService.parseAccessToken("invalid-token")).willThrow(exception);
+    given(tokenService.verifyAccessToken("invalid-token")).willThrow(exception);
 
     JwtAuthenticationException thrown =
         assertThrows(
