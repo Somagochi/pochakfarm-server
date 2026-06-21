@@ -1,5 +1,6 @@
 package com.somagochi.pochakfarm.auth.service;
 
+import com.somagochi.pochakfarm.auth.domain.RefreshTokenWhitelist;
 import com.somagochi.pochakfarm.auth.domain.TokenBlacklist;
 import com.somagochi.pochakfarm.auth.dto.TokenResponse;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
@@ -25,14 +26,19 @@ public class TokenService {
   private static final String REFRESH_TOKEN_TYPE = "refresh";
 
   private final TokenBlacklist tokenBlacklist;
+  private final RefreshTokenWhitelist refreshTokenWhitelist;
   private final JwtHelper jwtHelper;
   private final Duration accessTokenTtl;
   private final Duration refreshTokenTtl;
 
   public TokenService(
-      JwtHelper jwtHelper, JwtProperties jwtProperties, TokenBlacklist tokenBlacklist) {
+      JwtHelper jwtHelper,
+      JwtProperties jwtProperties,
+      TokenBlacklist tokenBlacklist,
+      RefreshTokenWhitelist refreshTokenWhitelist) {
     this.jwtHelper = jwtHelper;
     this.tokenBlacklist = tokenBlacklist;
+    this.refreshTokenWhitelist = refreshTokenWhitelist;
     this.accessTokenTtl =
         requirePositive(jwtProperties.accessTokenExpiration(), "accessTokenExpiration");
     this.refreshTokenTtl =
@@ -57,8 +63,9 @@ public class TokenService {
   }
 
   public String generateAccessToken(String subject, Map<String, Object> claims) {
+    String tokenId = UUID.randomUUID().toString();
     return jwtHelper.generateToken(
-        subject, withReservedClaims(claims, ACCESS_TOKEN_TYPE), accessTokenTtl);
+        subject, withReservedClaims(claims, ACCESS_TOKEN_TYPE, tokenId), accessTokenTtl);
   }
 
   public String generateRefreshToken(String subject) {
@@ -66,8 +73,12 @@ public class TokenService {
   }
 
   public String generateRefreshToken(String subject, Map<String, Object> claims) {
-    return jwtHelper.generateToken(
-        subject, withReservedClaims(claims, REFRESH_TOKEN_TYPE), refreshTokenTtl);
+    String tokenId = UUID.randomUUID().toString();
+    String refreshToken =
+        jwtHelper.generateToken(
+            subject, withReservedClaims(claims, REFRESH_TOKEN_TYPE, tokenId), refreshTokenTtl);
+    refreshTokenWhitelist.register(tokenId, refreshTokenTtl);
+    return refreshToken;
   }
 
   public JwtPayload parse(String token) {
@@ -100,6 +111,11 @@ public class TokenService {
     tokenBlacklist.register(payload.tokenId(), ttl);
   }
 
+  public void revokeRefreshToken(String token) {
+    JwtPayload payload = parseRefreshToken(token);
+    refreshTokenWhitelist.remove(payload.tokenId());
+  }
+
   private JwtPayload parseOrThrow(String token) {
     try {
       return jwtHelper.parse(token);
@@ -116,9 +132,10 @@ public class TokenService {
     }
   }
 
-  private Map<String, Object> withReservedClaims(Map<String, Object> claims, String tokenType) {
+  private Map<String, Object> withReservedClaims(
+      Map<String, Object> claims, String tokenType, String tokenId) {
     Map<String, Object> tokenClaims = new HashMap<>(claims);
-    tokenClaims.put(JTI_CLAIM, UUID.randomUUID().toString());
+    tokenClaims.put(JTI_CLAIM, tokenId);
     tokenClaims.put(TOKEN_TYPE_CLAIM, tokenType);
     return Map.copyOf(tokenClaims);
   }
