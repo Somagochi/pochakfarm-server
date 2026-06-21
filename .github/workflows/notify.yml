@@ -1,0 +1,35 @@
+name: Notify
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types: [completed]
+
+jobs:
+  discord:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send Discord notification
+        env:
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          ACTOR: ${{ github.event.workflow_run.actor.login }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          REPO: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          COMMIT_URL="$SERVER_URL/$REPO/commit/$SHA"
+          SHORT_SHA="${SHA:0:7}"
+          DESC=$(printf '**Branch:** `%s`\n**Commit:** [`%s`](%s)\n**Author:** %s' \
+            "$BRANCH" "$SHORT_SHA" "$COMMIT_URL" "$ACTOR")
+          PAYLOAD=$(jq -n \
+            --arg title "❌ $WORKFLOW_NAME 실패" \
+            --arg desc "$DESC" \
+            --arg url "$RUN_URL" \
+            '{username: "GitHub Actions", embeds: [{title: $title, description: $desc, url: $url, color: 15158332}]}')
+          curl -sf -H "Content-Type: application/json" -d "$PAYLOAD" "$WEBHOOK_URL"

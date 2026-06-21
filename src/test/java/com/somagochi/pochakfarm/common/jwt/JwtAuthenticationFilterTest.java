@@ -6,13 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.BDDMockito.given;
 
-import com.somagochi.pochakfarm.auth.service.TokenService;
+import com.somagochi.pochakfarm.auth.application.TokenService;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationException;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationFilter;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationToken;
-import com.somagochi.pochakfarm.user.domain.User;
-import com.somagochi.pochakfarm.user.service.UserService;
 import java.time.Instant;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
@@ -25,9 +23,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 class JwtAuthenticationFilterTest {
 
   private final TokenService tokenService = org.mockito.Mockito.mock(TokenService.class);
-  private final UserService userService = org.mockito.Mockito.mock(UserService.class);
   private final JwtAuthenticationFilter jwtAuthenticationFilter =
-      new JwtAuthenticationFilter(tokenService, userService);
+      new JwtAuthenticationFilter(tokenService);
 
   @AfterEach
   void clearSecurityContext() {
@@ -48,7 +45,6 @@ class JwtAuthenticationFilterTest {
                 Instant.parse("2026-05-26T00:00:00Z"),
                 Instant.parse("2026-05-26T01:00:00Z"),
                 Map.of("jti", "token-1", "tokenType", "access")));
-    given(userService.getById(1L)).willReturn(new User(1L));
 
     jwtAuthenticationFilter.doFilter(request, response, new MockFilterChain());
 

@@ -1,9 +1,7 @@
 package com.somagochi.pochakfarm.common.security;
 
-import com.somagochi.pochakfarm.auth.service.TokenService;
+import com.somagochi.pochakfarm.auth.application.TokenService;
 import com.somagochi.pochakfarm.common.jwt.JwtPayload;
-import com.somagochi.pochakfarm.user.domain.User;
-import com.somagochi.pochakfarm.user.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,11 +18,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private static final String BEARER_PREFIX = "Bearer ";
 
   private final TokenService tokenService;
-  private final UserService userService;
 
-  public JwtAuthenticationFilter(TokenService tokenService, UserService userService) {
+  public JwtAuthenticationFilter(TokenService tokenService) {
     this.tokenService = tokenService;
-    this.userService = userService;
   }
 
   @Override
@@ -39,8 +35,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     JwtPayload payload = tokenService.verifyAccessToken(bearerToken);
-    User user = userService.getById(Long.valueOf(payload.subject()));
-    JwtAuthenticationToken authentication = new JwtAuthenticationToken(bearerToken, user, payload);
+    UserPrincipal principal = new UserPrincipal(Long.valueOf(payload.subject()));
+    JwtAuthenticationToken authentication =
+        new JwtAuthenticationToken(bearerToken, principal, payload);
     SecurityContextHolder.getContext().setAuthentication(authentication);
     filterChain.doFilter(request, response);
   }

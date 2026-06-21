@@ -1,4 +1,4 @@
-package com.somagochi.pochakfarm.auth.service;
+package com.somagochi.pochakfarm.auth.application;
 
 import com.somagochi.pochakfarm.auth.domain.RefreshTokenWhitelist;
 import com.somagochi.pochakfarm.auth.domain.TokenBlacklist;
