@@ -1,6 +1,5 @@
 package com.somagochi.pochakfarm.auth.application;
 
-import com.somagochi.pochakfarm.auth.service.TokenService;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.jwt.JwtPayload;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationException;

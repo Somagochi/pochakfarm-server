@@ -1,8 +1,8 @@
 package com.somagochi.pochakfarm.auth.presentation;
 
 import com.somagochi.pochakfarm.auth.application.LogoutService;
-import com.somagochi.pochakfarm.auth.dto.LogoutRequest;
 import com.somagochi.pochakfarm.auth.application.SocialLoginService;
+import com.somagochi.pochakfarm.auth.dto.LogoutRequest;
 import com.somagochi.pochakfarm.auth.dto.SocialLoginRequest;
 import com.somagochi.pochakfarm.auth.dto.SocialLoginResponse;
 import com.somagochi.pochakfarm.common.response.ApiResponse;
@@ -28,7 +28,7 @@ public class AuthController {
 
   @PostMapping("/logout")
   public ApiResponse<Void> logout(
-          Authentication authentication, @RequestBody LogoutRequest request) {
+      Authentication authentication, @RequestBody LogoutRequest request) {
     logoutService.logout((String) authentication.getCredentials(), request.refreshToken());
     return ApiResponse.empty();
   }

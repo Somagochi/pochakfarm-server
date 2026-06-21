@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.somagochi.pochakfarm.auth.infrastructure.InMemoryRefreshTokenWhitelist;
 import com.somagochi.pochakfarm.auth.infrastructure.InMemoryTokenBlacklist;
-import com.somagochi.pochakfarm.auth.service.TokenService;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.jwt.JwtHelper;
 import com.somagochi.pochakfarm.common.properties.JwtProperties;
