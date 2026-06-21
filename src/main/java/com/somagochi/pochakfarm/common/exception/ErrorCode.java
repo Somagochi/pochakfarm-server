@@ -4,6 +4,7 @@ public enum ErrorCode {
   INVALID_TOKEN(401, "INVALID_TOKEN", "Invalid token"),
   EXPIRED_TOKEN(401, "EXPIRED_TOKEN", "Token has expired"),
   INVALID_TOKEN_TYPE(401, "INVALID_TOKEN_TYPE", "Invalid token type"),
+  BLACKLISTED_TOKEN(401, "BLACKLISTED_TOKEN", "Blacklisted token"),
   ;
 
   private final int status;

@@ -1,5 +1,6 @@
 package com.somagochi.pochakfarm.auth.service;
 
+import com.somagochi.pochakfarm.auth.domain.TokenBlacklist;
 import com.somagochi.pochakfarm.auth.dto.TokenResponse;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.jwt.JwtExpiredException;
@@ -9,6 +10,7 @@ import com.somagochi.pochakfarm.common.jwt.JwtPayload;
 import com.somagochi.pochakfarm.common.properties.JwtProperties;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -22,12 +24,15 @@ public class TokenService {
   private static final String ACCESS_TOKEN_TYPE = "access";
   private static final String REFRESH_TOKEN_TYPE = "refresh";
 
+  private final TokenBlacklist tokenBlacklist;
   private final JwtHelper jwtHelper;
   private final Duration accessTokenTtl;
   private final Duration refreshTokenTtl;
 
-  public TokenService(JwtHelper jwtHelper, JwtProperties jwtProperties) {
+  public TokenService(
+      JwtHelper jwtHelper, JwtProperties jwtProperties, TokenBlacklist tokenBlacklist) {
     this.jwtHelper = jwtHelper;
+    this.tokenBlacklist = tokenBlacklist;
     this.accessTokenTtl =
         requirePositive(jwtProperties.accessTokenExpiration(), "accessTokenExpiration");
     this.refreshTokenTtl =
@@ -75,10 +80,24 @@ public class TokenService {
     return payload;
   }
 
+  public JwtPayload verifyAccessToken(String token) {
+    JwtPayload payload = parseAccessToken(token);
+    if (tokenBlacklist.isBlacklisted(payload.tokenId())) {
+      throw new JwtAuthenticationException(ErrorCode.BLACKLISTED_TOKEN);
+    }
+    return payload;
+  }
+
   public JwtPayload parseRefreshToken(String token) {
     JwtPayload payload = parseOrThrow(token);
     validateTokenType(payload, REFRESH_TOKEN_TYPE);
     return payload;
+  }
+
+  public void blacklistToken(String token) {
+    JwtPayload payload = parseAccessToken(token);
+    Duration ttl = Duration.between(Instant.now(), payload.expiresAt());
+    tokenBlacklist.register(payload.tokenId(), ttl);
   }
 
   private JwtPayload parseOrThrow(String token) {
