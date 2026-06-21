@@ -15,9 +15,9 @@ import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.social.SocialLoginResolver;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
 import com.somagochi.pochakfarm.common.social.SocialUserInfo;
-import com.somagochi.pochakfarm.user.dto.UserRegistration;
 import com.somagochi.pochakfarm.user.application.UserService;
 import com.somagochi.pochakfarm.user.domain.User;
+import com.somagochi.pochakfarm.user.dto.UserRegistration;
 import org.junit.jupiter.api.Test;
 
 class SocialLoginServiceTest {
