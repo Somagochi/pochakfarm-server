@@ -17,6 +17,19 @@ spring:
       hibernate:
         format_sql: ${secret.jpa.properties.hibernate.format_sql}
 
+management:
+  server:
+    port: 9090
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
 app:
   jwt:
     secret: ${secret.jwt.secret}
