@@ -16,6 +16,11 @@ spring:
     properties:
       hibernate:
         format_sql: ${secret.jpa.properties.hibernate.format_sql}
+  data:
+    redis:
+      host: {secret.data.redis.host}
+      password: {secret.data.redis.password}
+      port: {secret.data.redis.port}
 
 management:
   server:
