@@ -9,6 +9,7 @@ public enum ErrorCode {
   INVALID_SOCIAL_TOKEN(401, "INVALID_SOCIAL_TOKEN", "Invalid social token"),
   SOCIAL_USER_INFO_FAILED(502, "SOCIAL_USER_INFO_FAILED", "Failed to fetch social user info"),
   USER_NOT_FOUND(404, "USER_NOT_FOUND", "User not found"),
+  TOKEN_OWNER_MISMATCH(401, "TOKEN_OWNER_MISMATCH", "Token owner mismatch"),
   ;
 
   private final int status;

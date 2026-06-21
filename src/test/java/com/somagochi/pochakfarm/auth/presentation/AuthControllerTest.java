@@ -2,10 +2,13 @@ package com.somagochi.pochakfarm.auth.presentation;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.somagochi.pochakfarm.auth.application.LogoutService;
 import com.somagochi.pochakfarm.auth.application.SocialLoginService;
 import com.somagochi.pochakfarm.auth.dto.SocialLoginRequest;
 import com.somagochi.pochakfarm.auth.dto.SocialLoginResponse;
@@ -14,14 +17,19 @@ import com.somagochi.pochakfarm.common.config.SecurityConfig;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.exception.GlobalExceptionHandler;
+import com.somagochi.pochakfarm.common.jwt.JwtPayload;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationFilter;
+import com.somagochi.pochakfarm.common.security.JwtAuthenticationToken;
 import com.somagochi.pochakfarm.common.security.SecurityAccessDeniedHandler;
 import com.somagochi.pochakfarm.common.security.SecurityAuthenticationEntryPoint;
+import com.somagochi.pochakfarm.common.security.UserPrincipal;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.Instant;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -41,10 +49,10 @@ import org.springframework.test.web.servlet.MockMvc;
   AuthControllerTest.TestConfig.class
 })
 class AuthControllerTest {
-
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private SocialLoginService socialLoginService;
+  @MockitoBean private LogoutService logoutService;
 
   @Test
   void returnsTokenPairWhenLoginSucceeds() throws Exception {
@@ -76,6 +84,35 @@ class AuthControllerTest {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.status").value(400))
         .andExpect(jsonPath("$.code").value("UNSUPPORTED_SOCIAL_PROVIDER"));
+  }
+
+  @Test
+  void logsOutWhenAuthenticated() throws Exception {
+    JwtAuthenticationToken authentication =
+        new JwtAuthenticationToken(
+            "access-token",
+            new UserPrincipal(1L),
+            new JwtPayload(
+                "jti-1",
+                "1",
+                Instant.parse("2026-05-26T00:00:00Z"),
+                Instant.parse("2026-05-26T01:00:00Z"),
+                Map.of("jti", "jti-1", "tokenType", "access")));
+
+    mockMvc
+        .perform(
+            post("/api/auth/logout")
+                .with(authentication(authentication))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"refreshToken\":\"refresh-token\"}"))
+        .andExpect(status().isOk());
+
+    verify(logoutService).logout("access-token", "refresh-token");
+  }
+
+  @Test
+  void returnsUnauthorizedWhenNotAuthenticated() throws Exception {
+    mockMvc.perform(post("/api/auth/logout")).andExpect(status().isUnauthorized());
   }
 
   @TestConfiguration
