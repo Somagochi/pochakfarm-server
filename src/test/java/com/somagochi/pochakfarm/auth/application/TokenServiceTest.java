@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.somagochi.pochakfarm.auth.dto.TokenResponse;
+import com.somagochi.pochakfarm.auth.infrastructure.InMemoryRefreshTokenWhitelist;
 import com.somagochi.pochakfarm.auth.infrastructure.InMemoryTokenBlacklist;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.jwt.JwtHelper;
@@ -28,7 +29,8 @@ class TokenServiceTest {
         new TokenService(
             jwtHelper,
             new JwtProperties(SECRET, Duration.ofMinutes(30), Duration.ofDays(14)),
-            new InMemoryTokenBlacklist());
+            new InMemoryTokenBlacklist(),
+            new InMemoryRefreshTokenWhitelist());
 
     TokenResponse tokenResponse =
         tokenService.generateTokenPair(
@@ -58,6 +60,43 @@ class TokenServiceTest {
   }
 
   @Test
+  void registersRefreshTokenInWhitelistWhenGenerated() {
+    JwtHelper jwtHelper = new JwtHelper(SECRET);
+    InMemoryRefreshTokenWhitelist refreshTokenWhitelist = new InMemoryRefreshTokenWhitelist();
+    TokenService tokenService =
+        new TokenService(
+            jwtHelper,
+            new JwtProperties(SECRET, Duration.ofMinutes(30), Duration.ofDays(14)),
+            new InMemoryTokenBlacklist(),
+            refreshTokenWhitelist);
+
+    String refreshToken = tokenService.generateRefreshToken("user-1");
+    String jti = tokenService.parseRefreshToken(refreshToken).tokenId();
+
+    assertTrue(refreshTokenWhitelist.contains(jti));
+  }
+
+  @Test
+  void revokeRefreshTokenRemovesFromWhitelist() {
+    JwtHelper jwtHelper = new JwtHelper(SECRET);
+    InMemoryRefreshTokenWhitelist refreshTokenWhitelist = new InMemoryRefreshTokenWhitelist();
+    TokenService tokenService =
+        new TokenService(
+            jwtHelper,
+            new JwtProperties(SECRET, Duration.ofMinutes(30), Duration.ofDays(14)),
+            new InMemoryTokenBlacklist(),
+            refreshTokenWhitelist);
+
+    String refreshToken = tokenService.generateRefreshToken("user-1");
+    String jti = tokenService.parseRefreshToken(refreshToken).tokenId();
+    assertTrue(refreshTokenWhitelist.contains(jti));
+
+    tokenService.revokeRefreshToken(refreshToken);
+
+    assertFalse(refreshTokenWhitelist.contains(jti));
+  }
+
+  @Test
   void blacklistsAccessTokenByJti() {
     JwtHelper jwtHelper = new JwtHelper(SECRET);
     InMemoryTokenBlacklist tokenBlacklist = new InMemoryTokenBlacklist();
@@ -65,7 +104,8 @@ class TokenServiceTest {
         new TokenService(
             jwtHelper,
             new JwtProperties(SECRET, Duration.ofMinutes(30), Duration.ofDays(14)),
-            tokenBlacklist);
+            tokenBlacklist,
+            new InMemoryRefreshTokenWhitelist());
 
     String accessToken = tokenService.generateAccessToken("user-1");
     String jti = tokenService.parseAccessToken(accessToken).tokenId();
@@ -83,7 +123,8 @@ class TokenServiceTest {
         new TokenService(
             jwtHelper,
             new JwtProperties(SECRET, Duration.ofMinutes(30), Duration.ofDays(14)),
-            new InMemoryTokenBlacklist());
+            new InMemoryTokenBlacklist(),
+            new InMemoryRefreshTokenWhitelist());
 
     String accessToken = tokenService.generateAccessToken("user-1");
 
@@ -100,7 +141,8 @@ class TokenServiceTest {
         new TokenService(
             jwtHelper,
             new JwtProperties(SECRET, Duration.ofMinutes(30), Duration.ofDays(14)),
-            tokenBlacklist);
+            tokenBlacklist,
+            new InMemoryRefreshTokenWhitelist());
 
     String accessToken = tokenService.generateAccessToken("user-1");
     tokenService.blacklistToken(accessToken);
@@ -119,7 +161,8 @@ class TokenServiceTest {
         new TokenService(
             jwtHelper,
             new JwtProperties(SECRET, Duration.ofMinutes(30), Duration.ofDays(14)),
-            new InMemoryTokenBlacklist());
+            new InMemoryTokenBlacklist(),
+            new InMemoryRefreshTokenWhitelist());
 
     String refreshToken = tokenService.generateRefreshToken("user-1");
 
@@ -137,7 +180,8 @@ class TokenServiceTest {
         new TokenService(
             jwtHelper,
             new JwtProperties(SECRET, Duration.ofMinutes(30), Duration.ofDays(14)),
-            new InMemoryTokenBlacklist());
+            new InMemoryTokenBlacklist(),
+            new InMemoryRefreshTokenWhitelist());
 
     String refreshToken = tokenService.generateRefreshToken("user-1");
 
@@ -155,7 +199,8 @@ class TokenServiceTest {
         new TokenService(
             jwtHelper,
             new JwtProperties(SECRET, Duration.ofMillis(1), Duration.ofDays(14)),
-            new InMemoryTokenBlacklist());
+            new InMemoryTokenBlacklist(),
+            new InMemoryRefreshTokenWhitelist());
 
     String accessToken = tokenService.generateAccessToken("user-1");
 
