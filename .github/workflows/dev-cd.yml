@@ -52,10 +52,7 @@ jobs:
           host: ${{ secrets.DEV_HOST }}
           username: ${{ secrets.DEV_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: |
-            deploy/docker-compose.yml
-            deploy/nginx/conf.d/default.conf
-            deploy/scripts/deploy.sh
+          source: "deploy/docker-compose.yml, deploy/nginx/conf.d/default.conf, deploy/scripts/deploy.sh"
           target: ${{ vars.DEPLOY_PATH }}
           strip_components: 1
 
