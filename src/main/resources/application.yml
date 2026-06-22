@@ -17,6 +17,12 @@ spring:
       hibernate:
         format_sql: ${secret.jpa.properties.hibernate.format_sql}
 
+springdoc:
+  api-docs:
+    enabled: ${secret.springdoc.api-docs.enabled}
+  swagger-ui:
+    enabled: ${secret.springdoc.swagger-ui.enabled}
+
 app:
   jwt:
     secret: ${secret.jwt.secret}
