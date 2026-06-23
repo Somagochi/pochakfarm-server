@@ -1,21 +1,17 @@
 package com.somagochi.pochakfarm.user.domain;
 
+import com.somagochi.pochakfarm.common.entity.BaseEntity;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Getter
@@ -26,8 +22,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
         @UniqueConstraint(
             name = "uk_users_provider_provider_id",
             columnNames = {"provider", "provider_id"}))
-@EntityListeners(AuditingEntityListener.class)
-public class User {
+public class User extends BaseEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,10 +32,6 @@ public class User {
   @Embedded private SocialAccount socialAccount;
 
   private String email;
-
-  @CreatedDate private Instant createdAt;
-
-  @LastModifiedDate private Instant updatedAt;
 
   private User(SocialAccount socialAccount, String email) {
     this.socialAccount = socialAccount;
