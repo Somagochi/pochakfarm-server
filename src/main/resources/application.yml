@@ -18,6 +18,8 @@ spring:
         format_sql: ${secret.jpa.properties.hibernate.format_sql}
 
 app:
+  discord:
+    webhook-url: ${secret.discord.webhook-url:}
   jwt:
     secret: ${secret.jwt.secret}
     access-token-expiration: ${secret.jwt.access-token-expiration}
