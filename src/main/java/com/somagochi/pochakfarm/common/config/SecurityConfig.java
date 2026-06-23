@@ -42,6 +42,8 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers(HttpMethod.POST, "/api/auth/login")
                     .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/storage/public/**")
+                    .permitAll()
                     .anyRequest()
                     .authenticated())
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
