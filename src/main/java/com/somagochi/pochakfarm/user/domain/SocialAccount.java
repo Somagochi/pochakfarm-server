@@ -19,12 +19,16 @@ public class SocialAccount {
   @Column(name = "provider", nullable = false, updatable = false)
   private SocialProvider provider;
 
-  @Column(name = "provider_id", nullable = false, updatable = false)
+  @Column(name = "provider_id", nullable = false)
   private String providerId;
 
   public SocialAccount(SocialProvider provider, String providerId) {
     this.provider = Objects.requireNonNull(provider, "provider must not be null");
     this.providerId = Objects.requireNonNull(providerId, "providerId must not be null");
+  }
+
+  SocialAccount anonymized(String token) {
+    return new SocialAccount(provider, "deleted-" + token + "-" + providerId);
   }
 
   @Override
