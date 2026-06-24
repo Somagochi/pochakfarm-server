@@ -105,6 +105,16 @@ public class TokenService {
     return payload;
   }
 
+  public void revokeTokens(String accessToken, String refreshToken) {
+    JwtPayload accessPayload = parseAccessToken(accessToken);
+    JwtPayload refreshPayload = parseRefreshToken(refreshToken);
+    if (!accessPayload.subject().equals(refreshPayload.subject())) {
+      throw new JwtAuthenticationException(ErrorCode.TOKEN_OWNER_MISMATCH);
+    }
+    revokeRefreshToken(refreshToken);
+    blacklistToken(accessToken);
+  }
+
   public void blacklistToken(String token) {
     JwtPayload payload = parseAccessToken(token);
     Duration ttl = Duration.between(Instant.now(), payload.expiresAt());
