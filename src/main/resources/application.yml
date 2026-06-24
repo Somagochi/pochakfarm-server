@@ -22,6 +22,8 @@ spring:
       username: ${secret.data.redis.username}
       password: ${secret.data.redis.password}
       port: ${secret.data.redis.port}
+      ssl:
+        enabled: ${secret.data.redis.ssl.enabled}
 
 management:
   server:
