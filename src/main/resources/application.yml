@@ -36,6 +36,12 @@ management:
         enabled: true
       show-details: never
 
+springdoc:
+  api-docs:
+    enabled: ${secret.springdoc.api-docs.enabled}
+  swagger-ui:
+    enabled: ${secret.springdoc.swagger-ui.enabled}
+
 app:
   jwt:
     secret: ${secret.jwt.secret}

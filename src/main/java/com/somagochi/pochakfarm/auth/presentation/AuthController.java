@@ -16,16 +16,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-public class AuthController {
+public class AuthController implements AuthApiSpec {
 
   private final SocialLoginService socialLoginService;
   private final LogoutService logoutService;
 
+  @Override
   @PostMapping("/login")
   public ApiResponse<SocialLoginResponse> login(@RequestBody SocialLoginRequest request) {
     return ApiResponse.success(socialLoginService.login(request));
   }
 
+  @Override
   @PostMapping("/logout")
   public ApiResponse<Void> logout(
       Authentication authentication, @RequestBody LogoutRequest request) {
