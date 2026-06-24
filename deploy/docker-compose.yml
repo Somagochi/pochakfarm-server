@@ -1,0 +1,41 @@
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: pochakfarm-nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    networks:
+      - pochakfarm
+
+  app-blue:
+    image: ${IMAGE}
+    container_name: pochakfarm-app-blue
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+    expose:
+      - "8080"
+    ports:
+      - "9091:9090"
+    networks:
+      - pochakfarm
+
+  app-green:
+    image: ${IMAGE}
+    container_name: pochakfarm-app-green
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+    expose:
+      - "8080"
+    ports:
+      - "9092:9090"
+    networks:
+      - pochakfarm
+
+networks:
+  pochakfarm:
+    name: pochakfarm
