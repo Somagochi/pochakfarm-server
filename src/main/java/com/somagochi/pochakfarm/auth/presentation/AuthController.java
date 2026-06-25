@@ -31,6 +31,7 @@ public class AuthController implements AuthApiSpec {
     return ApiResponse.success(socialLoginService.login(request));
   }
 
+  @Override
   @PostMapping("/refresh")
   public ApiResponse<TokenResponse> refresh(@RequestBody RefreshRequest request) {
     return ApiResponse.success(refreshService.refresh(request.refreshToken()));
