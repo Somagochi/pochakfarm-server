@@ -10,6 +10,12 @@ public enum ErrorCode {
   SOCIAL_USER_INFO_FAILED(502, "SOCIAL_USER_INFO_FAILED", "Failed to fetch social user info"),
   USER_NOT_FOUND(404, "USER_NOT_FOUND", "User not found"),
   TOKEN_OWNER_MISMATCH(401, "TOKEN_OWNER_MISMATCH", "Token owner mismatch"),
+  UNSUPPORTED_CONTENT_TYPE(400, "UNSUPPORTED_CONTENT_TYPE", "Unsupported content type"),
+  INVALID_UPLOAD_PURPOSE(400, "INVALID_UPLOAD_PURPOSE", "Invalid upload purpose"),
+  EMPTY_FILE(400, "EMPTY_FILE", "Empty file"),
+  FILE_NOT_FOUND(404, "FILE_NOT_FOUND", "File not found"),
+  FILE_TOO_LARGE(413, "FILE_TOO_LARGE", "File too large"),
+  FORBIDDEN_FILE_ACCESS(403, "FORBIDDEN_FILE_ACCESS", "Forbidden file access"),
   ;
 
   private final int status;
