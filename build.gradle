@@ -26,6 +26,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3'
 	implementation 'com.github.ben-manes.caffeine:caffeine'
+	implementation 'org.zalando:logbook-spring-boot-starter:4.0.4'
+	implementation 'org.zalando:logbook-logstash:4.0.4'
+	implementation 'net.logstash.logback:logstash-logback-encoder:9.0'
 	implementation platform('software.amazon.awssdk:bom:2.46.13')
 	implementation 'software.amazon.awssdk:s3'
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.7'
