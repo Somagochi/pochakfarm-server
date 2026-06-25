@@ -1,4 +1,4 @@
-package com.somagochi.pochakfarm.dev.config;
+package com.somagochi.pochakfarm.develop.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,7 +13,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @Profile({"local", "dev"})
-public class DevSecurityConfig {
+public class DevelopSecurityConfig {
 
   @Bean
   @Order(Ordered.HIGHEST_PRECEDENCE)

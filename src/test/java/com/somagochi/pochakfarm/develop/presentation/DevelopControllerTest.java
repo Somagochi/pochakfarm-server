@@ -1,4 +1,4 @@
-package com.somagochi.pochakfarm.dev.presentation;
+package com.somagochi.pochakfarm.develop.presentation;
 
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -8,8 +8,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.somagochi.pochakfarm.auth.dto.SocialLoginResponse;
 import com.somagochi.pochakfarm.auth.dto.TokenResponse;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationFilter;
-import com.somagochi.pochakfarm.dev.application.DevLoginService;
-import com.somagochi.pochakfarm.dev.config.DevSecurityConfig;
+import com.somagochi.pochakfarm.develop.application.DevelopDeviceService;
+import com.somagochi.pochakfarm.develop.application.DevelopLoginService;
+import com.somagochi.pochakfarm.develop.config.DevelopSecurityConfig;
+import com.somagochi.pochakfarm.develop.dto.DevelopDeviceTokenResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,18 +28,20 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(DevAuthController.class)
-@Import({DevSecurityConfig.class, DevAuthControllerTest.TestConfig.class})
+@WebMvcTest(DevelopController.class)
+@Import({DevelopSecurityConfig.class, DevelopControllerTest.TestConfig.class})
 @ActiveProfiles("local")
-class DevAuthControllerTest {
+class DevelopControllerTest {
 
   @Autowired private MockMvc mockMvc;
 
-  @MockitoBean private DevLoginService devLoginService;
+  @MockitoBean private DevelopLoginService developLoginService;
+
+  @MockitoBean private DevelopDeviceService developDeviceService;
 
   @Test
   void issuesTokenPairWithoutAuthentication() throws Exception {
-    given(devLoginService.login(5L))
+    given(developLoginService.login(5L))
         .willReturn(
             new SocialLoginResponse(new TokenResponse("access-token", "refresh-token"), false));
 
@@ -47,6 +51,17 @@ class DevAuthControllerTest {
         .andExpect(jsonPath("$.data.token.accessToken").value("access-token"))
         .andExpect(jsonPath("$.data.token.refreshToken").value("refresh-token"))
         .andExpect(jsonPath("$.data.isNew").value(false));
+  }
+
+  @Test
+  void issuesDeviceTokenWithoutAuthentication() throws Exception {
+    given(developDeviceService.issueDeviceToken())
+        .willReturn(new DevelopDeviceTokenResponse("dev_abc"));
+
+    mockMvc
+        .perform(post("/api/dev/device-token"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.deviceToken").value("dev_abc"));
   }
 
   @TestConfiguration
