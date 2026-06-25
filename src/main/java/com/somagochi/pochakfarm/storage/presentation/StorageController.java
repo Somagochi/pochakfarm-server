@@ -17,10 +17,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/storage/images")
 @RequiredArgsConstructor
-public class StorageController {
+public class StorageController implements StorageApiSpec {
 
   private final ImageUploadService imageUploadService;
 
+  @Override
   @PostMapping("/presign")
   public ApiResponse<PresignResponse> presign(
       Authentication authentication, @RequestBody PresignRequest request) {
@@ -29,6 +30,7 @@ public class StorageController {
         imageUploadService.createPresign(userId, request.purpose(), request.contentType()));
   }
 
+  @Override
   @PostMapping("/confirm")
   public ApiResponse<ConfirmResponse> confirm(
       Authentication authentication, @RequestBody ConfirmRequest request) {
