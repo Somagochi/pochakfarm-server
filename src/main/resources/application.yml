@@ -3,6 +3,10 @@ spring:
     active: local
   config:
     import: optional:classpath:secret/
+  servlet:
+    multipart:
+      max-file-size: 11MB
+      max-request-size: 12MB
   datasource:
     url: ${secret.datasource.url}
     username: ${secret.datasource.username}
@@ -16,6 +20,33 @@ spring:
     properties:
       hibernate:
         format_sql: ${secret.jpa.properties.hibernate.format_sql}
+  data:
+    redis:
+      host: ${secret.data.redis.host}
+      username: ${secret.data.redis.username}
+      password: ${secret.data.redis.password}
+      port: ${secret.data.redis.port}
+      ssl:
+        enabled: ${secret.data.redis.ssl.enabled}
+
+management:
+  server:
+    port: 9090
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+springdoc:
+  api-docs:
+    enabled: ${secret.springdoc.api-docs.enabled}
+  swagger-ui:
+    enabled: ${secret.springdoc.swagger-ui.enabled}
 
 app:
   discord:
@@ -39,3 +70,12 @@ app:
       jwks-cache:
         ttl: ${secret.social.oidc.jwks-cache.ttl}
         min-refresh-interval: ${secret.social.oidc.jwks-cache.min-refresh-interval}
+  storage:
+    s3:
+      bucket: ${secret.storage.s3.bucket:pochakfarm-local}
+      region: ${secret.storage.s3.region:ap-northeast-2}
+      access-key: ${secret.storage.s3.access-key:}
+      secret-key: ${secret.storage.s3.secret-key:}
+      presign-expiration: ${secret.storage.s3.presign-expiration:PT5M}
+      max-file-size: ${secret.storage.s3.max-file-size:10485760}
+      allowed-content-types: ${secret.storage.s3.allowed-content-types:image/jpeg,image/png,image/webp}

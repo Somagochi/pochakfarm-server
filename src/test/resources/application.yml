@@ -28,3 +28,12 @@ app:
       jwks-cache:
         ttl: 6h
         min-refresh-interval: 5m
+  storage:
+    s3:
+      bucket: test-bucket
+      region: ap-northeast-2
+      access-key: test-access-key
+      secret-key: test-secret-key
+      presign-expiration: 5m
+      max-file-size: 10485760
+      allowed-content-types: image/jpeg,image/png,image/webp

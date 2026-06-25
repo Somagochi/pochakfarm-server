@@ -9,6 +9,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @Slf4j
 @RestControllerAdvice
@@ -51,6 +52,16 @@ public class GlobalExceptionHandler {
       AccessDeniedException exception) {
     loggingError(exception);
     return buildResponse(HttpStatus.FORBIDDEN.value(), "FORBIDDEN", FORBIDDEN_MESSAGE);
+  }
+
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceededException(
+      MaxUploadSizeExceededException exception) {
+    loggingError(exception);
+    return buildResponse(
+        ErrorCode.FILE_TOO_LARGE.getStatus(),
+        ErrorCode.FILE_TOO_LARGE.getCode(),
+        ErrorCode.FILE_TOO_LARGE.getMessage());
   }
 
   @ExceptionHandler(Exception.class)
