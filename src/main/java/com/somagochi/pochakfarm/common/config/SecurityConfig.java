@@ -22,6 +22,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+  private static final String[] PUBLIC_GET_ENDPOINTS = {"/actuator/health", "/actuator/health/**"};
+
+  private static final String[] PUBLIC_POST_ENDPOINTS = {
+    "/api/auth/login", "/api/pre-registrations"
+  };
+
+  private static final String[] PUBLIC_DELETE_ENDPOINTS = {"/api/pre-registrations"};
+
   private final SecurityAuthenticationEntryPoint authenticationEntryPoint;
   private final SecurityAccessDeniedHandler accessDeniedHandler;
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -40,11 +48,11 @@ public class SecurityConfig {
         .cors(Customizer.withDefaults())
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**")
+                auth.requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS)
                     .permitAll()
-                    .requestMatchers(HttpMethod.POST, "/api/auth/login")
+                    .requestMatchers(HttpMethod.POST, PUBLIC_POST_ENDPOINTS)
                     .permitAll()
-                    .requestMatchers(HttpMethod.POST, "/api/storage/public/**")
+                    .requestMatchers(HttpMethod.DELETE, PUBLIC_DELETE_ENDPOINTS)
                     .permitAll()
                     .anyRequest()
                     .authenticated())
