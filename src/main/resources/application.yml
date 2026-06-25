@@ -16,6 +16,33 @@ spring:
     properties:
       hibernate:
         format_sql: ${secret.jpa.properties.hibernate.format_sql}
+  data:
+    redis:
+      host: ${secret.data.redis.host}
+      username: ${secret.data.redis.username}
+      password: ${secret.data.redis.password}
+      port: ${secret.data.redis.port}
+      ssl:
+        enabled: ${secret.data.redis.ssl.enabled}
+
+management:
+  server:
+    port: 9090
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+springdoc:
+  api-docs:
+    enabled: ${secret.springdoc.api-docs.enabled}
+  swagger-ui:
+    enabled: ${secret.springdoc.swagger-ui.enabled}
 
 app:
   jwt:
