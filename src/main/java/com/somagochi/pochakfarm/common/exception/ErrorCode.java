@@ -16,6 +16,13 @@ public enum ErrorCode {
   FILE_NOT_FOUND(404, "FILE_NOT_FOUND", "File not found"),
   FILE_TOO_LARGE(413, "FILE_TOO_LARGE", "File too large"),
   FORBIDDEN_FILE_ACCESS(403, "FORBIDDEN_FILE_ACCESS", "Forbidden file access"),
+  DEVICE_NOT_FOUND(404, "DEVICE_NOT_FOUND", "Device not found"),
+  INVALID_PHONE_NUMBER(400, "INVALID_PHONE_NUMBER", "Invalid phone number"),
+  REQUIRED_CONSENT_REQUIRED(400, "REQUIRED_CONSENT_REQUIRED", "Required consent is missing"),
+  PHONE_NUMBER_ALREADY_REGISTERED(
+      409, "PHONE_NUMBER_ALREADY_REGISTERED", "Phone number already registered"),
+  DEVICE_ALREADY_REGISTERED(409, "DEVICE_ALREADY_REGISTERED", "Device already registered"),
+  PRE_REGISTRATION_NOT_FOUND(404, "PRE_REGISTRATION_NOT_FOUND", "Pre-registration not found"),
   ;
 
   private final int status;
