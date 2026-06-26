@@ -32,8 +32,7 @@ public class PreRegistrationController implements PreRegistrationApiSpec {
   @Override
   @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
   public ApiResponse<PreRegistrationResponse> register(
-      @CookieValue(value = DeviceTokenCookieFactory.COOKIE_NAME, required = false)
-          String deviceToken,
+      @CookieValue(value = DeviceTokenCookieFactory.COOKIE_NAME) String deviceToken,
       @RequestBody PreRegistrationRequest request) {
     return ApiResponse.success(preRegistrationRegisterService.register(deviceToken, request));
   }
@@ -41,8 +40,7 @@ public class PreRegistrationController implements PreRegistrationApiSpec {
   @Override
   @DeleteMapping
   public ApiResponse<PreRegistrationResponse> cancel(
-      @CookieValue(value = DeviceTokenCookieFactory.COOKIE_NAME, required = false)
-          String deviceToken) {
+      @CookieValue(value = DeviceTokenCookieFactory.COOKIE_NAME) String deviceToken) {
     return ApiResponse.success(preRegistrationCancelService.cancel(deviceToken));
   }
 }
