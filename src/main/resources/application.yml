@@ -19,6 +19,7 @@ spring:
     show-sql: ${secret.jpa.show-sql}
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
         format_sql: ${secret.jpa.properties.hibernate.format_sql}
   data:
     redis:
