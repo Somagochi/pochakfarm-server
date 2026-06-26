@@ -13,10 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
-public class UserController {
+public class UserController implements UserApiSpec {
 
   private final UserService userService;
 
+  @Override
   @GetMapping("/me")
   public ApiResponse<UserResponse> getMe(@AuthenticationPrincipal UserPrincipal principal) {
     return ApiResponse.success(userService.getProfile(principal.id()));

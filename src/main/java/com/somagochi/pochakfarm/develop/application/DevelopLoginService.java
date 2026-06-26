@@ -1,4 +1,4 @@
-package com.somagochi.pochakfarm.dev.application;
+package com.somagochi.pochakfarm.develop.application;
 
 import com.somagochi.pochakfarm.auth.application.TokenService;
 import com.somagochi.pochakfarm.auth.dto.SocialLoginResponse;
@@ -12,14 +12,14 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Profile({"local", "dev"})
-public class DevLoginService {
+public class DevelopLoginService {
 
   private static final SocialProvider DEV_PROVIDER = SocialProvider.KAKAO;
 
   private final UserService userService;
   private final TokenService tokenService;
 
-  public DevLoginService(UserService userService, TokenService tokenService) {
+  public DevelopLoginService(UserService userService, TokenService tokenService) {
     this.userService = userService;
     this.tokenService = tokenService;
   }
