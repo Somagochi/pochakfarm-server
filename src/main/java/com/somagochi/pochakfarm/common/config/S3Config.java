@@ -1,6 +1,7 @@
 package com.somagochi.pochakfarm.common.config;
 
 import com.somagochi.pochakfarm.common.properties.S3Properties;
+import java.net.URI;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,6 +11,7 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 @Configuration
@@ -19,6 +21,9 @@ public class S3Config {
   @Bean
   AwsCredentialsProvider awsCredentialsProvider(S3Properties properties) {
     if (properties.accessKey() == null || properties.accessKey().isBlank()) {
+      if (properties.endpoint() != null && !properties.endpoint().isBlank()) {
+        return StaticCredentialsProvider.create(AwsBasicCredentials.create("test", "test"));
+      }
       return DefaultCredentialsProvider.builder().build();
     }
     return StaticCredentialsProvider.create(
@@ -27,17 +32,29 @@ public class S3Config {
 
   @Bean
   S3Client s3Client(S3Properties properties, AwsCredentialsProvider awsCredentialsProvider) {
-    return S3Client.builder()
-        .region(Region.of(properties.region()))
-        .credentialsProvider(awsCredentialsProvider)
-        .build();
+    var builder =
+        S3Client.builder()
+            .region(Region.of(properties.region()))
+            .credentialsProvider(awsCredentialsProvider);
+    if (properties.endpoint() != null && !properties.endpoint().isBlank()) {
+      builder
+          .endpointOverride(URI.create(properties.endpoint()))
+          .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build());
+    }
+    return builder.build();
   }
 
   @Bean
   S3Presigner s3Presigner(S3Properties properties, AwsCredentialsProvider awsCredentialsProvider) {
-    return S3Presigner.builder()
-        .region(Region.of(properties.region()))
-        .credentialsProvider(awsCredentialsProvider)
-        .build();
+    var builder =
+        S3Presigner.builder()
+            .region(Region.of(properties.region()))
+            .credentialsProvider(awsCredentialsProvider);
+    if (properties.endpoint() != null && !properties.endpoint().isBlank()) {
+      builder
+          .endpointOverride(URI.create(properties.endpoint()))
+          .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build());
+    }
+    return builder.build();
   }
 }

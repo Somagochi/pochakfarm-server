@@ -26,6 +26,7 @@ class ImageUploadServiceTest {
           "ap-northeast-2",
           null,
           null,
+          null,
           Duration.ofMinutes(5),
           MAX_FILE_SIZE,
           List.of("image/jpeg", "image/png", "image/webp"));

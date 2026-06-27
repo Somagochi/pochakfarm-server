@@ -10,6 +10,7 @@ public record S3Properties(
     String region,
     String accessKey,
     String secretKey,
+    String endpoint,
     Duration presignExpiration,
     long maxFileSize,
     List<String> allowedContentTypes) {}
