@@ -4,5 +4,5 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface CharacterizerClient {
 
-  CharacterizerResult characterize(MultipartFile image, String animalName);
+  CharacterizerResult characterize(MultipartFile image, String animalName, CardMetadata metadata);
 }

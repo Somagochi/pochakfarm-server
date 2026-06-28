@@ -1,5 +1,7 @@
 package com.somagochi.pochakfarm.characterization.application;
 
+import com.somagochi.pochakfarm.characterization.domain.CardMetadata;
+import com.somagochi.pochakfarm.characterization.domain.CardMetadataGenerator;
 import com.somagochi.pochakfarm.characterization.domain.Characterization;
 import com.somagochi.pochakfarm.characterization.domain.CharacterizationStatus;
 import com.somagochi.pochakfarm.characterization.domain.CharacterizerClient;
@@ -28,14 +30,17 @@ public class CharacterizationService {
 
   private final CharacterizationRepository characterizationRepository;
   private final CharacterizerClient characterizerClient;
+  private final CardMetadataGenerator cardMetadataGenerator;
   private final ImageUploadService imageUploadService;
 
   public CharacterizationService(
       CharacterizationRepository characterizationRepository,
       CharacterizerClient characterizerClient,
+      CardMetadataGenerator cardMetadataGenerator,
       ImageUploadService imageUploadService) {
     this.characterizationRepository = characterizationRepository;
     this.characterizerClient = characterizerClient;
+    this.cardMetadataGenerator = cardMetadataGenerator;
     this.imageUploadService = imageUploadService;
   }
 
@@ -44,9 +49,12 @@ public class CharacterizationService {
     validateImage(image);
     String normalizedAnimalName = normalizeAnimalName(animalName);
     validateDeviceCanCharacterize(deviceId);
+    CardMetadata metadata = cardMetadataGenerator.generate();
 
     Characterization characterization =
-        save(Characterization.start(deviceId, normalizedAnimalName));
+        save(Characterization.start(deviceId, normalizedAnimalName, metadata));
+    metadata = metadata.withCardNo(formatCardNo(characterization.getId()));
+    characterization.cardNoAssigned(metadata.cardNo());
     try {
       long originalUploadStartedAt = System.nanoTime();
       PublicUploadResponse original = uploadOriginal(image);
@@ -57,7 +65,8 @@ public class CharacterizationService {
       characterization.originalUploaded(original.key());
 
       long characterizerStartedAt = System.nanoTime();
-      CharacterizerResult result = characterizerClient.characterize(image, normalizedAnimalName);
+      CharacterizerResult result =
+          characterizerClient.characterize(image, normalizedAnimalName, metadata);
       log.info(
           "characterization_python_completed provider={} fallbackFrom={} pythonElapsedMs={} clientElapsedMs={}",
           result.provider(),
@@ -83,6 +92,13 @@ public class CharacterizationService {
           result.provider(),
           result.fallbackFrom(),
           result.animalName(),
+          metadata.cardTypeLabel(),
+          metadata.power(),
+          metadata.skill1().displayName(),
+          metadata.skill1().description(),
+          metadata.skill2().displayName(),
+          metadata.skill2().description(),
+          metadata.cardNo(),
           resultUpload.url(),
           result.elapsedMs());
     } catch (BusinessException exception) {
@@ -99,6 +115,12 @@ public class CharacterizationService {
   private Characterization save(Characterization characterization) {
     Characterization saved = characterizationRepository.save(characterization);
     return saved == null ? characterization : saved;
+  }
+
+  private String formatCardNo(Long characterizationId) {
+    long source = characterizationId == null ? 1L : characterizationId;
+    long displayNumber = Math.max(source, 1L) % 1000L;
+    return "No.%03d".formatted(displayNumber);
   }
 
   private long elapsedMsSince(long startedAtNanos) {

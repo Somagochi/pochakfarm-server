@@ -29,6 +29,27 @@ public class Characterization extends BaseEntity {
   @Column(name = "animal_name", nullable = false)
   private String animalName;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "card_type")
+  private CardType cardType;
+
+  @Column(name = "power")
+  private Integer power;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "skill_1")
+  private CardSkill skill1;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "skill_2")
+  private CardSkill skill2;
+
+  @Column(name = "card_no")
+  private String cardNo;
+
+  @Column(name = "flavor_text")
+  private String flavorText;
+
   @Column(name = "original_image_key")
   private String originalImageKey;
 
@@ -51,18 +72,28 @@ public class Characterization extends BaseEntity {
   @Column(name = "failure_reason")
   private String failureReason;
 
-  private Characterization(Long deviceId, String animalName) {
+  private Characterization(Long deviceId, String animalName, CardMetadata metadata) {
     this.deviceId = deviceId;
     this.animalName = animalName;
+    this.cardType = metadata.cardType();
+    this.power = metadata.power();
+    this.skill1 = metadata.skill1();
+    this.skill2 = metadata.skill2();
+    this.cardNo = metadata.cardNo();
+    this.flavorText = metadata.flavorText();
     this.status = CharacterizationStatus.PROCESSING;
   }
 
-  public static Characterization start(Long deviceId, String animalName) {
-    return new Characterization(deviceId, animalName);
+  public static Characterization start(Long deviceId, String animalName, CardMetadata metadata) {
+    return new Characterization(deviceId, animalName, metadata);
   }
 
   public void originalUploaded(String originalImageKey) {
     this.originalImageKey = originalImageKey;
+  }
+
+  public void cardNoAssigned(String cardNo) {
+    this.cardNo = cardNo;
   }
 
   public void succeed(
