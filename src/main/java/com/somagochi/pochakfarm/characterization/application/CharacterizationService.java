@@ -13,10 +13,12 @@ import com.somagochi.pochakfarm.storage.dto.PublicUploadResponse;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
+@Slf4j
 public class CharacterizationService {
 
   private static final Set<String> ALLOWED_CONTENT_TYPES =
@@ -46,13 +48,32 @@ public class CharacterizationService {
     Characterization characterization =
         save(Characterization.start(deviceId, normalizedAnimalName));
     try {
+      long originalUploadStartedAt = System.nanoTime();
       PublicUploadResponse original = uploadOriginal(image);
+      log.info(
+          "characterization_original_uploaded key={} elapsedMs={}",
+          original.key(),
+          elapsedMsSince(originalUploadStartedAt));
       characterization.originalUploaded(original.key());
 
+      long characterizerStartedAt = System.nanoTime();
       CharacterizerResult result = characterizerClient.characterize(image, normalizedAnimalName);
+      log.info(
+          "characterization_python_completed provider={} fallbackFrom={} pythonElapsedMs={} clientElapsedMs={}",
+          result.provider(),
+          result.fallbackFrom(),
+          result.elapsedMs(),
+          elapsedMsSince(characterizerStartedAt));
+
+      long resultUploadStartedAt = System.nanoTime();
       byte[] resultImage = decodeResultImage(result);
       PublicUploadResponse resultUpload =
           imageUploadService.uploadPublic(RESULT_PURPOSE, result.contentType(), resultImage);
+      log.info(
+          "characterization_result_uploaded key={} bytes={} elapsedMs={}",
+          resultUpload.key(),
+          resultImage.length,
+          elapsedMsSince(resultUploadStartedAt));
 
       characterization.succeed(
           resultUpload.key(), result.provider(), result.fallbackFrom(), result.elapsedMs());
@@ -78,6 +99,10 @@ public class CharacterizationService {
   private Characterization save(Characterization characterization) {
     Characterization saved = characterizationRepository.save(characterization);
     return saved == null ? characterization : saved;
+  }
+
+  private long elapsedMsSince(long startedAtNanos) {
+    return (System.nanoTime() - startedAtNanos) / 1_000_000;
   }
 
   private PublicUploadResponse uploadOriginal(MultipartFile image) {
