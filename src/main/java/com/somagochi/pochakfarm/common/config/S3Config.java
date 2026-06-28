@@ -11,6 +11,7 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3ClientBuilder;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
@@ -20,14 +21,14 @@ public class S3Config {
 
   @Bean
   AwsCredentialsProvider awsCredentialsProvider(S3Properties properties) {
-    if (properties.accessKey() == null || properties.accessKey().isBlank()) {
-      if (properties.endpoint() != null && !properties.endpoint().isBlank()) {
-        return StaticCredentialsProvider.create(AwsBasicCredentials.create("test", "test"));
-      }
-      return DefaultCredentialsProvider.builder().build();
+    if (hasAccessKey(properties)) {
+      return StaticCredentialsProvider.create(
+          AwsBasicCredentials.create(properties.accessKey(), properties.secretKey()));
     }
-    return StaticCredentialsProvider.create(
-        AwsBasicCredentials.create(properties.accessKey(), properties.secretKey()));
+    if (hasEndpoint(properties)) {
+      return localEndpointCredentialsProvider();
+    }
+    return DefaultCredentialsProvider.builder().build();
   }
 
   @Bean
@@ -36,11 +37,7 @@ public class S3Config {
         S3Client.builder()
             .region(Region.of(properties.region()))
             .credentialsProvider(awsCredentialsProvider);
-    if (properties.endpoint() != null && !properties.endpoint().isBlank()) {
-      builder
-          .endpointOverride(URI.create(properties.endpoint()))
-          .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build());
-    }
+    applyEndpointOverride(builder, properties);
     return builder.build();
   }
 
@@ -50,11 +47,37 @@ public class S3Config {
         S3Presigner.builder()
             .region(Region.of(properties.region()))
             .credentialsProvider(awsCredentialsProvider);
-    if (properties.endpoint() != null && !properties.endpoint().isBlank()) {
-      builder
-          .endpointOverride(URI.create(properties.endpoint()))
-          .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build());
-    }
+    applyEndpointOverride(builder, properties);
     return builder.build();
+  }
+
+  private void applyEndpointOverride(S3ClientBuilder builder, S3Properties properties) {
+    if (!hasEndpoint(properties)) {
+      return;
+    }
+    builder
+        .endpointOverride(URI.create(properties.endpoint()))
+        .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build());
+  }
+
+  private void applyEndpointOverride(S3Presigner.Builder builder, S3Properties properties) {
+    if (!hasEndpoint(properties)) {
+      return;
+    }
+    builder
+        .endpointOverride(URI.create(properties.endpoint()))
+        .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build());
+  }
+
+  private boolean hasEndpoint(S3Properties properties) {
+    return properties.endpoint() != null && !properties.endpoint().isBlank();
+  }
+
+  private boolean hasAccessKey(S3Properties properties) {
+    return properties.accessKey() != null && !properties.accessKey().isBlank();
+  }
+
+  private AwsCredentialsProvider localEndpointCredentialsProvider() {
+    return StaticCredentialsProvider.create(AwsBasicCredentials.create("test", "test"));
   }
 }

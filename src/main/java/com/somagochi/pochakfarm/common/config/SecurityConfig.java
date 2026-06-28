@@ -22,9 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-  private static final String[] PUBLIC_GET_ENDPOINTS = {
-    "/", "/pre-registration.html", "/actuator/health", "/actuator/health/**"
-  };
+  private static final String[] PUBLIC_GET_ENDPOINTS = {"/actuator/health", "/actuator/health/**"};
 
   private static final String[] PUBLIC_POST_ENDPOINTS = {
     "/api/auth/login", "/api/characterizations", "/api/pre-registrations"

@@ -59,6 +59,7 @@ public class Characterization extends BaseEntity {
   @Column(name = "provider")
   private String provider;
 
+  /** fallback provider가 사용된 경우, 실패한 원래 provider 이름. */
   @Column(name = "fallback_from")
   private String fallbackFrom;
 
