@@ -76,6 +76,7 @@ class CharacterizationControllerTest {
                     org.hamcrest.Matchers.containsString("deviceToken=dev_new")))
         .andExpect(jsonPath("$.data.cardType").value("하늘"))
         .andExpect(jsonPath("$.data.power").value(82))
+        .andExpect(jsonPath("$.data.fallbackFrom").doesNotExist())
         .andExpect(jsonPath("$.data.resultImageUrl").value("https://cdn.test/result.png"));
   }
 
@@ -106,7 +107,6 @@ class CharacterizationControllerTest {
     return new CharacterizationResponse(
         "success",
         "codex_exec",
-        null,
         "솜구름",
         "하늘",
         82,

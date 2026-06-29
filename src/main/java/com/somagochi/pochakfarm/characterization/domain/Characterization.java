@@ -59,10 +59,6 @@ public class Characterization extends BaseEntity {
   @Column(name = "provider")
   private String provider;
 
-  /** fallback provider가 사용된 경우, 실패한 원래 provider 이름. */
-  @Column(name = "fallback_from")
-  private String fallbackFrom;
-
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false)
   private CharacterizationStatus status;
@@ -97,11 +93,9 @@ public class Characterization extends BaseEntity {
     this.cardNo = cardNo;
   }
 
-  public void succeed(
-      String resultImageKey, String provider, String fallbackFrom, Integer elapsedMs) {
+  public void succeed(String resultImageKey, String provider, Integer elapsedMs) {
     this.resultImageKey = resultImageKey;
     this.provider = provider;
-    this.fallbackFrom = fallbackFrom;
     this.elapsedMs = elapsedMs;
     this.status = CharacterizationStatus.SUCCEEDED;
     this.failureReason = null;

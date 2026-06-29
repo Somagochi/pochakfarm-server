@@ -5,11 +5,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public record CharacterizationResponse(
     @Schema(description = "변환 처리 결과 상태", example = "success") String status,
     @Schema(description = "실제 변환을 수행한 내부 provider", example = "codex_exec") String provider,
-    @Schema(
-            description = "fallback provider가 사용된 경우 원래 provider",
-            nullable = true,
-            example = "primary")
-        String fallbackFrom,
     @Schema(description = "요청에서 전달한 반려동물 이름", example = "솜구름") String animalName,
     @Schema(description = "카드 타입", example = "하늘") String cardType,
     @Schema(description = "카드 파워", example = "82") Integer power,

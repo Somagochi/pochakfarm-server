@@ -84,13 +84,11 @@ public class CharacterizationService {
           resultImage.length,
           elapsedMsSince(resultUploadStartedAt));
 
-      characterization.succeed(
-          resultUpload.key(), result.provider(), result.fallbackFrom(), result.elapsedMs());
+      characterization.succeed(resultUpload.key(), result.provider(), result.elapsedMs());
       save(characterization);
       return new CharacterizationResponse(
           "success",
           result.provider(),
-          result.fallbackFrom(),
           result.animalName(),
           metadata.cardTypeLabel(),
           metadata.power(),
