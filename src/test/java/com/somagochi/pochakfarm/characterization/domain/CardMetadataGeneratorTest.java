@@ -22,10 +22,11 @@ class CardMetadataGeneratorTest {
 
     CardMetadata metadata = generator.generate();
 
+    assertEquals(CardType.SKY, metadata.cardType());
     assertTrue(metadata.power() >= 70 && metadata.power() <= 90);
     assertEquals(metadata.cardType(), metadata.skill1().cardType());
     assertEquals(metadata.cardType(), metadata.skill2().cardType());
     assertNotEquals(metadata.skill1(), metadata.skill2());
-    assertEquals("No.001", metadata.cardNo());
+    assertEquals("001", metadata.cardNo());
   }
 }

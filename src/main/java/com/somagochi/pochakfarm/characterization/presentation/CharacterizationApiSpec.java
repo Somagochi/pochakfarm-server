@@ -44,7 +44,7 @@ public interface CharacterizationApiSpec {
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "400",
       description =
-          "빈 파일(EMPTY_FILE), 지원하지 않는 이미지 형식(UNSUPPORTED_CONTENT_TYPE), 또는 빈 animalName(INVALID_ANIMAL_NAME)",
+          "빈 파일(EMPTY_FILE), 지원하지 않는 이미지 형식(UNSUPPORTED_CONTENT_TYPE), 또는 비어 있거나 6글자를 초과한 animalName(INVALID_ANIMAL_NAME)",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "404",

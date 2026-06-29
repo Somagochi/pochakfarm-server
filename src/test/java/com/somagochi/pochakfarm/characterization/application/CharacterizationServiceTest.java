@@ -54,18 +54,17 @@ class CharacterizationServiceTest {
                 "characterization-original", "image/png", bytes("original-image")))
         .willReturn(
             new PublicUploadResponse("public/original.png", "https://cdn.test/original.png"));
-    given(characterizerClient.characterize(image, "솜구름", metadata))
+    given(characterizerClient.characterize("https://cdn.test/original.png", "솜구름", metadata))
         .willReturn(
             new CharacterizerResult(
                 "success",
                 "codex_exec",
-                null,
-                "솜구름",
-                "하늘",
-                82,
                 "image/png",
+                Base64.getEncoder().encodeToString(bytes("ai-image")),
                 Base64.getEncoder().encodeToString(bytes("result-image")),
                 12345));
+    given(imageUploadService.uploadPublic("characterization-ai", "image/png", bytes("ai-image")))
+        .willReturn(new PublicUploadResponse("public/ai.png", "https://cdn.test/ai.png"));
     given(
             imageUploadService.uploadPublic(
                 "characterization-result", "image/png", bytes("result-image")))
@@ -73,14 +72,8 @@ class CharacterizationServiceTest {
 
     CharacterizationResponse response = service.characterize(1L, image, " 솜구름 ");
 
+    assertEquals("https://cdn.test/ai.png", response.aiImageUrl());
     assertEquals("https://cdn.test/result.png", response.resultImageUrl());
-    assertEquals("codex_exec", response.provider());
-    assertEquals("하늘", response.cardType());
-    assertEquals(82, response.power());
-    assertEquals("구름 점프", response.skill1Name());
-    assertEquals("바람 돌진", response.skill2Name());
-    assertEquals("No.001", response.cardNo());
-    assertEquals(12345, response.elapsedMs());
     ArgumentCaptor<Characterization> captor = ArgumentCaptor.forClass(Characterization.class);
     verify(characterizationRepository, times(2)).save(captor.capture());
     Characterization saved = lastCaptured(captor);
@@ -90,7 +83,7 @@ class CharacterizationServiceTest {
     assertEquals(82, saved.getPower());
     assertEquals(CardSkill.SKY_CLOUD_JUMP, saved.getSkill1());
     assertEquals(CardSkill.SKY_WIND_DASH, saved.getSkill2());
-    assertEquals("No.001", saved.getCardNo());
+    assertEquals("001", saved.getCardNo());
     assertEquals("public/original.png", saved.getOriginalImageKey());
     assertEquals("public/result.png", saved.getResultImageKey());
     assertEquals(CharacterizationStatus.SUCCEEDED, saved.getStatus());
@@ -99,7 +92,7 @@ class CharacterizationServiceTest {
   @Test
   void usesCharacterizationIdAsCyclicCardNumberBeforeCallingCharacterizer() {
     MockMultipartFile image = image("animal.png", "image/png", "original-image");
-    CardMetadata generatedMetadata = metadata("No.999");
+    CardMetadata generatedMetadata = metadata("999");
     given(cardMetadataGenerator.generate()).willReturn(generatedMetadata);
     given(characterizationRepository.save(any(Characterization.class)))
         .willAnswer(
@@ -113,27 +106,59 @@ class CharacterizationServiceTest {
     given(imageUploadService.uploadPublic(eq("characterization-original"), eq("image/png"), any()))
         .willReturn(
             new PublicUploadResponse("public/original.png", "https://cdn.test/original.png"));
-    given(characterizerClient.characterize(eq(image), eq("솜구름"), any()))
+    given(characterizerClient.characterize(eq("https://cdn.test/original.png"), eq("솜구름"), any()))
         .willReturn(
             new CharacterizerResult(
                 "success",
                 "codex_exec",
-                null,
-                "솜구름",
-                "하늘",
-                82,
                 "image/png",
+                Base64.getEncoder().encodeToString(bytes("ai-image")),
                 Base64.getEncoder().encodeToString(bytes("result-image")),
                 10));
+    given(imageUploadService.uploadPublic(eq("characterization-ai"), eq("image/png"), any()))
+        .willReturn(new PublicUploadResponse("public/ai.png", "https://cdn.test/ai.png"));
     given(imageUploadService.uploadPublic(eq("characterization-result"), eq("image/png"), any()))
         .willReturn(new PublicUploadResponse("public/result.png", "https://cdn.test/result.png"));
 
-    CharacterizationResponse response = service.characterize(1L, image, "솜구름");
+    service.characterize(1L, image, "솜구름");
 
-    assertEquals("No.000", response.cardNo());
     ArgumentCaptor<CardMetadata> metadataCaptor = ArgumentCaptor.forClass(CardMetadata.class);
-    verify(characterizerClient).characterize(eq(image), eq("솜구름"), metadataCaptor.capture());
-    assertEquals("No.000", metadataCaptor.getValue().cardNo());
+    verify(characterizerClient)
+        .characterize(eq("https://cdn.test/original.png"), eq("솜구름"), metadataCaptor.capture());
+    assertEquals("000", metadataCaptor.getValue().cardNo());
+  }
+
+  @Test
+  void allowsAnimalNameUpToSixCharactersIncludingSpaces() {
+    given(cardMetadataGenerator.generate()).willReturn(metadata());
+    given(imageUploadService.uploadPublic(eq("characterization-original"), eq("image/png"), any()))
+        .willReturn(
+            new PublicUploadResponse("public/original.png", "https://cdn.test/original.png"));
+    given(characterizerClient.characterize(any(), eq("가나다 라마"), any()))
+        .willReturn(
+            new CharacterizerResult(
+                "success",
+                "codex_exec",
+                "image/png",
+                Base64.getEncoder().encodeToString(bytes("ai-image")),
+                Base64.getEncoder().encodeToString(bytes("result-image")),
+                10));
+    given(imageUploadService.uploadPublic(eq("characterization-ai"), eq("image/png"), any()))
+        .willReturn(new PublicUploadResponse("public/ai.png", "https://cdn.test/ai.png"));
+    given(imageUploadService.uploadPublic(eq("characterization-result"), eq("image/png"), any()))
+        .willReturn(new PublicUploadResponse("public/result.png", "https://cdn.test/result.png"));
+
+    CharacterizationResponse response = service.characterize(1L, image(), " 가나다 라마 ");
+
+    assertEquals("https://cdn.test/result.png", response.resultImageUrl());
+  }
+
+  @Test
+  void rejectsAnimalNameLongerThanSixCharactersIncludingSpaces() {
+    BusinessException exception =
+        assertThrows(BusinessException.class, () -> service.characterize(1L, image(), "가나다 라마바"));
+
+    assertEquals(ErrorCode.INVALID_ANIMAL_NAME.getCode(), exception.getCode());
   }
 
   @Test
@@ -173,13 +198,12 @@ class CharacterizationServiceTest {
             new CharacterizerResult(
                 "success",
                 "codex_exec",
-                null,
-                "솜구름",
-                "하늘",
-                82,
                 "image/png",
+                Base64.getEncoder().encodeToString(bytes("ai-image")),
                 Base64.getEncoder().encodeToString(bytes("result-image")),
                 10));
+    given(imageUploadService.uploadPublic(eq("characterization-ai"), eq("image/png"), any()))
+        .willReturn(new PublicUploadResponse("public/ai.png", "https://cdn.test/ai.png"));
     given(imageUploadService.uploadPublic(eq("characterization-result"), eq("image/png"), any()))
         .willReturn(new PublicUploadResponse("public/result.png", "https://cdn.test/result.png"));
 
@@ -217,7 +241,14 @@ class CharacterizationServiceTest {
     given(characterizerClient.characterize(any(), eq("솜구름"), any()))
         .willReturn(
             new CharacterizerResult(
-                "success", "codex_exec", null, "솜구름", "하늘", 82, "image/png", "not-base64", 10));
+                "success",
+                "codex_exec",
+                "image/png",
+                Base64.getEncoder().encodeToString(bytes("ai-image")),
+                "not-base64",
+                10));
+    given(imageUploadService.uploadPublic(eq("characterization-ai"), eq("image/png"), any()))
+        .willReturn(new PublicUploadResponse("public/ai.png", "https://cdn.test/ai.png"));
 
     BusinessException exception =
         assertThrows(BusinessException.class, () -> service.characterize(1L, image(), "솜구름"));
@@ -233,17 +264,12 @@ class CharacterizationServiceTest {
   }
 
   private static CardMetadata metadata() {
-    return metadata("No.001");
+    return metadata("001");
   }
 
   private static CardMetadata metadata(String cardNo) {
     return new CardMetadata(
-        CardType.SKY,
-        82,
-        CardSkill.SKY_CLOUD_JUMP,
-        CardSkill.SKY_WIND_DASH,
-        cardNo,
-        "세상에 하나뿐인 포착팜 친구!");
+        CardType.SKY, 82, CardSkill.SKY_CLOUD_JUMP, CardSkill.SKY_WIND_DASH, cardNo);
   }
 
   private static MockMultipartFile image() {

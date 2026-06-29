@@ -25,7 +25,9 @@ public class CharacterizationService {
 
   private static final Set<String> ALLOWED_CONTENT_TYPES =
       Set.of("image/jpeg", "image/png", "image/webp");
+  private static final int MAX_ANIMAL_NAME_LENGTH = 6;
   private static final String ORIGINAL_PURPOSE = "characterization-original";
+  private static final String AI_PURPOSE = "characterization-ai";
   private static final String RESULT_PURPOSE = "characterization-result";
 
   private final CharacterizationRepository characterizationRepository;
@@ -66,16 +68,25 @@ public class CharacterizationService {
 
       long characterizerStartedAt = System.nanoTime();
       CharacterizerResult result =
-          characterizerClient.characterize(image, normalizedAnimalName, metadata);
+          characterizerClient.characterize(original.url(), normalizedAnimalName, metadata);
       log.info(
-          "characterization_python_completed provider={} fallbackFrom={} pythonElapsedMs={} clientElapsedMs={}",
+          "characterization_python_completed provider={} pythonElapsedMs={} clientElapsedMs={}",
           result.provider(),
-          result.fallbackFrom(),
           result.elapsedMs(),
           elapsedMsSince(characterizerStartedAt));
 
+      long aiUploadStartedAt = System.nanoTime();
+      byte[] aiImage = decodeBase64Image(result.aiImageBase64());
+      PublicUploadResponse aiUpload =
+          imageUploadService.uploadPublic(AI_PURPOSE, result.contentType(), aiImage);
+      log.info(
+          "characterization_ai_uploaded key={} bytes={} elapsedMs={}",
+          aiUpload.key(),
+          aiImage.length,
+          elapsedMsSince(aiUploadStartedAt));
+
       long resultUploadStartedAt = System.nanoTime();
-      byte[] resultImage = decodeResultImage(result);
+      byte[] resultImage = decodeCardImage(result);
       PublicUploadResponse resultUpload =
           imageUploadService.uploadPublic(RESULT_PURPOSE, result.contentType(), resultImage);
       log.info(
@@ -86,19 +97,7 @@ public class CharacterizationService {
 
       characterization.succeed(resultUpload.key(), result.provider(), result.elapsedMs());
       save(characterization);
-      return new CharacterizationResponse(
-          "success",
-          result.provider(),
-          result.animalName(),
-          metadata.cardTypeLabel(),
-          metadata.power(),
-          metadata.skill1().displayName(),
-          metadata.skill1().description(),
-          metadata.skill2().displayName(),
-          metadata.skill2().description(),
-          metadata.cardNo(),
-          resultUpload.url(),
-          result.elapsedMs());
+      return new CharacterizationResponse(aiUpload.url(), resultUpload.url());
     } catch (BusinessException exception) {
       characterization.fail(exception.getCode());
       save(characterization);
@@ -118,7 +117,7 @@ public class CharacterizationService {
   private String formatCardNo(Long characterizationId) {
     long source = characterizationId == null ? 1L : characterizationId;
     long displayNumber = Math.max(source, 1L) % 1000L;
-    return "No.%03d".formatted(displayNumber);
+    return "%03d".formatted(displayNumber);
   }
 
   private long elapsedMsSince(long startedAtNanos) {
@@ -134,15 +133,22 @@ public class CharacterizationService {
     }
   }
 
-  private byte[] decodeResultImage(CharacterizerResult result) {
+  private byte[] decodeCardImage(CharacterizerResult result) {
     if (result == null
         || !"success".equals(result.status())
-        || result.imageBase64() == null
+        || result.cardImageBase64() == null
         || result.contentType() == null) {
       throw new BusinessException(ErrorCode.CHARACTERIZATION_FAILED);
     }
+    return decodeBase64Image(result.cardImageBase64());
+  }
+
+  private byte[] decodeBase64Image(String imageBase64) {
+    if (imageBase64 == null || imageBase64.isBlank()) {
+      throw new BusinessException(ErrorCode.CHARACTERIZATION_FAILED);
+    }
     try {
-      return Base64.getDecoder().decode(result.imageBase64());
+      return Base64.getDecoder().decode(imageBase64);
     } catch (IllegalArgumentException exception) {
       throw new BusinessException(ErrorCode.CHARACTERIZATION_FAILED);
     }
@@ -172,6 +178,10 @@ public class CharacterizationService {
     if (animalName == null || animalName.isBlank()) {
       throw new BusinessException(ErrorCode.INVALID_ANIMAL_NAME);
     }
-    return animalName.trim();
+    String normalized = animalName.trim();
+    if (normalized.length() > MAX_ANIMAL_NAME_LENGTH) {
+      throw new BusinessException(ErrorCode.INVALID_ANIMAL_NAME);
+    }
+    return normalized;
   }
 }

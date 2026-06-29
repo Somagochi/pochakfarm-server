@@ -47,9 +47,6 @@ public class Characterization extends BaseEntity {
   @Column(name = "card_no")
   private String cardNo;
 
-  @Column(name = "flavor_text")
-  private String flavorText;
-
   @Column(name = "original_image_key")
   private String originalImageKey;
 
@@ -77,7 +74,6 @@ public class Characterization extends BaseEntity {
     this.skill1 = metadata.skill1();
     this.skill2 = metadata.skill2();
     this.cardNo = metadata.cardNo();
-    this.flavorText = metadata.flavorText();
     this.status = CharacterizationStatus.PROCESSING;
   }
 

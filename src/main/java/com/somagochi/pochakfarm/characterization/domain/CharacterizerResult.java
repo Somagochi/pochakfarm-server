@@ -3,10 +3,7 @@ package com.somagochi.pochakfarm.characterization.domain;
 public record CharacterizerResult(
     String status,
     String provider,
-    String fallbackFrom,
-    String animalName,
-    String cardType,
-    Integer power,
     String contentType,
-    String imageBase64,
+    String aiImageBase64,
+    String cardImageBase64,
     Integer elapsedMs) {}

@@ -8,8 +8,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class CardMetadataGenerator {
 
-  private static final String FIXED_CARD_NO = "No.001";
-  private static final String FIXED_FLAVOR_TEXT = "세상에 하나뿐인 포착팜 친구!";
+  private static final String FIXED_CARD_NO = "001";
 
   private final RandomGenerator random;
 
@@ -30,17 +29,11 @@ public class CardMetadataGenerator {
       secondIndex++;
     }
     return new CardMetadata(
-        cardType,
-        pickPower(),
-        skills.get(firstIndex),
-        skills.get(secondIndex),
-        FIXED_CARD_NO,
-        FIXED_FLAVOR_TEXT);
+        cardType, pickPower(), skills.get(firstIndex), skills.get(secondIndex), FIXED_CARD_NO);
   }
 
   private CardType pickCardType() {
-    CardType[] values = CardType.values();
-    return values[random.nextInt(values.length)];
+    return CardType.SKY;
   }
 
   private int pickPower() {

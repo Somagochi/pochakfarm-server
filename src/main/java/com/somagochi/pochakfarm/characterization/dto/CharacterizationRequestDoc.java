@@ -9,4 +9,5 @@ public record CharacterizationRequestDoc(
             description = "변환할 원본 이미지 파일. 지원 형식: image/jpeg, image/png, image/webp",
             format = "binary")
         MultipartFile image,
-    @Schema(description = "결과 이미지에 반영할 반려동물 이름", example = "솜구름") String animalName) {}
+    @Schema(description = "결과 이미지에 반영할 반려동물 이름. 공백 포함 최대 6글자", example = "솜구름", maxLength = 6)
+        String animalName) {}

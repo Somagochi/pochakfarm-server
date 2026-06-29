@@ -74,9 +74,7 @@ class CharacterizationControllerTest {
                 .string(
                     HttpHeaders.SET_COOKIE,
                     org.hamcrest.Matchers.containsString("deviceToken=dev_new")))
-        .andExpect(jsonPath("$.data.cardType").value("하늘"))
-        .andExpect(jsonPath("$.data.power").value(82))
-        .andExpect(jsonPath("$.data.fallbackFrom").doesNotExist())
+        .andExpect(jsonPath("$.data.aiImageUrl").value("https://cdn.test/ai.png"))
         .andExpect(jsonPath("$.data.resultImageUrl").value("https://cdn.test/result.png"));
   }
 
@@ -104,19 +102,7 @@ class CharacterizationControllerTest {
   }
 
   private static CharacterizationResponse response() {
-    return new CharacterizationResponse(
-        "success",
-        "codex_exec",
-        "솜구름",
-        "하늘",
-        82,
-        "구름 점프",
-        "폭신한 구름을 밟고 높이 뛰어올라요.",
-        "바람 돌진",
-        "상쾌한 바람을 타고 빠르게 돌진해요.",
-        "No.001",
-        "https://cdn.test/result.png",
-        12345);
+    return new CharacterizationResponse("https://cdn.test/ai.png", "https://cdn.test/result.png");
   }
 
   private static AnonymousDevice device(Long id, String deviceToken) {

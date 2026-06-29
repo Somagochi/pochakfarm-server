@@ -17,7 +17,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.mock.web.MockMultipartFile;
 
 class FastApiCharacterizerClientTest {
 
@@ -39,39 +38,36 @@ class FastApiCharacterizerClientTest {
         {
           "status": "success",
           "provider": "codex_exec",
-          "fallback_from": null,
-          "animal_name": "솜구름",
-          "card_type": "하늘",
-          "power": 82,
           "content_type": "image/png",
-          "image_base64": "cmVzdWx0",
+          "ai_image_base64": "YWk=",
+          "card_image_base64": "Y2FyZA==",
           "elapsed_ms": 123
         }
         """);
     FastApiCharacterizerClient client =
         new FastApiCharacterizerClient(baseUrl(), Duration.ofSeconds(1), Duration.ofSeconds(1));
 
-    CharacterizerResult result = client.characterize(image(), "솜구름", metadata());
+    CharacterizerResult result =
+        client.characterize("https://cdn.test/original.png", "솜구름", metadata());
 
     assertEquals("success", result.status());
     assertEquals("codex_exec", result.provider());
-    assertEquals("하늘", result.cardType());
-    assertEquals(82, result.power());
     assertEquals("image/png", result.contentType());
-    assertEquals("cmVzdWx0", result.imageBase64());
+    assertEquals("YWk=", result.aiImageBase64());
+    assertEquals("Y2FyZA==", result.cardImageBase64());
     assertEquals(123, result.elapsedMs());
-    assertTrue(requestBody.contains("name=\"card_type\""));
+    assertTrue(requestBody.contains("\"source_image_url\":\"https://cdn.test/original.png\""));
+    assertTrue(requestBody.contains("\"card_type\":\"SKY\""));
     assertTrue(requestBody.contains("SKY"));
-    assertTrue(requestBody.contains("name=\"card_type_label\""));
+    assertTrue(requestBody.contains("\"card_type_label\":\"하늘\""));
     assertTrue(requestBody.contains("하늘"));
-    assertTrue(requestBody.contains("name=\"power\""));
+    assertTrue(requestBody.contains("\"power\":82"));
     assertTrue(requestBody.contains("82"));
-    assertTrue(requestBody.contains("name=\"skill_1_name\""));
+    assertTrue(requestBody.contains("\"skill_1_name\":\"구름 점프\""));
     assertTrue(requestBody.contains("구름 점프"));
-    assertTrue(requestBody.contains("name=\"skill_2_name\""));
+    assertTrue(requestBody.contains("\"skill_2_name\":\"바람 돌진\""));
     assertTrue(requestBody.contains("바람 돌진"));
-    assertTrue(requestBody.contains("name=\"card_no\""));
-    assertTrue(requestBody.contains("No.001"));
+    assertTrue(requestBody.contains("\"card_no\":\"001\""));
   }
 
   @Test
@@ -80,7 +76,9 @@ class FastApiCharacterizerClientTest {
     FastApiCharacterizerClient client =
         new FastApiCharacterizerClient(baseUrl(), Duration.ofMillis(100), Duration.ofMillis(100));
 
-    assertThrows(BusinessException.class, () -> client.characterize(image(), "솜구름", metadata()));
+    assertThrows(
+        BusinessException.class,
+        () -> client.characterize("https://cdn.test/original.png", "솜구름", metadata()));
   }
 
   private void startServer(long responseDelayMillis, String responseBody) throws IOException {
@@ -113,17 +111,8 @@ class FastApiCharacterizerClientTest {
     return "http://127.0.0.1:" + server.getAddress().getPort();
   }
 
-  private static MockMultipartFile image() {
-    return new MockMultipartFile("image", "animal.png", "image/png", "fake-image".getBytes());
-  }
-
   private static CardMetadata metadata() {
     return new CardMetadata(
-        CardType.SKY,
-        82,
-        CardSkill.SKY_CLOUD_JUMP,
-        CardSkill.SKY_WIND_DASH,
-        "No.001",
-        "세상에 하나뿐인 포착팜 친구!");
+        CardType.SKY, 82, CardSkill.SKY_CLOUD_JUMP, CardSkill.SKY_WIND_DASH, "001");
   }
 }
