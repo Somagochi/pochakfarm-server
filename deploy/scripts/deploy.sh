@@ -78,6 +78,10 @@ cat > "$UPSTREAM_FILE" <<EOF
 upstream pochakfarm_backend {
     server app-${target}:8080;
 }
+
+upstream pochakfarm_actuator {
+    server app-${target}:9090;
+}
 EOF
 
 # nginx 기동(첫 배포) 또는 이미 떠 있으면 no-op
