@@ -17,12 +17,12 @@ import org.springframework.web.client.RestClientException;
 
 @Component
 @Slf4j
-public class FastApiCharacterizerClient implements CharacterizerClient {
+public class HttpCharacterizerClient implements CharacterizerClient {
 
   private final RestClient restClient;
   private final String baseUrl;
 
-  public FastApiCharacterizerClient(
+  public HttpCharacterizerClient(
       @Value("${app.characterizer.base-url:http://localhost:8000}") String baseUrl,
       @Value("${app.characterizer.connect-timeout:PT5S}") Duration connectTimeout,
       @Value("${app.characterizer.read-timeout:PT6M}") Duration readTimeout) {
@@ -40,14 +40,14 @@ public class FastApiCharacterizerClient implements CharacterizerClient {
     try {
       log.info(
           "characterizer_request_started baseUrl={} sourceImageUrl={}", baseUrl, sourceImageUrl);
-      FastApiCharacterizationResponse response =
+      HttpCharacterizationResponse response =
           restClient
               .post()
               .uri("/internal/characterize")
               .contentType(MediaType.APPLICATION_JSON)
               .body(createRequestBody(sourceImageUrl, animalName, metadata))
               .retrieve()
-              .body(FastApiCharacterizationResponse.class);
+              .body(HttpCharacterizationResponse.class);
       if (response == null
           || !"success".equals(response.status())
           || response.aiImageBase64() == null
@@ -80,9 +80,9 @@ public class FastApiCharacterizerClient implements CharacterizerClient {
     return (System.nanoTime() - startedAtNanos) / 1_000_000;
   }
 
-  private FastApiCharacterizationRequest createRequestBody(
+  private HttpCharacterizationRequest createRequestBody(
       String sourceImageUrl, String animalName, CardMetadata metadata) {
-    return new FastApiCharacterizationRequest(
+    return new HttpCharacterizationRequest(
         sourceImageUrl,
         animalName,
         metadata.cardType().name(),
@@ -95,7 +95,7 @@ public class FastApiCharacterizerClient implements CharacterizerClient {
         metadata.cardNo());
   }
 
-  private record FastApiCharacterizationRequest(
+  private record HttpCharacterizationRequest(
       @JsonProperty("source_image_url") String sourceImageUrl,
       @JsonProperty("animal_name") String animalName,
       @JsonProperty("card_type") String cardType,
@@ -107,7 +107,7 @@ public class FastApiCharacterizerClient implements CharacterizerClient {
       @JsonProperty("skill_2_description") String skill2Description,
       @JsonProperty("card_no") String cardNo) {}
 
-  private record FastApiCharacterizationResponse(
+  private record HttpCharacterizationResponse(
       String status,
       String provider,
       @JsonProperty("content_type") String contentType,

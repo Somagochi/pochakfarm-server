@@ -18,7 +18,7 @@ import java.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-class FastApiCharacterizerClientTest {
+class HttpCharacterizerClientTest {
 
   private HttpServer server;
   private String requestBody;
@@ -31,7 +31,7 @@ class FastApiCharacterizerClientTest {
   }
 
   @Test
-  void mapsFastApiBase64JsonResponse() throws IOException {
+  void mapsHttpBase64JsonResponse() throws IOException {
     startServer(
         0,
         """
@@ -45,8 +45,8 @@ class FastApiCharacterizerClientTest {
           "elapsed_ms": 123
         }
         """);
-    FastApiCharacterizerClient client =
-        new FastApiCharacterizerClient(baseUrl(), Duration.ofSeconds(1), Duration.ofSeconds(1));
+    HttpCharacterizerClient client =
+        new HttpCharacterizerClient(baseUrl(), Duration.ofSeconds(1), Duration.ofSeconds(1));
 
     CharacterizerResult result =
         client.characterize("https://cdn.test/original.png", "솜구름", metadata());
@@ -73,10 +73,10 @@ class FastApiCharacterizerClientTest {
   }
 
   @Test
-  void failsWhenFastApiReadExceedsConfiguredTimeout() throws IOException {
+  void failsWhenHttpReadExceedsConfiguredTimeout() throws IOException {
     startServer(500, "{\"status\":\"success\"}");
-    FastApiCharacterizerClient client =
-        new FastApiCharacterizerClient(baseUrl(), Duration.ofMillis(100), Duration.ofMillis(100));
+    HttpCharacterizerClient client =
+        new HttpCharacterizerClient(baseUrl(), Duration.ofMillis(100), Duration.ofMillis(100));
 
     assertThrows(
         BusinessException.class,
