@@ -208,10 +208,6 @@
               <input name="requiredConsent" type="checkbox" required />
               개인정보 수집 및 이용에 동의합니다.
             </label>
-            <label>
-              <input name="marketingConsent" type="checkbox" />
-              출시 알림과 이벤트 소식을 받겠습니다.
-            </label>
           </div>
 
           <button type="submit" id="submitButton">카드 생성하고 사전예약</button>
@@ -268,7 +264,6 @@
             body: JSON.stringify({
               phoneNumber: form.phoneNumber.value,
               requiredConsent: form.requiredConsent.checked,
-              marketingConsent: form.marketingConsent.checked,
             }),
           });
           if (!reservationResponse.ok) {

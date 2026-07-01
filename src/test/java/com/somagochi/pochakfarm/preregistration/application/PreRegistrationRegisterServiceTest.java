@@ -27,8 +27,8 @@ class PreRegistrationRegisterServiceTest {
   private final PreRegistrationRegisterService preRegistrationService =
       new PreRegistrationRegisterService(preRegistrationRepository);
 
-  private PreRegistrationRequest request(String phone, Boolean required, Boolean marketing) {
-    return new PreRegistrationRequest(phone, required, marketing);
+  private PreRegistrationRequest request(String phone, Boolean required) {
+    return new PreRegistrationRequest(phone, required);
   }
 
   private PreRegistration preRegistration(boolean registered) {
@@ -46,7 +46,7 @@ class PreRegistrationRegisterServiceTest {
     PreRegistration saved = preRegistration(true);
     given(preRegistrationRepository.save(any())).willReturn(saved);
 
-    PreRegistrationResponse response = preRegistrationService.register(request(PHONE, true, false));
+    PreRegistrationResponse response = preRegistrationService.register(request(PHONE, true));
 
     assertEquals(5L, response.preRegistrationId());
     assertEquals("REGISTERED", response.status());
@@ -57,9 +57,9 @@ class PreRegistrationRegisterServiceTest {
     PreRegistration canceled = preRegistration(false);
     given(preRegistrationRepository.findByPhoneNumber(PHONE)).willReturn(Optional.of(canceled));
 
-    preRegistrationService.register(request(PHONE, true, true));
+    preRegistrationService.register(request(PHONE, true));
 
-    verify(canceled).reactivate(PHONE, true, true);
+    verify(canceled).reactivate(PHONE, true);
     verify(preRegistrationRepository, never()).save(any());
   }
 
@@ -67,8 +67,7 @@ class PreRegistrationRegisterServiceTest {
   void rejectsInvalidPhoneNumber() {
     BusinessException exception =
         assertThrows(
-            BusinessException.class,
-            () -> preRegistrationService.register(request("0100", true, false)));
+            BusinessException.class, () -> preRegistrationService.register(request("0100", true)));
 
     assertEquals(ErrorCode.INVALID_PHONE_NUMBER.getCode(), exception.getCode());
   }
@@ -77,8 +76,7 @@ class PreRegistrationRegisterServiceTest {
   void rejectsWhenRequiredConsentMissing() {
     BusinessException exception =
         assertThrows(
-            BusinessException.class,
-            () -> preRegistrationService.register(request(PHONE, false, false)));
+            BusinessException.class, () -> preRegistrationService.register(request(PHONE, false)));
 
     assertEquals(ErrorCode.REQUIRED_CONSENT_REQUIRED.getCode(), exception.getCode());
   }
@@ -90,8 +88,7 @@ class PreRegistrationRegisterServiceTest {
 
     BusinessException exception =
         assertThrows(
-            BusinessException.class,
-            () -> preRegistrationService.register(request(PHONE, true, false)));
+            BusinessException.class, () -> preRegistrationService.register(request(PHONE, true)));
 
     assertEquals(ErrorCode.PHONE_NUMBER_ALREADY_REGISTERED.getCode(), exception.getCode());
   }
@@ -104,8 +101,7 @@ class PreRegistrationRegisterServiceTest {
 
     BusinessException exception =
         assertThrows(
-            BusinessException.class,
-            () -> preRegistrationService.register(request(PHONE, true, false)));
+            BusinessException.class, () -> preRegistrationService.register(request(PHONE, true)));
 
     assertEquals(ErrorCode.PHONE_NUMBER_ALREADY_REGISTERED.getCode(), exception.getCode());
   }

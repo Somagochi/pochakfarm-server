@@ -26,27 +26,26 @@ public class PreRegistrationRegisterService {
   public PreRegistrationResponse register(PreRegistrationRequest request) {
     String phoneNumber = normalizePhoneNumber(request.phoneNumber());
     validateRequiredConsent(request);
-    return reactivateOrCreate(phoneNumber, Boolean.TRUE.equals(request.marketingConsent()));
+    return reactivateOrCreate(phoneNumber);
   }
 
-  private PreRegistrationResponse reactivateOrCreate(String phoneNumber, boolean marketingConsent) {
+  private PreRegistrationResponse reactivateOrCreate(String phoneNumber) {
     PreRegistration existing =
         preRegistrationRepository.findByPhoneNumber(phoneNumber).orElse(null);
     if (existing != null) {
       if (existing.isRegistered()) {
         throw new BusinessException(ErrorCode.PHONE_NUMBER_ALREADY_REGISTERED);
       }
-      existing.reactivate(phoneNumber, true, marketingConsent);
+      existing.reactivate(phoneNumber, true);
       return PreRegistrationResponse.from(existing);
     }
-    return create(phoneNumber, marketingConsent);
+    return create(phoneNumber);
   }
 
-  private PreRegistrationResponse create(String phoneNumber, boolean marketingConsent) {
+  private PreRegistrationResponse create(String phoneNumber) {
     try {
       PreRegistration saved =
-          preRegistrationRepository.save(
-              PreRegistration.create(phoneNumber, true, marketingConsent));
+          preRegistrationRepository.save(PreRegistration.create(phoneNumber, true));
       return PreRegistrationResponse.from(saved);
     } catch (DataIntegrityViolationException exception) {
       // 동시 요청으로 같은 phone number 가 먼저 저장된 경우
