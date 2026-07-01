@@ -54,6 +54,7 @@ jobs:
           source: "deploy/docker-compose.yml, deploy/nginx/conf.d/default.conf, deploy/scripts/deploy.sh, deploy/promtail/config.yml"
           target: ${{ vars.DEPLOY_PATH }}
           strip_components: 1
+          overwrite: true
 
       - name: Blue-green deploy on server
         uses: appleboy/ssh-action@v1.2.0
