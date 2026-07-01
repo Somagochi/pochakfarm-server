@@ -38,13 +38,21 @@ public class CardMetadataGenerator {
   }
 
   private int pickPower() {
-    int bucket = random.nextInt(100);
-    if (bucket < 70) {
-      return random.nextInt(11) + 70;
+    int chance = randomPercentage();
+    if (chance < 70) {
+      return randomPowerBetween(70, 80);
     }
-    if (bucket < 95) {
-      return random.nextInt(5) + 81;
+    if (chance < 95) {
+      return randomPowerBetween(81, 85);
     }
-    return random.nextInt(5) + 86;
+    return randomPowerBetween(86, 90);
+  }
+
+  private int randomPercentage() {
+    return random.nextInt(100);
+  }
+
+  private int randomPowerBetween(int minInclusive, int maxInclusive) {
+    return random.nextInt(maxInclusive - minInclusive + 1) + minInclusive;
   }
 }
