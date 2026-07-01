@@ -3,7 +3,6 @@ server:
   grpc_listen_port: 0
 
 positions:
-  # 어디까지 읽었는지 기록(재시작 후 중복/누락 방지). named volume 에 영속화한다.
   filename: /promtail/positions.yaml
 
 clients:
@@ -18,23 +17,26 @@ scrape_configs:
           job: pochakfarm
           color: blue
           __path__: /logs/blue/pochakfarm-app*.json
+
       - targets:
           - localhost
         labels:
           job: pochakfarm
           color: green
           __path__: /logs/green/pochakfarm-app*.json
+
     pipeline_stages:
-      # logback LogstashEncoder 가 남기는 JSON 한 줄을 파싱한다.
       - json:
           expressions:
             level: level
             logger: logger_name
             thread: thread_name
             message: message
-            timestamp: '@timestamp'
+            timestamp: '"@timestamp"'
+
       - timestamp:
           source: timestamp
           format: RFC3339Nano
+
       - labels:
           level:
