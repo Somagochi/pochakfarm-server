@@ -9,8 +9,6 @@ import static org.mockito.Mockito.verify;
 
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
-import com.somagochi.pochakfarm.device.application.DeviceService;
-import com.somagochi.pochakfarm.device.domain.AnonymousDevice;
 import com.somagochi.pochakfarm.preregistration.domain.PreRegistration;
 import com.somagochi.pochakfarm.preregistration.domain.PreRegistrationStatus;
 import com.somagochi.pochakfarm.preregistration.dto.PreRegistrationResponse;
@@ -20,17 +18,12 @@ import org.junit.jupiter.api.Test;
 
 class PreRegistrationCancelServiceTest {
 
-  private final DeviceService deviceService = mock(DeviceService.class);
+  private static final String PHONE = "01012345678";
+
   private final PreRegistrationRepository preRegistrationRepository =
       mock(PreRegistrationRepository.class);
   private final PreRegistrationCancelService preRegistrationCancelService =
-      new PreRegistrationCancelService(deviceService, preRegistrationRepository);
-
-  private void givenDevice() {
-    AnonymousDevice device = mock(AnonymousDevice.class);
-    given(device.getId()).willReturn(1L);
-    given(deviceService.findByToken("dev_abc")).willReturn(device);
-  }
+      new PreRegistrationCancelService(preRegistrationRepository);
 
   private PreRegistration preRegistration(boolean registered) {
     PreRegistration preRegistration = mock(PreRegistration.class);
@@ -43,22 +36,20 @@ class PreRegistrationCancelServiceTest {
 
   @Test
   void cancelsRegistration() {
-    givenDevice();
     PreRegistration registered = preRegistration(true);
-    given(preRegistrationRepository.findByDeviceId(1L)).willReturn(Optional.of(registered));
+    given(preRegistrationRepository.findByPhoneNumber(PHONE)).willReturn(Optional.of(registered));
 
-    preRegistrationCancelService.cancel("dev_abc");
+    preRegistrationCancelService.cancel(PHONE);
 
     verify(registered).cancel();
   }
 
   @Test
   void isIdempotentWhenAlreadyCanceled() {
-    givenDevice();
     PreRegistration canceled = preRegistration(false);
-    given(preRegistrationRepository.findByDeviceId(1L)).willReturn(Optional.of(canceled));
+    given(preRegistrationRepository.findByPhoneNumber(PHONE)).willReturn(Optional.of(canceled));
 
-    PreRegistrationResponse response = preRegistrationCancelService.cancel("dev_abc");
+    PreRegistrationResponse response = preRegistrationCancelService.cancel(PHONE);
 
     assertEquals("CANCELED", response.status());
     verify(canceled, never()).cancel();
@@ -66,12 +57,19 @@ class PreRegistrationCancelServiceTest {
 
   @Test
   void rejectsWhenNoRegistration() {
-    givenDevice();
-    given(preRegistrationRepository.findByDeviceId(1L)).willReturn(Optional.empty());
+    given(preRegistrationRepository.findByPhoneNumber(PHONE)).willReturn(Optional.empty());
 
     BusinessException exception =
-        assertThrows(BusinessException.class, () -> preRegistrationCancelService.cancel("dev_abc"));
+        assertThrows(BusinessException.class, () -> preRegistrationCancelService.cancel(PHONE));
 
     assertEquals(ErrorCode.PRE_REGISTRATION_NOT_FOUND.getCode(), exception.getCode());
+  }
+
+  @Test
+  void rejectsInvalidPhoneNumber() {
+    BusinessException exception =
+        assertThrows(BusinessException.class, () -> preRegistrationCancelService.cancel("0100"));
+
+    assertEquals(ErrorCode.INVALID_PHONE_NUMBER.getCode(), exception.getCode());
   }
 }

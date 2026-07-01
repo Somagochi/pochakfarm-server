@@ -21,16 +21,13 @@ import lombok.NoArgsConstructor;
     name = "pre_registrations",
     uniqueConstraints =
         @UniqueConstraint(
-            name = "uk_pre_registrations_device_id",
-            columnNames = {"device_id"}))
+            name = "uk_pre_registrations_phone_number",
+            columnNames = {"phone_number"}))
 public class PreRegistration extends BaseEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
-
-  @Column(name = "device_id", nullable = false, updatable = false)
-  private Long deviceId;
 
   @Column(name = "phone_number", nullable = false)
   private String phoneNumber;
@@ -45,9 +42,7 @@ public class PreRegistration extends BaseEntity {
   @Column(name = "status", nullable = false)
   private PreRegistrationStatus status;
 
-  private PreRegistration(
-      Long deviceId, String phoneNumber, boolean requiredConsent, boolean marketingConsent) {
-    this.deviceId = deviceId;
+  private PreRegistration(String phoneNumber, boolean requiredConsent, boolean marketingConsent) {
     this.phoneNumber = phoneNumber;
     this.requiredConsent = requiredConsent;
     this.marketingConsent = marketingConsent;
@@ -55,8 +50,8 @@ public class PreRegistration extends BaseEntity {
   }
 
   public static PreRegistration create(
-      Long deviceId, String phoneNumber, boolean requiredConsent, boolean marketingConsent) {
-    return new PreRegistration(deviceId, phoneNumber, requiredConsent, marketingConsent);
+      String phoneNumber, boolean requiredConsent, boolean marketingConsent) {
+    return new PreRegistration(phoneNumber, requiredConsent, marketingConsent);
   }
 
   public boolean isRegistered() {

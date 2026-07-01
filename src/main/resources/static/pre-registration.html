@@ -226,24 +226,6 @@
       const message = document.querySelector("#message");
       const resultFrame = document.querySelector("#resultFrame");
 
-      async function issueLocalDeviceToken() {
-        if (document.cookie.includes("deviceToken=")) {
-          return;
-        }
-        const response = await fetch("/api/dev/device-token", {
-          method: "POST",
-          credentials: "same-origin",
-        });
-        if (!response.ok) {
-          return;
-        }
-        const payload = await response.json();
-        const token = payload.data && payload.data.deviceToken;
-        if (token) {
-          document.cookie = `deviceToken=${token}; path=/; max-age=31536000; SameSite=Lax`;
-        }
-      }
-
       function setMessage(text, isError = false) {
         message.textContent = text;
         message.classList.toggle("error", isError);
@@ -263,8 +245,6 @@
         setMessage("이미지 캐릭터화 중입니다.");
 
         try {
-          await issueLocalDeviceToken();
-
           const formData = new FormData();
           formData.append("animalName", form.animalName.value);
           formData.append("image", form.image.files[0]);
