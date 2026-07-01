@@ -18,11 +18,11 @@ public class S3Config {
 
   @Bean
   AwsCredentialsProvider awsCredentialsProvider(S3Properties properties) {
-    if (properties.accessKey() == null || properties.accessKey().isBlank()) {
-      return DefaultCredentialsProvider.builder().build();
+    if (hasAccessKey(properties)) {
+      return StaticCredentialsProvider.create(
+          AwsBasicCredentials.create(properties.accessKey(), properties.secretKey()));
     }
-    return StaticCredentialsProvider.create(
-        AwsBasicCredentials.create(properties.accessKey(), properties.secretKey()));
+    return DefaultCredentialsProvider.builder().build();
   }
 
   @Bean
@@ -39,5 +39,9 @@ public class S3Config {
         .region(Region.of(properties.region()))
         .credentialsProvider(awsCredentialsProvider)
         .build();
+  }
+
+  private boolean hasAccessKey(S3Properties properties) {
+    return properties.accessKey() != null && !properties.accessKey().isBlank();
   }
 }

@@ -80,6 +80,12 @@ app:
         min-refresh-interval: ${secret.social.oidc.jwks-cache.min-refresh-interval}
   pre-registration:
     enabled: ${secret.pre-registration.enabled:true}
+  characterization:
+    device-limit-enabled: ${secret.characterization.device-limit-enabled:false}
+  characterizer:
+    base-url: ${secret.characterizer.base-url:http://localhost:8000}
+    connect-timeout: ${secret.characterizer.connect-timeout:PT5S}
+    read-timeout: ${secret.characterizer.read-timeout:PT6M}
   storage:
     s3:
       bucket: ${secret.storage.s3.bucket:pochakfarm-local}
