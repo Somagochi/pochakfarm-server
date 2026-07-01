@@ -41,6 +41,7 @@ class FastApiCharacterizerClientTest {
           "content_type": "image/png",
           "ai_image_base64": "YWk=",
           "card_image_base64": "Y2FyZA==",
+          "card_back_image_base64": "YmFjaw==",
           "elapsed_ms": 123
         }
         """);
@@ -55,6 +56,7 @@ class FastApiCharacterizerClientTest {
     assertEquals("image/png", result.contentType());
     assertEquals("YWk=", result.aiImageBase64());
     assertEquals("Y2FyZA==", result.cardImageBase64());
+    assertEquals("YmFjaw==", result.cardBackImageBase64());
     assertEquals(123, result.elapsedMs());
     assertTrue(requestBody.contains("\"source_image_url\":\"https://cdn.test/original.png\""));
     assertTrue(requestBody.contains("\"card_type\":\"SKY\""));

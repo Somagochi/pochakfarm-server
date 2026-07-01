@@ -75,7 +75,8 @@ class CharacterizationControllerTest {
                     HttpHeaders.SET_COOKIE,
                     org.hamcrest.Matchers.containsString("deviceToken=dev_new")))
         .andExpect(jsonPath("$.data.aiImageUrl").value("https://cdn.test/ai.png"))
-        .andExpect(jsonPath("$.data.resultImageUrl").value("https://cdn.test/result.png"));
+        .andExpect(jsonPath("$.data.resultImageUrl").value("https://cdn.test/result.png"))
+        .andExpect(jsonPath("$.data.cardBackImageUrl").value("https://cdn.test/back.png"));
   }
 
   @Test
@@ -94,7 +95,8 @@ class CharacterizationControllerTest {
                 .contentType(MediaType.MULTIPART_FORM_DATA))
         .andExpect(status().isOk())
         .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE))
-        .andExpect(jsonPath("$.data.resultImageUrl").value("https://cdn.test/result.png"));
+        .andExpect(jsonPath("$.data.resultImageUrl").value("https://cdn.test/result.png"))
+        .andExpect(jsonPath("$.data.cardBackImageUrl").value("https://cdn.test/back.png"));
   }
 
   private static MockMultipartFile image() {
@@ -102,7 +104,8 @@ class CharacterizationControllerTest {
   }
 
   private static CharacterizationResponse response() {
-    return new CharacterizationResponse("https://cdn.test/ai.png", "https://cdn.test/result.png");
+    return new CharacterizationResponse(
+        "https://cdn.test/ai.png", "https://cdn.test/result.png", "https://cdn.test/back.png");
   }
 
   private static AnonymousDevice device(Long id, String deviceToken) {

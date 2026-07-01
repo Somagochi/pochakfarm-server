@@ -6,4 +6,5 @@ public record CharacterizerResult(
     String contentType,
     String aiImageBase64,
     String cardImageBase64,
+    String cardBackImageBase64,
     Integer elapsedMs) {}

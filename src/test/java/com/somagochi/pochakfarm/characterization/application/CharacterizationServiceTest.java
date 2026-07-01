@@ -64,6 +64,7 @@ class CharacterizationServiceTest {
                 "image/png",
                 Base64.getEncoder().encodeToString(bytes("ai-image")),
                 Base64.getEncoder().encodeToString(bytes("result-image")),
+                Base64.getEncoder().encodeToString(bytes("back-image")),
                 12345));
     given(imageUploadService.uploadPublic("characterization-ai", "image/png", bytes("ai-image")))
         .willReturn(new PublicUploadResponse("public/ai.png", "https://cdn.test/ai.png"));
@@ -71,11 +72,16 @@ class CharacterizationServiceTest {
             imageUploadService.uploadPublic(
                 "characterization-result", "image/png", bytes("result-image")))
         .willReturn(new PublicUploadResponse("public/result.png", "https://cdn.test/result.png"));
+    given(
+            imageUploadService.uploadPublic(
+                "characterization-back", "image/png", bytes("back-image")))
+        .willReturn(new PublicUploadResponse("public/back.png", "https://cdn.test/back.png"));
 
     CharacterizationResponse response = service.characterize(1L, image, " 솜구름 ");
 
     assertEquals("https://cdn.test/ai.png", response.aiImageUrl());
     assertEquals("https://cdn.test/result.png", response.resultImageUrl());
+    assertEquals("https://cdn.test/back.png", response.cardBackImageUrl());
     ArgumentCaptor<Characterization> captor = ArgumentCaptor.forClass(Characterization.class);
     verify(characterizationRepository, times(2)).save(captor.capture());
     Characterization saved = lastCaptured(captor);
@@ -116,11 +122,13 @@ class CharacterizationServiceTest {
                 "image/png",
                 Base64.getEncoder().encodeToString(bytes("ai-image")),
                 Base64.getEncoder().encodeToString(bytes("result-image")),
+                Base64.getEncoder().encodeToString(bytes("back-image")),
                 10));
     given(imageUploadService.uploadPublic(eq("characterization-ai"), eq("image/png"), any()))
         .willReturn(new PublicUploadResponse("public/ai.png", "https://cdn.test/ai.png"));
     given(imageUploadService.uploadPublic(eq("characterization-result"), eq("image/png"), any()))
         .willReturn(new PublicUploadResponse("public/result.png", "https://cdn.test/result.png"));
+    givenBackUpload();
 
     service.characterize(1L, image, "솜구름");
 
@@ -144,11 +152,13 @@ class CharacterizationServiceTest {
                 "image/png",
                 Base64.getEncoder().encodeToString(bytes("ai-image")),
                 Base64.getEncoder().encodeToString(bytes("result-image")),
+                Base64.getEncoder().encodeToString(bytes("back-image")),
                 10));
     given(imageUploadService.uploadPublic(eq("characterization-ai"), eq("image/png"), any()))
         .willReturn(new PublicUploadResponse("public/ai.png", "https://cdn.test/ai.png"));
     given(imageUploadService.uploadPublic(eq("characterization-result"), eq("image/png"), any()))
         .willReturn(new PublicUploadResponse("public/result.png", "https://cdn.test/result.png"));
+    givenBackUpload();
 
     CharacterizationResponse response = service.characterize(1L, image(), " 가나다 라마 ");
 
@@ -203,11 +213,13 @@ class CharacterizationServiceTest {
                 "image/png",
                 Base64.getEncoder().encodeToString(bytes("ai-image")),
                 Base64.getEncoder().encodeToString(bytes("result-image")),
+                Base64.getEncoder().encodeToString(bytes("back-image")),
                 10));
     given(imageUploadService.uploadPublic(eq("characterization-ai"), eq("image/png"), any()))
         .willReturn(new PublicUploadResponse("public/ai.png", "https://cdn.test/ai.png"));
     given(imageUploadService.uploadPublic(eq("characterization-result"), eq("image/png"), any()))
         .willReturn(new PublicUploadResponse("public/result.png", "https://cdn.test/result.png"));
+    givenBackUpload();
 
     CharacterizationResponse response = service.characterize(1L, image(), "솜구름");
 
@@ -239,11 +251,13 @@ class CharacterizationServiceTest {
                 "image/png",
                 Base64.getEncoder().encodeToString(bytes("ai-image")),
                 Base64.getEncoder().encodeToString(bytes("result-image")),
+                Base64.getEncoder().encodeToString(bytes("back-image")),
                 10));
     given(imageUploadService.uploadPublic(eq("characterization-ai"), eq("image/png"), any()))
         .willReturn(new PublicUploadResponse("public/ai.png", "https://cdn.test/ai.png"));
     given(imageUploadService.uploadPublic(eq("characterization-result"), eq("image/png"), any()))
         .willReturn(new PublicUploadResponse("public/result.png", "https://cdn.test/result.png"));
+    givenBackUpload();
 
     CharacterizationResponse response = serviceWithLimitDisabled.characterize(1L, image(), "솜구름");
 
@@ -284,6 +298,7 @@ class CharacterizationServiceTest {
                 "image/png",
                 Base64.getEncoder().encodeToString(bytes("ai-image")),
                 "not-base64",
+                Base64.getEncoder().encodeToString(bytes("back-image")),
                 10));
     given(imageUploadService.uploadPublic(eq("characterization-ai"), eq("image/png"), any()))
         .willReturn(new PublicUploadResponse("public/ai.png", "https://cdn.test/ai.png"));
@@ -299,6 +314,11 @@ class CharacterizationServiceTest {
 
   private static Characterization lastCaptured(ArgumentCaptor<Characterization> captor) {
     return captor.getAllValues().get(captor.getAllValues().size() - 1);
+  }
+
+  private void givenBackUpload() {
+    given(imageUploadService.uploadPublic(eq("characterization-back"), eq("image/png"), any()))
+        .willReturn(new PublicUploadResponse("public/back.png", "https://cdn.test/back.png"));
   }
 
   private static CardMetadata metadata() {

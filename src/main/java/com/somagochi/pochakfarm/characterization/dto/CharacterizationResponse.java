@@ -10,4 +10,8 @@ public record CharacterizationResponse(
     @Schema(
             description = "S3에 저장된 결과 이미지 접근 URL",
             example = "https://cdn.example.com/public/characterization-result/result.png")
-        String resultImageUrl) {}
+        String resultImageUrl,
+    @Schema(
+            description = "S3에 저장된 카드 뒷면 이미지 접근 URL",
+            example = "https://cdn.example.com/public/characterization-back/back.png")
+        String cardBackImageUrl) {}

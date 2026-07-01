@@ -54,6 +54,8 @@ public class FastApiCharacterizerClient implements CharacterizerClient {
           || response.aiImageBase64().isBlank()
           || response.cardImageBase64() == null
           || response.cardImageBase64().isBlank()
+          || response.cardBackImageBase64() == null
+          || response.cardBackImageBase64().isBlank()
           || response.contentType() == null
           || response.contentType().isBlank()) {
         throw new BusinessException(ErrorCode.CHARACTERIZATION_FAILED);
@@ -111,11 +113,18 @@ public class FastApiCharacterizerClient implements CharacterizerClient {
       @JsonProperty("content_type") String contentType,
       @JsonProperty("ai_image_base64") String aiImageBase64,
       @JsonProperty("card_image_base64") String cardImageBase64,
+      @JsonProperty("card_back_image_base64") String cardBackImageBase64,
       @JsonProperty("elapsed_ms") Integer elapsedMs) {
 
     private CharacterizerResult toResult() {
       return new CharacterizerResult(
-          status, provider, contentType, aiImageBase64, cardImageBase64, elapsedMs);
+          status,
+          provider,
+          contentType,
+          aiImageBase64,
+          cardImageBase64,
+          cardBackImageBase64,
+          elapsedMs);
     }
   }
 }

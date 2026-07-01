@@ -30,6 +30,7 @@ public class CharacterizationService {
   private static final String ORIGINAL_PURPOSE = "characterization-original";
   private static final String AI_PURPOSE = "characterization-ai";
   private static final String RESULT_PURPOSE = "characterization-result";
+  private static final String BACK_PURPOSE = "characterization-back";
 
   private final CharacterizationRepository characterizationRepository;
   private final CharacterizerClient characterizerClient;
@@ -101,9 +102,19 @@ public class CharacterizationService {
           resultImage.length,
           elapsedMsSince(resultUploadStartedAt));
 
+      long backUploadStartedAt = System.nanoTime();
+      byte[] backImage = decodeCardBackImage(result);
+      PublicUploadResponse backUpload =
+          imageUploadService.uploadPublic(BACK_PURPOSE, result.contentType(), backImage);
+      log.info(
+          "characterization_back_uploaded key={} bytes={} elapsedMs={}",
+          backUpload.key(),
+          backImage.length,
+          elapsedMsSince(backUploadStartedAt));
+
       characterization.succeed(resultUpload.key(), result.provider(), result.elapsedMs());
       save(characterization);
-      return new CharacterizationResponse(aiUpload.url(), resultUpload.url());
+      return new CharacterizationResponse(aiUpload.url(), resultUpload.url(), backUpload.url());
     } catch (BusinessException exception) {
       characterization.fail(exception.getCode());
       save(characterization);
@@ -147,6 +158,16 @@ public class CharacterizationService {
       throw new BusinessException(ErrorCode.CHARACTERIZATION_FAILED);
     }
     return decodeBase64Image(result.cardImageBase64());
+  }
+
+  private byte[] decodeCardBackImage(CharacterizerResult result) {
+    if (result == null
+        || !"success".equals(result.status())
+        || result.cardBackImageBase64() == null
+        || result.contentType() == null) {
+      throw new BusinessException(ErrorCode.CHARACTERIZATION_FAILED);
+    }
+    return decodeBase64Image(result.cardBackImageBase64());
   }
 
   private byte[] decodeBase64Image(String imageBase64) {

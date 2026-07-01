@@ -40,7 +40,7 @@ public interface CharacterizationApiSpec {
       example = "dev_0123456789abcdef0123456789abcdef0123456789abcdef")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "200",
-      description = "변환 성공. data.resultImageUrl에 S3 결과 이미지 URL 반환")
+      description = "변환 성공. data.resultImageUrl에 카드 앞면 URL, data.cardBackImageUrl에 카드 뒷면 URL 반환")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "400",
       description =
