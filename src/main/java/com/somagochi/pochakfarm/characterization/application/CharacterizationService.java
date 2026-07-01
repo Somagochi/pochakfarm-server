@@ -10,6 +10,7 @@ import com.somagochi.pochakfarm.characterization.dto.CharacterizationResponse;
 import com.somagochi.pochakfarm.characterization.infrastructure.persistence.CharacterizationRepository;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
+import com.somagochi.pochakfarm.common.properties.CharacterizationProperties;
 import com.somagochi.pochakfarm.storage.application.ImageUploadService;
 import com.somagochi.pochakfarm.storage.dto.PublicUploadResponse;
 import java.io.IOException;
@@ -34,23 +35,28 @@ public class CharacterizationService {
   private final CharacterizerClient characterizerClient;
   private final CardMetadataGenerator cardMetadataGenerator;
   private final ImageUploadService imageUploadService;
+  private final CharacterizationProperties properties;
 
   public CharacterizationService(
       CharacterizationRepository characterizationRepository,
       CharacterizerClient characterizerClient,
       CardMetadataGenerator cardMetadataGenerator,
-      ImageUploadService imageUploadService) {
+      ImageUploadService imageUploadService,
+      CharacterizationProperties properties) {
     this.characterizationRepository = characterizationRepository;
     this.characterizerClient = characterizerClient;
     this.cardMetadataGenerator = cardMetadataGenerator;
     this.imageUploadService = imageUploadService;
+    this.properties = properties;
   }
 
   public CharacterizationResponse characterize(
       Long deviceId, MultipartFile image, String animalName) {
     validateImage(image);
     String normalizedAnimalName = normalizeAnimalName(animalName);
-    validateDeviceCanCharacterize(deviceId);
+    if (properties.deviceLimitEnabled()) {
+      validateDeviceCanCharacterize(deviceId);
+    }
     CardMetadata metadata = cardMetadataGenerator.generate();
 
     Characterization characterization =

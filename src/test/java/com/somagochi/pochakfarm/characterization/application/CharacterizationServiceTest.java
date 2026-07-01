@@ -21,6 +21,7 @@ import com.somagochi.pochakfarm.characterization.dto.CharacterizationResponse;
 import com.somagochi.pochakfarm.characterization.infrastructure.persistence.CharacterizationRepository;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
+import com.somagochi.pochakfarm.common.properties.CharacterizationProperties;
 import com.somagochi.pochakfarm.storage.application.ImageUploadService;
 import com.somagochi.pochakfarm.storage.dto.PublicUploadResponse;
 import java.nio.charset.StandardCharsets;
@@ -42,7 +43,8 @@ class CharacterizationServiceTest {
           characterizationRepository,
           characterizerClient,
           cardMetadataGenerator,
-          imageUploadService);
+          imageUploadService,
+          new CharacterizationProperties(true));
 
   @Test
   void succeedsBySavingOriginalCallingCharacterizerAndSavingResult() {
@@ -208,6 +210,42 @@ class CharacterizationServiceTest {
         .willReturn(new PublicUploadResponse("public/result.png", "https://cdn.test/result.png"));
 
     CharacterizationResponse response = service.characterize(1L, image(), "솜구름");
+
+    assertEquals("https://cdn.test/result.png", response.resultImageUrl());
+  }
+
+  @Test
+  void skipsDeviceLimitWhenDisabled() {
+    CharacterizationService serviceWithLimitDisabled =
+        new CharacterizationService(
+            characterizationRepository,
+            characterizerClient,
+            cardMetadataGenerator,
+            imageUploadService,
+            new CharacterizationProperties(false));
+    given(
+            characterizationRepository.existsByDeviceIdAndStatus(
+                1L, CharacterizationStatus.SUCCEEDED))
+        .willReturn(true);
+    given(cardMetadataGenerator.generate()).willReturn(metadata());
+    given(imageUploadService.uploadPublic(eq("characterization-original"), eq("image/png"), any()))
+        .willReturn(
+            new PublicUploadResponse("public/original.png", "https://cdn.test/original.png"));
+    given(characterizerClient.characterize(any(), eq("솜구름"), any()))
+        .willReturn(
+            new CharacterizerResult(
+                "success",
+                "codex_exec",
+                "image/png",
+                Base64.getEncoder().encodeToString(bytes("ai-image")),
+                Base64.getEncoder().encodeToString(bytes("result-image")),
+                10));
+    given(imageUploadService.uploadPublic(eq("characterization-ai"), eq("image/png"), any()))
+        .willReturn(new PublicUploadResponse("public/ai.png", "https://cdn.test/ai.png"));
+    given(imageUploadService.uploadPublic(eq("characterization-result"), eq("image/png"), any()))
+        .willReturn(new PublicUploadResponse("public/result.png", "https://cdn.test/result.png"));
+
+    CharacterizationResponse response = serviceWithLimitDisabled.characterize(1L, image(), "솜구름");
 
     assertEquals("https://cdn.test/result.png", response.resultImageUrl());
   }
