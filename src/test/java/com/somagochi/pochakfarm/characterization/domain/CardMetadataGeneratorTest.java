@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.EnumSet;
 import java.util.Random;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class CardMetadataGeneratorTest {
@@ -22,11 +24,22 @@ class CardMetadataGeneratorTest {
 
     CardMetadata metadata = generator.generate();
 
-    assertEquals(CardType.SKY, metadata.cardType());
     assertTrue(metadata.power() >= 70 && metadata.power() <= 90);
     assertEquals(metadata.cardType(), metadata.skill1().cardType());
     assertEquals(metadata.cardType(), metadata.skill2().cardType());
     assertNotEquals(metadata.skill1(), metadata.skill2());
     assertEquals("001", metadata.cardNo());
+  }
+
+  @Test
+  void canGenerateEveryCardType() {
+    CardMetadataGenerator generator = new CardMetadataGenerator(new Random(0));
+    Set<CardType> generatedTypes = EnumSet.noneOf(CardType.class);
+
+    for (int i = 0; i < 100; i++) {
+      generatedTypes.add(generator.generate().cardType());
+    }
+
+    assertEquals(EnumSet.allOf(CardType.class), generatedTypes);
   }
 }

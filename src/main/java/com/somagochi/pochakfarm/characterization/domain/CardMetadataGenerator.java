@@ -33,7 +33,8 @@ public class CardMetadataGenerator {
   }
 
   private CardType pickCardType() {
-    return CardType.SKY;
+    CardType[] cardTypes = CardType.values();
+    return cardTypes[random.nextInt(cardTypes.length)];
   }
 
   private int pickPower() {
