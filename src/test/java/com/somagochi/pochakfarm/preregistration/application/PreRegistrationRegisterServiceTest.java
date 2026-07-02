@@ -15,7 +15,10 @@ import com.somagochi.pochakfarm.preregistration.domain.PreRegistrationStatus;
 import com.somagochi.pochakfarm.preregistration.dto.PreRegistrationRequest;
 import com.somagochi.pochakfarm.preregistration.dto.PreRegistrationResponse;
 import com.somagochi.pochakfarm.preregistration.infrastructure.persistence.PreRegistrationRepository;
+import java.util.Arrays;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 class PreRegistrationRegisterServiceTest {
@@ -38,6 +41,18 @@ class PreRegistrationRegisterServiceTest {
     given(preRegistration.getStatus())
         .willReturn(registered ? PreRegistrationStatus.REGISTERED : PreRegistrationStatus.CANCELED);
     return preRegistration;
+  }
+
+  @Test
+  void preRegistrationKeepsOnlyCurrentPersistenceFields() {
+    Set<String> fieldNames =
+        Arrays.stream(PreRegistration.class.getDeclaredFields())
+            .map(java.lang.reflect.Field::getName)
+            .collect(Collectors.toSet());
+
+    assertEquals(
+        Set.of("id", "phoneNumber", "requiredConsent", "status"),
+        fieldNames);
   }
 
   @Test

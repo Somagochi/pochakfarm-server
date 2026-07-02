@@ -35,9 +35,6 @@ public class PreRegistration extends BaseEntity {
   @Column(name = "required_consent", nullable = false)
   private boolean requiredConsent;
 
-  @Column(name = "marketing_consent", nullable = false)
-  private boolean marketingConsent;
-
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false)
   private PreRegistrationStatus status;
@@ -45,7 +42,6 @@ public class PreRegistration extends BaseEntity {
   private PreRegistration(String phoneNumber, boolean requiredConsent) {
     this.phoneNumber = phoneNumber;
     this.requiredConsent = requiredConsent;
-    this.marketingConsent = false;
     this.status = PreRegistrationStatus.REGISTERED;
   }
 
@@ -64,7 +60,6 @@ public class PreRegistration extends BaseEntity {
   public void reactivate(String phoneNumber, boolean requiredConsent) {
     this.phoneNumber = phoneNumber;
     this.requiredConsent = requiredConsent;
-    this.marketingConsent = false;
     this.status = PreRegistrationStatus.REGISTERED;
   }
 }
