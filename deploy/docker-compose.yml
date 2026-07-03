@@ -7,6 +7,7 @@ services:
       - "80:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./logs/nginx:/var/log/nginx
     networks:
       - pochakfarm
 
@@ -53,6 +54,7 @@ services:
       LOKI_URL: ${LOKI_URL}
     volumes:
       - ./logs:/logs:ro
+      - ./logs/nginx:/var/log/nginx:ro
       - ./promtail/config.yml:/etc/promtail/config.yml:ro
       - promtail-positions:/promtail
     networks:

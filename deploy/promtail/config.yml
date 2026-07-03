@@ -40,3 +40,19 @@ scrape_configs:
 
       - labels:
           level:
+
+  # Grafana 대시보드 21654가 {filename="/var/log/nginx/access.log"} 를 정규식으로 파싱하므로
+  # 원본 라인을 그대로 수집한다(promtail이 실제 읽는 경로를 filename 라벨로 붙임).
+  - job_name: pochakfarm-nginx
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          __path__: /var/log/nginx/access.log
+
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          __path__: /var/log/nginx/error.log
