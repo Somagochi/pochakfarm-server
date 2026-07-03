@@ -40,3 +40,35 @@ scrape_configs:
 
       - labels:
           level:
+
+  - job_name: pochakfarm-nginx
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          stream: access
+          __path__: /logs/nginx/access.log
+
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          stream: error
+          __path__: /logs/nginx/error.log
+
+    pipeline_stages:
+      - match:
+          selector: '{stream="access"}'
+          stages:
+            - json:
+                expressions:
+                  status: status
+                  method: method
+                  timestamp: '"@timestamp"'
+            - timestamp:
+                source: timestamp
+                format: RFC3339
+            - labels:
+                status:
+                method:
