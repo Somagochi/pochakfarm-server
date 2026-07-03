@@ -54,6 +54,7 @@ services:
       LOKI_URL: ${LOKI_URL}
     volumes:
       - ./logs:/logs:ro
+      - ./logs/nginx:/var/log/nginx:ro
       - ./promtail/config.yml:/etc/promtail/config.yml:ro
       - promtail-positions:/promtail
     networks:
