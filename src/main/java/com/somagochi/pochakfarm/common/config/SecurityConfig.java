@@ -1,9 +1,12 @@
 package com.somagochi.pochakfarm.common.config;
 
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationFilter;
+import com.somagochi.pochakfarm.common.security.OAuth2LoginSuccessHandler;
+import com.somagochi.pochakfarm.common.security.OAuth2UserServiceImpl;
 import com.somagochi.pochakfarm.common.security.SecurityAccessDeniedHandler;
 import com.somagochi.pochakfarm.common.security.SecurityAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,7 +26,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
   private static final String[] PUBLIC_GET_ENDPOINTS = {
-    "/actuator/health", "/actuator/health/**", "/actuator/prometheus"
+    "/actuator/health", "/actuator/health/**", "/actuator/prometheus", "/api/auth/oauth2/**",
   };
 
   private static final String[] PUBLIC_POST_ENDPOINTS = {
@@ -42,7 +45,11 @@ public class SecurityConfig {
   }
 
   @Bean
-  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+  public SecurityFilterChain securityFilterChain(
+      HttpSecurity http,
+      ObjectProvider<OAuth2UserServiceImpl> oauth2UserService,
+      ObjectProvider<OAuth2LoginSuccessHandler> oauth2LoginSuccessHandler)
+      throws Exception {
     http.csrf(AbstractHttpConfigurer::disable)
         .formLogin(AbstractHttpConfigurer::disable)
         .httpBasic(AbstractHttpConfigurer::disable)
@@ -62,7 +69,15 @@ public class SecurityConfig {
         .exceptionHandling(
             ex ->
                 ex.authenticationEntryPoint(authenticationEntryPoint)
-                    .accessDeniedHandler(accessDeniedHandler));
+                    .accessDeniedHandler(accessDeniedHandler))
+        .oauth2Login(
+            oauth ->
+                oauth
+                    .authorizationEndpoint(endpoint -> endpoint.baseUri("/api/auth/oauth2"))
+                    .redirectionEndpoint(endpoint -> endpoint.baseUri("/api/auth/oauth2/code/*"))
+                    .userInfoEndpoint(
+                        userInfo -> userInfo.userService(oauth2UserService.getObject()))
+                    .successHandler(oauth2LoginSuccessHandler.getObject()));
     return http.build();
   }
 }
