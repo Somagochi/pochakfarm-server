@@ -17,6 +17,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -47,6 +48,7 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain securityFilterChain(
       HttpSecurity http,
+      ObjectProvider<ClientRegistrationRepository> clientRegistrationRepository,
       ObjectProvider<OAuth2UserServiceImpl> oauth2UserService,
       ObjectProvider<OAuth2LoginSuccessHandler> oauth2LoginSuccessHandler)
       throws Exception {
@@ -69,15 +71,18 @@ public class SecurityConfig {
         .exceptionHandling(
             ex ->
                 ex.authenticationEntryPoint(authenticationEntryPoint)
-                    .accessDeniedHandler(accessDeniedHandler))
-        .oauth2Login(
-            oauth ->
-                oauth
-                    .authorizationEndpoint(endpoint -> endpoint.baseUri("/api/auth/oauth2"))
-                    .redirectionEndpoint(endpoint -> endpoint.baseUri("/api/auth/oauth2/code/*"))
-                    .userInfoEndpoint(
-                        userInfo -> userInfo.userService(oauth2UserService.getObject()))
-                    .successHandler(oauth2LoginSuccessHandler.getObject()));
+                    .accessDeniedHandler(accessDeniedHandler));
+
+    if (clientRegistrationRepository.getIfAvailable() != null) {
+      http.oauth2Login(
+          oauth ->
+              oauth
+                  .authorizationEndpoint(endpoint -> endpoint.baseUri("/api/auth/oauth2"))
+                  .redirectionEndpoint(endpoint -> endpoint.baseUri("/api/auth/oauth2/code/*"))
+                  .userInfoEndpoint(userInfo -> userInfo.userService(oauth2UserService.getObject()))
+                  .successHandler(oauth2LoginSuccessHandler.getObject()));
+    }
+
     return http.build();
   }
 }
