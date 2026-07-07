@@ -5,6 +5,7 @@ import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -19,8 +20,10 @@ import com.somagochi.pochakfarm.common.security.SecurityAccessDeniedHandler;
 import com.somagochi.pochakfarm.common.security.SecurityAuthenticationEntryPoint;
 import com.somagochi.pochakfarm.common.security.UserPrincipal;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
+import com.somagochi.pochakfarm.user.application.ChangeNicknameService;
 import com.somagochi.pochakfarm.user.application.UserService;
 import com.somagochi.pochakfarm.user.application.WithdrawService;
+import com.somagochi.pochakfarm.user.dto.NicknameResponse;
 import com.somagochi.pochakfarm.user.dto.UserResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -52,6 +55,7 @@ class UserControllerTest {
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private UserService userService;
+  @MockitoBean private ChangeNicknameService changeNicknameService;
   @MockitoBean private WithdrawService withdrawService;
 
   @Test
@@ -79,6 +83,32 @@ class UserControllerTest {
   @Test
   void returnsUnauthorizedWhenNotAuthenticated() throws Exception {
     mockMvc.perform(get("/api/users/me")).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void changesNicknameWhenAuthenticated() throws Exception {
+    given(changeNicknameService.changeNickname(1L, "포착이")).willReturn(new NicknameResponse("포착이"));
+
+    mockMvc
+        .perform(
+            patch("/api/users/me/nickname")
+                .with(authentication(authenticationFor(1L)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nickname\":\"포착이\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.nickname").value("포착이"));
+
+    verify(changeNicknameService).changeNickname(1L, "포착이");
+  }
+
+  @Test
+  void returnsUnauthorizedWhenChangingNicknameWithoutAuthentication() throws Exception {
+    mockMvc
+        .perform(
+            patch("/api/users/me/nickname")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nickname\":\"포착이\"}"))
+        .andExpect(status().isUnauthorized());
   }
 
   @Test
