@@ -29,15 +29,6 @@ public class UserService {
             .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND)));
   }
 
-  @Transactional
-  public void withdraw(Long userId) {
-    User user =
-        userRepository
-            .findById(userId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-    user.withdraw();
-  }
-
   public UserRegistration getOrRegister(SocialUserInfo userInfo) {
     return findBySocialAccount(userInfo)
         .map(user -> new UserRegistration(user, false))
