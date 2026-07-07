@@ -27,7 +27,7 @@ public class SecurityConfig {
   };
 
   private static final String[] PUBLIC_POST_ENDPOINTS = {
-    "/api/auth/login", "/api/characterizations", "/api/pre-registrations"
+    "/api/auth/login", "/api/characterizations", "/api/pre-registrations", "/api/auth/refresh"
   };
 
   private static final String[] PUBLIC_DELETE_ENDPOINTS = {"/api/pre-registrations"};
