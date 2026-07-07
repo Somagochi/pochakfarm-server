@@ -9,6 +9,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @Slf4j
 @RestControllerAdvice
@@ -21,49 +22,71 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException exception) {
-    loggingError(exception);
+    logByStatus(exception.getStatus(), exception);
     return buildResponse(exception.getStatus(), exception.getCode(), exception.getMessage());
   }
 
   @ExceptionHandler(IllegalArgumentException.class)
   public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
       IllegalArgumentException exception) {
-    loggingError(exception);
+    logClientError(exception);
     return buildResponse(HttpStatus.BAD_REQUEST.value(), "BAD_REQUEST", BAD_REQUEST_MESSAGE);
   }
 
   @ExceptionHandler(JwtAuthenticationException.class)
   public ResponseEntity<ErrorResponse> handleJwtAuthenticationException(
       JwtAuthenticationException exception) {
-    loggingError(exception);
+    logByStatus(exception.getStatus(), exception);
     return buildResponse(exception.getStatus(), exception.getCode(), exception.getErrorMessage());
   }
 
   @ExceptionHandler(AuthenticationException.class)
   public ResponseEntity<ErrorResponse> handleAuthenticationException(
       AuthenticationException exception) {
-    loggingError(exception);
+    logClientError(exception);
     return buildResponse(HttpStatus.UNAUTHORIZED.value(), "UNAUTHORIZED", UNAUTHORIZED_MESSAGE);
   }
 
   @ExceptionHandler(AccessDeniedException.class)
   public ResponseEntity<ErrorResponse> handleAccessDeniedException(
       AccessDeniedException exception) {
-    loggingError(exception);
+    logClientError(exception);
     return buildResponse(HttpStatus.FORBIDDEN.value(), "FORBIDDEN", FORBIDDEN_MESSAGE);
+  }
+
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceededException(
+      MaxUploadSizeExceededException exception) {
+    logClientError(exception);
+    return buildResponse(
+        ErrorCode.FILE_TOO_LARGE.getStatus(),
+        ErrorCode.FILE_TOO_LARGE.getCode(),
+        ErrorCode.FILE_TOO_LARGE.getMessage());
   }
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleException(Exception exception) {
-    loggingError(exception);
+    logServerError(exception);
     return buildResponse(
         HttpStatus.INTERNAL_SERVER_ERROR.value(),
         "INTERNAL_SERVER_ERROR",
         INTERNAL_SERVER_ERROR_MESSAGE);
   }
 
-  private void loggingError(Exception e) {
-    log.error("Error: {}", e.getMessage(), e);
+  private void logByStatus(int status, Exception e) {
+    if (status >= HttpStatus.INTERNAL_SERVER_ERROR.value()) {
+      logServerError(e);
+    } else {
+      logClientError(e);
+    }
+  }
+
+  private void logClientError(Exception e) {
+    log.warn("Client error: {}", e.getMessage());
+  }
+
+  private void logServerError(Exception e) {
+    log.error("Server error: {}", e.getMessage(), e);
   }
 
   private ResponseEntity<ErrorResponse> buildResponse(int status, String code, String message) {

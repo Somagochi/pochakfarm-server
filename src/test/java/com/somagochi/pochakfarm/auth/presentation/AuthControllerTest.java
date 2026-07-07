@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.somagochi.pochakfarm.auth.application.LogoutService;
+import com.somagochi.pochakfarm.auth.application.RefreshService;
 import com.somagochi.pochakfarm.auth.application.SocialLoginService;
 import com.somagochi.pochakfarm.auth.dto.SocialLoginRequest;
 import com.somagochi.pochakfarm.auth.dto.SocialLoginResponse;
@@ -18,6 +19,7 @@ import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.exception.GlobalExceptionHandler;
 import com.somagochi.pochakfarm.common.jwt.JwtPayload;
+import com.somagochi.pochakfarm.common.security.JwtAuthenticationException;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationFilter;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationToken;
 import com.somagochi.pochakfarm.common.security.SecurityAccessDeniedHandler;
@@ -53,6 +55,7 @@ class AuthControllerTest {
 
   @MockitoBean private SocialLoginService socialLoginService;
   @MockitoBean private LogoutService logoutService;
+  @MockitoBean private RefreshService refreshService;
 
   @Test
   void returnsTokenPairWhenLoginSucceeds() throws Exception {
@@ -84,6 +87,37 @@ class AuthControllerTest {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.status").value(400))
         .andExpect(jsonPath("$.code").value("UNSUPPORTED_SOCIAL_PROVIDER"));
+  }
+
+  @Test
+  void refreshesTokenPairWithoutAuthentication() throws Exception {
+    given(refreshService.refresh("refresh-token"))
+        .willReturn(new TokenResponse("new-access-token", "new-refresh-token"));
+
+    mockMvc
+        .perform(
+            post("/api/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"refreshToken\":\"refresh-token\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.accessToken").value("new-access-token"))
+        .andExpect(jsonPath("$.data.refreshToken").value("new-refresh-token"));
+
+    verify(refreshService).refresh("refresh-token");
+  }
+
+  @Test
+  void mapsRevokedRefreshTokenToErrorResponse() throws Exception {
+    given(refreshService.refresh("refresh-token"))
+        .willThrow(new JwtAuthenticationException(ErrorCode.REVOKED_REFRESH_TOKEN));
+
+    mockMvc
+        .perform(
+            post("/api/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"refreshToken\":\"refresh-token\"}"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.code").value("REVOKED_REFRESH_TOKEN"));
   }
 
   @Test

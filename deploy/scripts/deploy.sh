@@ -22,6 +22,7 @@ set -euo pipefail
 
 export IMAGE
 export SPRING_PROFILES_ACTIVE="${SPRING_PROFILES_ACTIVE:-dev}"
+export LOKI_URL="${LOKI_URL:-}"
 HEALTH_RETRIES="${HEALTH_RETRIES:-30}"
 HEALTH_INTERVAL="${HEALTH_INTERVAL:-5}"
 
@@ -78,6 +79,10 @@ cat > "$UPSTREAM_FILE" <<EOF
 upstream pochakfarm_backend {
     server app-${target}:8080;
 }
+
+upstream pochakfarm_actuator {
+    server app-${target}:9090;
+}
 EOF
 
 # nginx 기동(첫 배포) 또는 이미 떠 있으면 no-op
@@ -88,6 +93,25 @@ docker compose exec -T nginx nginx -t
 docker compose exec -T nginx nginx -s reload
 
 echo "==> 트래픽이 $target 으로 전환됨"
+
+# 로그 수집 에이전트(promtail) 보장.
+PROMTAIL_CONFIG="$DEPLOY_PATH/promtail/config.yml"
+PROMTAIL_HASH_FILE="$DEPLOY_PATH/promtail/.config.hash"
+config_hash="$(sha256sum "$PROMTAIL_CONFIG" | awk '{print $1}')"
+previous_hash=""
+[ -f "$PROMTAIL_HASH_FILE" ] && previous_hash="$(cat "$PROMTAIL_HASH_FILE")"
+
+if [ -z "$(docker compose ps --status running -q promtail 2>/dev/null)" ]; then
+  echo "==> promtail 이 떠 있지 않음 — 새로 기동"
+  docker compose up -d promtail
+  echo "==> promtail 기동 완료"
+elif [ "$config_hash" != "$previous_hash" ]; then
+  echo "==> promtail config 변경 감지 — 재생성"
+  docker compose up -d --force-recreate promtail
+  echo "==> promtail 재생성 완료"
+fi
+
+echo "$config_hash" > "$PROMTAIL_HASH_FILE"
 
 # 이전 색상 정지
 if [ -n "$current" ] && [ "$current" != "$target" ]; then

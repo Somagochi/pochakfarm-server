@@ -16,7 +16,7 @@ import org.springframework.security.core.Authentication;
 @Tag(name = "User", description = "회원 관련 API")
 public interface UserApiSpec {
 
-  @Operation(summary = "내 정보 조회", description = "현재 로그인한 회원의 프로필을 조회한다.")
+  @Operation(summary = "내 정보 조회", description = "액세스 토큰으로 인증된 사용자의 프로필을 조회한다.")
   @Parameter(
       in = ParameterIn.HEADER,
       name = "Authorization",

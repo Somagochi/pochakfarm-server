@@ -26,6 +26,16 @@
 - 비밀값, 키, 토큰은 커밋하지 않는다.
 - 보안 설정 변경 시 기존 인증/인가 흐름에 미치는 영향을 함께 점검한다.
 
+## Git Rules
+
+- Branch from `dev`; never push directly to `main` or `dev`.
+- Branch format: `{type}/{issue-key}-{short-description}`.
+  - Types: `feat`, `fix`, `refactor`, `docs`
+  - Example: `feat/SOMA-12-user-auth`
+- Commit messages must be Korean and follow `<type>: <내용>`.
+  - Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`
+  - Example: `feat: 회원가입 API 추가`
+
 ## Domain-Driven Design
 
 - 비즈니스 규칙은 우선 domain 레이어에 둔다.

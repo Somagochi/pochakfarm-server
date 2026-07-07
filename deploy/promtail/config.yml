@@ -1,0 +1,58 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /promtail/positions.yaml
+
+clients:
+  - url: ${LOKI_URL}
+
+scrape_configs:
+  - job_name: pochakfarm-app
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: pochakfarm
+          color: blue
+          __path__: /logs/blue/pochakfarm-app*.json
+
+      - targets:
+          - localhost
+        labels:
+          job: pochakfarm
+          color: green
+          __path__: /logs/green/pochakfarm-app*.json
+
+    pipeline_stages:
+      - json:
+          expressions:
+            level: level
+            logger: logger_name
+            thread: thread_name
+            message: message
+            timestamp: '"@timestamp"'
+
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+
+      - labels:
+          level:
+
+  # Grafana 대시보드 21654가 {filename="/var/log/nginx/access.log"} 를 정규식으로 파싱하므로
+  # 원본 라인을 그대로 수집한다(promtail이 실제 읽는 경로를 filename 라벨로 붙임).
+  - job_name: pochakfarm-nginx
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          __path__: /var/log/nginx/access.log
+
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          __path__: /var/log/nginx/error.log

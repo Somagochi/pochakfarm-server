@@ -7,6 +7,7 @@ services:
       - "80:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./logs/nginx:/var/log/nginx
     networks:
       - pochakfarm
 
@@ -16,10 +17,13 @@ services:
     restart: unless-stopped
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      LOG_DIR: /app/logs
     expose:
       - "8080"
     ports:
       - "9091:9090"
+    volumes:
+      - ./logs/blue:/app/logs
     networks:
       - pochakfarm
 
@@ -29,13 +33,36 @@ services:
     restart: unless-stopped
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      LOG_DIR: /app/logs
     expose:
       - "8080"
     ports:
       - "9092:9090"
+    volumes:
+      - ./logs/green:/app/logs
+    networks:
+      - pochakfarm
+
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: pochakfarm-promtail
+    restart: unless-stopped
+    command:
+      - "-config.file=/etc/promtail/config.yml"
+      - "-config.expand-env=true"
+    environment:
+      LOKI_URL: ${LOKI_URL}
+    volumes:
+      - ./logs:/logs:ro
+      - ./logs/nginx:/var/log/nginx:ro
+      - ./promtail/config.yml:/etc/promtail/config.yml:ro
+      - promtail-positions:/promtail
     networks:
       - pochakfarm
 
 networks:
   pochakfarm:
     name: pochakfarm
+
+volumes:
+  promtail-positions:
