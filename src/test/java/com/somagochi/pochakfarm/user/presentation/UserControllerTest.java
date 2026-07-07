@@ -1,7 +1,9 @@
 package com.somagochi.pochakfarm.user.presentation;
 
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -18,6 +20,7 @@ import com.somagochi.pochakfarm.common.security.SecurityAuthenticationEntryPoint
 import com.somagochi.pochakfarm.common.security.UserPrincipal;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
 import com.somagochi.pochakfarm.user.application.UserService;
+import com.somagochi.pochakfarm.user.application.WithdrawService;
 import com.somagochi.pochakfarm.user.dto.UserResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -32,6 +35,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -48,6 +52,7 @@ class UserControllerTest {
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private UserService userService;
+  @MockitoBean private WithdrawService withdrawService;
 
   @Test
   void returnsCurrentUserWhenAuthenticated() throws Exception {
@@ -74,6 +79,29 @@ class UserControllerTest {
   @Test
   void returnsUnauthorizedWhenNotAuthenticated() throws Exception {
     mockMvc.perform(get("/api/users/me")).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void withdrawsWhenAuthenticated() throws Exception {
+    mockMvc
+        .perform(
+            delete("/api/users/me")
+                .with(authentication(authenticationFor(1L)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"refreshToken\":\"refresh-token\"}"))
+        .andExpect(status().isOk());
+
+    verify(withdrawService).withdraw(1L, "access-token", "refresh-token");
+  }
+
+  @Test
+  void returnsUnauthorizedWhenWithdrawingWithoutAuthentication() throws Exception {
+    mockMvc
+        .perform(
+            delete("/api/users/me")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"refreshToken\":\"refresh-token\"}"))
+        .andExpect(status().isUnauthorized());
   }
 
   private JwtAuthenticationToken authenticationFor(long userId) {
