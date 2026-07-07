@@ -7,10 +7,9 @@ import com.somagochi.pochakfarm.storage.dto.ConfirmResponse;
 import com.somagochi.pochakfarm.storage.dto.PresignRequest;
 import com.somagochi.pochakfarm.storage.dto.PresignResponse;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.core.Authentication;
 
@@ -20,12 +19,7 @@ public interface StorageApiSpec {
   @Operation(
       summary = "업로드 presigned URL 발급",
       description = "S3에 직접 업로드할 수 있는 presigned PUT URL과 객체 key를 발급한다.")
-  @Parameter(
-      in = ParameterIn.HEADER,
-      name = "Authorization",
-      required = true,
-      description = "액세스 토큰 (형식: `Bearer {accessToken}`)",
-      example = "Bearer eyJhbGciOiJIUzI1NiJ9.xxxxx.yyyyy")
+  @SecurityRequirement(name = "bearerAuth")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "발급 성공")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "400",
@@ -41,12 +35,7 @@ public interface StorageApiSpec {
   @Operation(
       summary = "업로드 확정",
       description = "presigned URL로 업로드한 객체의 소유권과 메타데이터를 검증하고 최종 접근 URL을 반환한다.")
-  @Parameter(
-      in = ParameterIn.HEADER,
-      name = "Authorization",
-      required = true,
-      description = "액세스 토큰 (형식: `Bearer {accessToken}`)",
-      example = "Bearer eyJhbGciOiJIUzI1NiJ9.xxxxx.yyyyy")
+  @SecurityRequirement(name = "bearerAuth")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "확정 성공")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "400",
