@@ -57,7 +57,7 @@ jobs:
           overwrite: true
 
       - name: Blue-green deploy on server
-        uses: appleboy/ssh-action@v1.2.0
+        uses: appleboy/ssh-action@v1.2.5
         env:
           IMAGE: ${{ steps.image.outputs.image }}
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
