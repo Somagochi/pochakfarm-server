@@ -7,10 +7,13 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+@Slf4j
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -34,11 +37,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       return;
     }
 
-    JwtPayload payload = tokenService.verifyAccessToken(bearerToken);
-    UserPrincipal principal = new UserPrincipal(Long.valueOf(payload.subject()));
-    JwtAuthenticationToken authentication =
-        new JwtAuthenticationToken(bearerToken, principal, payload);
-    SecurityContextHolder.getContext().setAuthentication(authentication);
+    try {
+      JwtPayload payload = tokenService.verifyAccessToken(bearerToken);
+      UserPrincipal principal = new UserPrincipal(Long.valueOf(payload.subject()));
+      JwtAuthenticationToken authentication =
+          new JwtAuthenticationToken(bearerToken, principal, payload);
+      SecurityContextHolder.getContext().setAuthentication(authentication);
+    } catch (AuthenticationException exception) {
+      log.warn("JwtAuthenticationFilter Exception: ", exception);
+      SecurityContextHolder.clearContext();
+    }
+
     filterChain.doFilter(request, response);
   }
 
