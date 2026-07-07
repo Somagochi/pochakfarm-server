@@ -8,10 +8,9 @@ import com.somagochi.pochakfarm.auth.dto.TokenResponse;
 import com.somagochi.pochakfarm.common.exception.ErrorResponse;
 import com.somagochi.pochakfarm.common.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.core.Authentication;
 
@@ -43,12 +42,7 @@ public interface AuthApiSpec {
   ApiResponse<TokenResponse> refresh(RefreshRequest request);
 
   @Operation(summary = "로그아웃", description = "액세스 토큰을 블랙리스트 처리하고 리프레시 토큰을 무효화한다.")
-  @Parameter(
-      in = ParameterIn.HEADER,
-      name = "Authorization",
-      required = true,
-      description = "액세스 토큰 (형식: `Bearer {accessToken}`)",
-      example = "Bearer eyJhbGciOiJIUzI1NiJ9.xxxxx.yyyyy")
+  @SecurityRequirement(name = "bearerAuth")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "200",
       description = "로그아웃 성공")
