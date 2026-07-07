@@ -9,4 +9,6 @@ public interface RefreshTokenWhitelist {
   boolean contains(String tokenId);
 
   void remove(String tokenId);
+
+  boolean rotate(String oldTokenId, String newTokenId, Duration ttl);
 }

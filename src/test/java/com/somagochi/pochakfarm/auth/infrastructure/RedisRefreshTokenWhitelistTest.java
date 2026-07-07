@@ -3,6 +3,8 @@ package com.somagochi.pochakfarm.auth.infrastructure;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -12,6 +14,7 @@ import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.script.RedisScript;
 
 class RedisRefreshTokenWhitelistTest {
 
@@ -72,5 +75,29 @@ class RedisRefreshTokenWhitelistTest {
     assertFalse(refreshTokenWhitelist.contains(null));
 
     verify(redisTemplate, never()).hasKey("whitelist:refresh:null");
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void rotatesWhenOldTokenExists() {
+    given(redisTemplate.execute(any(RedisScript.class), anyList(), any(), any())).willReturn(1L);
+
+    assertTrue(refreshTokenWhitelist.rotate("old", "new", Duration.ofDays(14)));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void doesNotRotateWhenOldTokenMissing() {
+    given(redisTemplate.execute(any(RedisScript.class), anyList(), any(), any())).willReturn(0L);
+
+    assertFalse(refreshTokenWhitelist.rotate("old", "new", Duration.ofDays(14)));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void doesNotRotateWhenTtlIsNotPositive() {
+    assertFalse(refreshTokenWhitelist.rotate("old", "new", Duration.ZERO));
+
+    verify(redisTemplate, never()).execute(any(RedisScript.class), anyList(), any(), any());
   }
 }

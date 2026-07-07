@@ -105,6 +105,24 @@ public class TokenService {
     return payload;
   }
 
+  public TokenResponse refreshTokens(JwtPayload oldRefreshPayload) {
+    String subject = oldRefreshPayload.subject();
+    String accessToken = generateAccessToken(subject);
+    String newRefreshTokenId = UUID.randomUUID().toString();
+    String newRefreshToken =
+        jwtHelper.generateToken(
+            subject,
+            withReservedClaims(Map.of(), REFRESH_TOKEN_TYPE, newRefreshTokenId),
+            refreshTokenTtl);
+    boolean rotated =
+        refreshTokenWhitelist.rotate(
+            oldRefreshPayload.tokenId(), newRefreshTokenId, refreshTokenTtl);
+    if (!rotated) {
+      throw new JwtAuthenticationException(ErrorCode.REVOKED_REFRESH_TOKEN);
+    }
+    return new TokenResponse(accessToken, newRefreshToken);
+  }
+
   public void blacklistToken(String token) {
     JwtPayload payload = parseAccessToken(token);
     Duration ttl = Duration.between(Instant.now(), payload.expiresAt());

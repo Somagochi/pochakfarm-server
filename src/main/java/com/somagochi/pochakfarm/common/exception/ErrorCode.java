@@ -5,6 +5,7 @@ public enum ErrorCode {
   EXPIRED_TOKEN(401, "EXPIRED_TOKEN", "Token has expired"),
   INVALID_TOKEN_TYPE(401, "INVALID_TOKEN_TYPE", "Invalid token type"),
   BLACKLISTED_TOKEN(401, "BLACKLISTED_TOKEN", "Blacklisted token"),
+  REVOKED_REFRESH_TOKEN(401, "REVOKED_REFRESH_TOKEN", "Revoked refresh token"),
   UNSUPPORTED_SOCIAL_PROVIDER(400, "UNSUPPORTED_SOCIAL_PROVIDER", "Unsupported social provider"),
   INVALID_SOCIAL_TOKEN(401, "INVALID_SOCIAL_TOKEN", "Invalid social token"),
   SOCIAL_USER_INFO_FAILED(502, "SOCIAL_USER_INFO_FAILED", "Failed to fetch social user info"),
