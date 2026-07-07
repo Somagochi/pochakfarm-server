@@ -50,9 +50,7 @@ class PreRegistrationRegisterServiceTest {
             .map(java.lang.reflect.Field::getName)
             .collect(Collectors.toSet());
 
-    assertEquals(
-        Set.of("id", "phoneNumber", "requiredConsent", "status"),
-        fieldNames);
+    assertEquals(Set.of("id", "phoneNumber", "requiredConsent", "status"), fieldNames);
   }
 
   @Test

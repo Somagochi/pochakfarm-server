@@ -120,13 +120,13 @@ public class TokenService {
     String accessToken = generateAccessToken(subject);
     String newRefreshTokenId = UUID.randomUUID().toString();
     String newRefreshToken =
-            jwtHelper.generateToken(
-                    subject,
-                    withReservedClaims(Map.of(), REFRESH_TOKEN_TYPE, newRefreshTokenId),
-                    refreshTokenTtl);
+        jwtHelper.generateToken(
+            subject,
+            withReservedClaims(Map.of(), REFRESH_TOKEN_TYPE, newRefreshTokenId),
+            refreshTokenTtl);
     boolean rotated =
-            refreshTokenWhitelist.rotate(
-                    oldRefreshPayload.tokenId(), newRefreshTokenId, refreshTokenTtl);
+        refreshTokenWhitelist.rotate(
+            oldRefreshPayload.tokenId(), newRefreshTokenId, refreshTokenTtl);
     if (!rotated) {
       throw new JwtAuthenticationException(ErrorCode.REVOKED_REFRESH_TOKEN);
     }
