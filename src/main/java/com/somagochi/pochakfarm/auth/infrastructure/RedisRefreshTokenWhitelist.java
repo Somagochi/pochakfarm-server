@@ -28,35 +28,35 @@ public class RedisRefreshTokenWhitelist implements RefreshTokenWhitelist {
   }
 
   @Override
-  public void register(String tokenId, Duration ttl) {
-    if (isBlank(tokenId)) {
-      throw new IllegalArgumentException("tokenId must not be blank");
+  public void register(String subject, String tokenId, Duration ttl) {
+    if (isBlank(subject) || isBlank(tokenId)) {
+      throw new IllegalArgumentException("subject and tokenId must not be blank");
     }
     if (isNotPositive(ttl)) {
       return;
     }
-    redisTemplate.opsForValue().set(key(tokenId), MARKER, ttl);
+    redisTemplate.opsForValue().set(key(subject, tokenId), MARKER, ttl);
   }
 
   @Override
-  public boolean contains(String tokenId) {
-    if (isBlank(tokenId)) {
+  public boolean contains(String subject, String tokenId) {
+    if (isBlank(subject) || isBlank(tokenId)) {
       return false;
     }
-    return Boolean.TRUE.equals(redisTemplate.hasKey(key(tokenId)));
+    return Boolean.TRUE.equals(redisTemplate.hasKey(key(subject, tokenId)));
   }
 
   @Override
-  public void remove(String tokenId) {
-    if (isBlank(tokenId)) {
+  public void remove(String subject, String tokenId) {
+    if (isBlank(subject) || isBlank(tokenId)) {
       return;
     }
-    redisTemplate.delete(key(tokenId));
+    redisTemplate.delete(key(subject, tokenId));
   }
 
   @Override
-  public boolean rotate(String oldTokenId, String newTokenId, Duration ttl) {
-    if (isBlank(oldTokenId) || isBlank(newTokenId)) {
+  public boolean rotate(String subject, String oldTokenId, String newTokenId, Duration ttl) {
+    if (isBlank(subject) || isBlank(oldTokenId) || isBlank(newTokenId)) {
       return false;
     }
     if (isNotPositive(ttl)) {
@@ -65,14 +65,16 @@ public class RedisRefreshTokenWhitelist implements RefreshTokenWhitelist {
     Long result =
         redisTemplate.execute(
             ROTATE_SCRIPT,
-            List.of(key(oldTokenId), key(newTokenId)),
+            List.of(key(subject, oldTokenId), key(subject, newTokenId)),
             MARKER,
             String.valueOf(ttl.toMillis()));
     return Long.valueOf(1L).equals(result);
   }
 
-  private String key(String tokenId) {
-    return KEY_PREFIX + tokenId;
+  // Redis Cluster hash tag({...})로 같은 subject의 키를 동일 슬롯에 배치한다.
+  // rotate의 다중 키 스크립트가 CROSSSLOT 없이 실행되도록 하기 위함이다.
+  private String key(String subject, String tokenId) {
+    return KEY_PREFIX + "{" + subject + "}:" + tokenId;
   }
 
   private static boolean isBlank(String tokenId) {
