@@ -1,6 +1,8 @@
 package com.somagochi.pochakfarm.user.domain;
 
 import com.somagochi.pochakfarm.common.entity.BaseEntity;
+import com.somagochi.pochakfarm.common.exception.BusinessException;
+import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -28,6 +30,8 @@ import org.hibernate.annotations.SQLRestriction;
 @SQLRestriction("deleted_at is null")
 public class User extends BaseEntity {
 
+  private static final int MAX_NICKNAME_LENGTH = 20;
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Getter
@@ -37,6 +41,8 @@ public class User extends BaseEntity {
 
   private String email;
 
+  private String nickname;
+
   private User(SocialAccount socialAccount, String email) {
     this.socialAccount = socialAccount;
     this.email = email;
@@ -44,6 +50,17 @@ public class User extends BaseEntity {
 
   public static User register(SocialProvider provider, String providerId, String email) {
     return new User(new SocialAccount(provider, providerId), email);
+  }
+
+  public void changeNickname(String nickname) {
+    if (nickname == null) {
+      throw new BusinessException(ErrorCode.INVALID_NICKNAME);
+    }
+    String trimmed = nickname.trim();
+    if (trimmed.length() > MAX_NICKNAME_LENGTH || trimmed.isBlank()) {
+      throw new BusinessException(ErrorCode.INVALID_NICKNAME);
+    }
+    this.nickname = trimmed;
   }
 
   public void withdraw() {
