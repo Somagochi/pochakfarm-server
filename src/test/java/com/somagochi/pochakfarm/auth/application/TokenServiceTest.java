@@ -73,7 +73,7 @@ class TokenServiceTest {
     String refreshToken = tokenService.generateRefreshToken("user-1");
     String jti = tokenService.parseRefreshToken(refreshToken).tokenId();
 
-    assertTrue(refreshTokenWhitelist.contains(jti));
+    assertTrue(refreshTokenWhitelist.contains("user-1", jti));
   }
 
   @Test
@@ -89,11 +89,11 @@ class TokenServiceTest {
 
     String refreshToken = tokenService.generateRefreshToken("user-1");
     String jti = tokenService.parseRefreshToken(refreshToken).tokenId();
-    assertTrue(refreshTokenWhitelist.contains(jti));
+    assertTrue(refreshTokenWhitelist.contains("user-1", jti));
 
     tokenService.revokeRefreshToken(refreshToken);
 
-    assertFalse(refreshTokenWhitelist.contains(jti));
+    assertFalse(refreshTokenWhitelist.contains("user-1", jti));
   }
 
   @Test

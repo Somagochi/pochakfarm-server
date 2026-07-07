@@ -42,8 +42,8 @@ class RefreshServiceTest {
     String newRefreshTokenId = tokenService.parseRefreshToken(refreshed.refreshToken()).tokenId();
     assertEquals("1", tokenService.verifyAccessToken(refreshed.accessToken()).subject());
     assertNotEquals(oldRefreshTokenId, newRefreshTokenId);
-    assertFalse(refreshTokenWhitelist.contains(oldRefreshTokenId));
-    assertTrue(refreshTokenWhitelist.contains(newRefreshTokenId));
+    assertFalse(refreshTokenWhitelist.contains("1", oldRefreshTokenId));
+    assertTrue(refreshTokenWhitelist.contains("1", newRefreshTokenId));
   }
 
   @Test

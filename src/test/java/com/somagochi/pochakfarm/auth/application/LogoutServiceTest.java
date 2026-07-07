@@ -35,12 +35,12 @@ class LogoutServiceTest {
     String refreshToken = tokenService.generateRefreshToken("1");
     String accessTokenId = tokenService.parseAccessToken(accessToken).tokenId();
     String refreshTokenId = tokenService.parseRefreshToken(refreshToken).tokenId();
-    assertTrue(refreshTokenWhitelist.contains(refreshTokenId));
+    assertTrue(refreshTokenWhitelist.contains("1", refreshTokenId));
 
     logoutService.logout(accessToken, refreshToken);
 
     assertTrue(tokenBlacklist.isBlacklisted(accessTokenId));
-    assertFalse(refreshTokenWhitelist.contains(refreshTokenId));
+    assertFalse(refreshTokenWhitelist.contains("1", refreshTokenId));
   }
 
   @Test
@@ -68,6 +68,6 @@ class LogoutServiceTest {
 
     assertEquals(ErrorCode.TOKEN_OWNER_MISMATCH.getCode(), exception.getCode());
     assertFalse(tokenBlacklist.isBlacklisted(accessTokenId));
-    assertTrue(refreshTokenWhitelist.contains(refreshTokenId));
+    assertTrue(refreshTokenWhitelist.contains("2", refreshTokenId));
   }
 }
