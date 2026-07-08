@@ -17,9 +17,13 @@ public class PreRegistrationRegisterService {
   private static final Pattern PHONE_PATTERN = Pattern.compile("^010\\d{8}$");
 
   private final PreRegistrationRepository preRegistrationRepository;
+  private final PreRegistrationCryptoService preRegistrationCryptoService;
 
-  public PreRegistrationRegisterService(PreRegistrationRepository preRegistrationRepository) {
+  public PreRegistrationRegisterService(
+      PreRegistrationRepository preRegistrationRepository,
+      PreRegistrationCryptoService preRegistrationCryptoService) {
     this.preRegistrationRepository = preRegistrationRepository;
+    this.preRegistrationCryptoService = preRegistrationCryptoService;
   }
 
   @Transactional
@@ -30,22 +34,25 @@ public class PreRegistrationRegisterService {
   }
 
   private PreRegistrationResponse reactivateOrCreate(String phoneNumber) {
+    String phoneNumberHash = preRegistrationCryptoService.hash(phoneNumber);
     PreRegistration existing =
-        preRegistrationRepository.findByPhoneNumber(phoneNumber).orElse(null);
+        preRegistrationRepository.findByPhoneNumberHash(phoneNumberHash).orElse(null);
     if (existing != null) {
       if (existing.isRegistered()) {
         throw new BusinessException(ErrorCode.PHONE_NUMBER_ALREADY_REGISTERED);
       }
-      existing.reactivate(phoneNumber, true);
+      existing.reactivate(preRegistrationCryptoService.encrypt(phoneNumber), phoneNumberHash, true);
       return PreRegistrationResponse.from(existing);
     }
-    return create(phoneNumber);
+    return create(phoneNumber, phoneNumberHash);
   }
 
-  private PreRegistrationResponse create(String phoneNumber) {
+  private PreRegistrationResponse create(String phoneNumber, String phoneNumberHash) {
     try {
       PreRegistration saved =
-          preRegistrationRepository.save(PreRegistration.create(phoneNumber, true));
+          preRegistrationRepository.save(
+              PreRegistration.create(
+                  preRegistrationCryptoService.encrypt(phoneNumber), phoneNumberHash, true));
       return PreRegistrationResponse.from(saved);
     } catch (DataIntegrityViolationException exception) {
       // 동시 요청으로 같은 phone number 가 먼저 저장된 경우

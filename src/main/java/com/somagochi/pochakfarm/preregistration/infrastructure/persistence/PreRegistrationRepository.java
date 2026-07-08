@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PreRegistrationRepository extends JpaRepository<PreRegistration, Long> {
 
-  Optional<PreRegistration> findByPhoneNumber(String phoneNumber);
+  Optional<PreRegistration> findByPhoneNumberHash(String phoneNumberHash);
 }

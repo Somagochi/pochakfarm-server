@@ -15,9 +15,13 @@ public class PreRegistrationCancelService {
   private static final Pattern PHONE_PATTERN = Pattern.compile("^010\\d{8}$");
 
   private final PreRegistrationRepository preRegistrationRepository;
+  private final PreRegistrationCryptoService preRegistrationCryptoService;
 
-  public PreRegistrationCancelService(PreRegistrationRepository preRegistrationRepository) {
+  public PreRegistrationCancelService(
+      PreRegistrationRepository preRegistrationRepository,
+      PreRegistrationCryptoService preRegistrationCryptoService) {
     this.preRegistrationRepository = preRegistrationRepository;
+    this.preRegistrationCryptoService = preRegistrationCryptoService;
   }
 
   @Transactional
@@ -25,7 +29,7 @@ public class PreRegistrationCancelService {
     String normalizedPhoneNumber = normalizePhoneNumber(phoneNumber);
     PreRegistration preRegistration =
         preRegistrationRepository
-            .findByPhoneNumber(normalizedPhoneNumber)
+            .findByPhoneNumberHash(preRegistrationCryptoService.hash(normalizedPhoneNumber))
             .orElseThrow(() -> new BusinessException(ErrorCode.PRE_REGISTRATION_NOT_FOUND));
     if (preRegistration.isRegistered()) {
       preRegistration.cancel();
