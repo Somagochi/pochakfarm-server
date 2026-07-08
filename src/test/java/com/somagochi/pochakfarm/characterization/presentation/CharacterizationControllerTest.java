@@ -74,7 +74,7 @@ class CharacterizationControllerTest {
                 .string(
                     HttpHeaders.SET_COOKIE,
                     org.hamcrest.Matchers.containsString("deviceToken=dev_new")))
-        .andExpect(jsonPath("$.data.aiImageUrl").value("https://cdn.test/ai.png"))
+        .andExpect(jsonPath("$.data.aiImageUrl").doesNotExist())
         .andExpect(jsonPath("$.data.resultImageUrl").value("https://cdn.test/result.png"))
         .andExpect(jsonPath("$.data.cardBackImageUrl").value("https://cdn.test/back.png"));
   }
@@ -104,8 +104,7 @@ class CharacterizationControllerTest {
   }
 
   private static CharacterizationResponse response() {
-    return new CharacterizationResponse(
-        "https://cdn.test/ai.png", "https://cdn.test/result.png", "https://cdn.test/back.png");
+    return new CharacterizationResponse("https://cdn.test/result.png", "https://cdn.test/back.png");
   }
 
   private static AnonymousDevice device(Long id, String deviceToken) {

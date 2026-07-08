@@ -23,7 +23,7 @@ public interface CharacterizationApiSpec {
           "홍보 페이지에서 업로드한 이미지를 반려동물 이름과 함께 캐릭터라이즈한다. "
               + "deviceToken 쿠키가 없으면 같은 요청에서 익명 디바이스를 생성하고 Set-Cookie로 내려준다. "
               + "device별 성공 변환은 1회만 허용하며, FAILED 기록만 있는 경우에는 재시도할 수 있다. "
-              + "Spring 서버가 원본/결과 이미지를 S3에 저장하고 Python 변환 서버는 내부 엔진으로만 호출된다.",
+              + "Spring 서버는 원본 이미지를 저장하지 않고 결과 카드 이미지만 S3에 저장한다.",
       requestBody =
           @io.swagger.v3.oas.annotations.parameters.RequestBody(
               required = true,
