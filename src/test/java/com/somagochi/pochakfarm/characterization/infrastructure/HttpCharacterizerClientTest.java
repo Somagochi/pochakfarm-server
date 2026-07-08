@@ -39,7 +39,6 @@ class HttpCharacterizerClientTest {
           "status": "success",
           "provider": "codex_exec",
           "content_type": "image/png",
-          "ai_image_base64": "YWk=",
           "card_image_base64": "Y2FyZA==",
           "card_back_image_base64": "YmFjaw==",
           "elapsed_ms": 123
@@ -49,16 +48,16 @@ class HttpCharacterizerClientTest {
         new HttpCharacterizerClient(baseUrl(), Duration.ofSeconds(1), Duration.ofSeconds(1));
 
     CharacterizerResult result =
-        client.characterize("https://cdn.test/original.png", "솜구름", metadata());
+        client.characterize("b3JpZ2luYWw=", "image/png", "솜구름", metadata());
 
     assertEquals("success", result.status());
     assertEquals("codex_exec", result.provider());
     assertEquals("image/png", result.contentType());
-    assertEquals("YWk=", result.aiImageBase64());
     assertEquals("Y2FyZA==", result.cardImageBase64());
     assertEquals("YmFjaw==", result.cardBackImageBase64());
     assertEquals(123, result.elapsedMs());
-    assertTrue(requestBody.contains("\"source_image_url\":\"https://cdn.test/original.png\""));
+    assertTrue(requestBody.contains("\"source_image_base64\":\"b3JpZ2luYWw=\""));
+    assertTrue(requestBody.contains("\"source_image_content_type\":\"image/png\""));
     assertTrue(requestBody.contains("\"card_type\":\"SKY\""));
     assertTrue(requestBody.contains("SKY"));
     assertTrue(requestBody.contains("\"card_type_label\":\"하늘\""));
@@ -80,7 +79,7 @@ class HttpCharacterizerClientTest {
 
     assertThrows(
         BusinessException.class,
-        () -> client.characterize("https://cdn.test/original.png", "솜구름", metadata()));
+        () -> client.characterize("b3JpZ2luYWw=", "image/png", "솜구름", metadata()));
   }
 
   private void startServer(long responseDelayMillis, String responseBody) throws IOException {

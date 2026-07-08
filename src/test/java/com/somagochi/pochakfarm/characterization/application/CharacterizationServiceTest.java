@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -47,27 +48,24 @@ class CharacterizationServiceTest {
           new CharacterizationProperties(true));
 
   @Test
-  void succeedsBySavingOriginalCallingCharacterizerAndSavingResult() {
+  void succeedsByPassingOriginalImageBase64AndSavingOnlyCardImages() {
     MockMultipartFile image = image("animal.png", "image/png", "original-image");
     CardMetadata metadata = metadata();
     given(cardMetadataGenerator.generate()).willReturn(metadata);
     given(
-            imageUploadService.uploadPublic(
-                "characterization-original", "image/png", bytes("original-image")))
-        .willReturn(
-            new PublicUploadResponse("public/original.png", "https://cdn.test/original.png"));
-    given(characterizerClient.characterize("https://cdn.test/original.png", "솜구름", metadata))
+            characterizerClient.characterize(
+                Base64.getEncoder().encodeToString(bytes("original-image")),
+                "image/png",
+                "솜구름",
+                metadata))
         .willReturn(
             new CharacterizerResult(
                 "success",
                 "codex_exec",
                 "image/png",
-                Base64.getEncoder().encodeToString(bytes("ai-image")),
                 Base64.getEncoder().encodeToString(bytes("result-image")),
                 Base64.getEncoder().encodeToString(bytes("back-image")),
                 12345));
-    given(imageUploadService.uploadPublic("characterization-ai", "image/png", bytes("ai-image")))
-        .willReturn(new PublicUploadResponse("public/ai.png", "https://cdn.test/ai.png"));
     given(
             imageUploadService.uploadPublic(
                 "characterization-result", "image/png", bytes("result-image")))
@@ -79,9 +77,10 @@ class CharacterizationServiceTest {
 
     CharacterizationResponse response = service.characterize(1L, image, " 솜구름 ");
 
-    assertEquals("https://cdn.test/ai.png", response.aiImageUrl());
     assertEquals("https://cdn.test/result.png", response.resultImageUrl());
     assertEquals("https://cdn.test/back.png", response.cardBackImageUrl());
+    verify(imageUploadService, never()).uploadPublic(eq("characterization-original"), any(), any());
+    verify(imageUploadService, never()).uploadPublic(eq("characterization-ai"), any(), any());
     ArgumentCaptor<Characterization> captor = ArgumentCaptor.forClass(Characterization.class);
     verify(characterizationRepository, times(2)).save(captor.capture());
     Characterization saved = lastCaptured(captor);
@@ -92,7 +91,6 @@ class CharacterizationServiceTest {
     assertEquals(CardSkill.SKY_CLOUD_JUMP, saved.getSkill1());
     assertEquals(CardSkill.SKY_WIND_DASH, saved.getSkill2());
     assertEquals("001", saved.getCardNo());
-    assertEquals("public/original.png", saved.getOriginalImageKey());
     assertEquals("public/result.png", saved.getResultImageKey());
     assertEquals(CharacterizationStatus.SUCCEEDED, saved.getStatus());
   }
@@ -111,21 +109,15 @@ class CharacterizationServiceTest {
               }
               return characterization;
             });
-    given(imageUploadService.uploadPublic(eq("characterization-original"), eq("image/png"), any()))
-        .willReturn(
-            new PublicUploadResponse("public/original.png", "https://cdn.test/original.png"));
-    given(characterizerClient.characterize(eq("https://cdn.test/original.png"), eq("솜구름"), any()))
+    given(characterizerClient.characterize(any(), eq("image/png"), eq("솜구름"), any()))
         .willReturn(
             new CharacterizerResult(
                 "success",
                 "codex_exec",
                 "image/png",
-                Base64.getEncoder().encodeToString(bytes("ai-image")),
                 Base64.getEncoder().encodeToString(bytes("result-image")),
                 Base64.getEncoder().encodeToString(bytes("back-image")),
                 10));
-    given(imageUploadService.uploadPublic(eq("characterization-ai"), eq("image/png"), any()))
-        .willReturn(new PublicUploadResponse("public/ai.png", "https://cdn.test/ai.png"));
     given(imageUploadService.uploadPublic(eq("characterization-result"), eq("image/png"), any()))
         .willReturn(new PublicUploadResponse("public/result.png", "https://cdn.test/result.png"));
     givenBackUpload();
@@ -134,28 +126,22 @@ class CharacterizationServiceTest {
 
     ArgumentCaptor<CardMetadata> metadataCaptor = ArgumentCaptor.forClass(CardMetadata.class);
     verify(characterizerClient)
-        .characterize(eq("https://cdn.test/original.png"), eq("솜구름"), metadataCaptor.capture());
+        .characterize(any(), eq("image/png"), eq("솜구름"), metadataCaptor.capture());
     assertEquals("000", metadataCaptor.getValue().cardNo());
   }
 
   @Test
   void allowsAnimalNameUpToSixCharactersIncludingSpaces() {
     given(cardMetadataGenerator.generate()).willReturn(metadata());
-    given(imageUploadService.uploadPublic(eq("characterization-original"), eq("image/png"), any()))
-        .willReturn(
-            new PublicUploadResponse("public/original.png", "https://cdn.test/original.png"));
-    given(characterizerClient.characterize(any(), eq("가나다 라마"), any()))
+    given(characterizerClient.characterize(any(), eq("image/png"), eq("가나다 라마"), any()))
         .willReturn(
             new CharacterizerResult(
                 "success",
                 "codex_exec",
                 "image/png",
-                Base64.getEncoder().encodeToString(bytes("ai-image")),
                 Base64.getEncoder().encodeToString(bytes("result-image")),
                 Base64.getEncoder().encodeToString(bytes("back-image")),
                 10));
-    given(imageUploadService.uploadPublic(eq("characterization-ai"), eq("image/png"), any()))
-        .willReturn(new PublicUploadResponse("public/ai.png", "https://cdn.test/ai.png"));
     given(imageUploadService.uploadPublic(eq("characterization-result"), eq("image/png"), any()))
         .willReturn(new PublicUploadResponse("public/result.png", "https://cdn.test/result.png"));
     givenBackUpload();
@@ -202,21 +188,15 @@ class CharacterizationServiceTest {
   @Test
   void allowsRetryWhenDeviceHasOnlyFailedCharacterizations() {
     given(cardMetadataGenerator.generate()).willReturn(metadata());
-    given(imageUploadService.uploadPublic(eq("characterization-original"), eq("image/png"), any()))
-        .willReturn(
-            new PublicUploadResponse("public/original.png", "https://cdn.test/original.png"));
-    given(characterizerClient.characterize(any(), eq("솜구름"), any()))
+    given(characterizerClient.characterize(any(), eq("image/png"), eq("솜구름"), any()))
         .willReturn(
             new CharacterizerResult(
                 "success",
                 "codex_exec",
                 "image/png",
-                Base64.getEncoder().encodeToString(bytes("ai-image")),
                 Base64.getEncoder().encodeToString(bytes("result-image")),
                 Base64.getEncoder().encodeToString(bytes("back-image")),
                 10));
-    given(imageUploadService.uploadPublic(eq("characterization-ai"), eq("image/png"), any()))
-        .willReturn(new PublicUploadResponse("public/ai.png", "https://cdn.test/ai.png"));
     given(imageUploadService.uploadPublic(eq("characterization-result"), eq("image/png"), any()))
         .willReturn(new PublicUploadResponse("public/result.png", "https://cdn.test/result.png"));
     givenBackUpload();
@@ -240,21 +220,15 @@ class CharacterizationServiceTest {
                 1L, CharacterizationStatus.SUCCEEDED))
         .willReturn(true);
     given(cardMetadataGenerator.generate()).willReturn(metadata());
-    given(imageUploadService.uploadPublic(eq("characterization-original"), eq("image/png"), any()))
-        .willReturn(
-            new PublicUploadResponse("public/original.png", "https://cdn.test/original.png"));
-    given(characterizerClient.characterize(any(), eq("솜구름"), any()))
+    given(characterizerClient.characterize(any(), eq("image/png"), eq("솜구름"), any()))
         .willReturn(
             new CharacterizerResult(
                 "success",
                 "codex_exec",
                 "image/png",
-                Base64.getEncoder().encodeToString(bytes("ai-image")),
                 Base64.getEncoder().encodeToString(bytes("result-image")),
                 Base64.getEncoder().encodeToString(bytes("back-image")),
                 10));
-    given(imageUploadService.uploadPublic(eq("characterization-ai"), eq("image/png"), any()))
-        .willReturn(new PublicUploadResponse("public/ai.png", "https://cdn.test/ai.png"));
     given(imageUploadService.uploadPublic(eq("characterization-result"), eq("image/png"), any()))
         .willReturn(new PublicUploadResponse("public/result.png", "https://cdn.test/result.png"));
     givenBackUpload();
@@ -267,10 +241,7 @@ class CharacterizationServiceTest {
   @Test
   void recordsFailedWhenCharacterizerThrows() {
     given(cardMetadataGenerator.generate()).willReturn(metadata());
-    given(imageUploadService.uploadPublic(eq("characterization-original"), eq("image/png"), any()))
-        .willReturn(
-            new PublicUploadResponse("public/original.png", "https://cdn.test/original.png"));
-    given(characterizerClient.characterize(any(), eq("솜구름"), any()))
+    given(characterizerClient.characterize(any(), eq("image/png"), eq("솜구름"), any()))
         .willThrow(new BusinessException(ErrorCode.CHARACTERIZATION_FAILED));
 
     BusinessException exception =
@@ -287,21 +258,15 @@ class CharacterizationServiceTest {
   @Test
   void rejectsInvalidResultBase64AndRecordsFailed() {
     given(cardMetadataGenerator.generate()).willReturn(metadata());
-    given(imageUploadService.uploadPublic(eq("characterization-original"), eq("image/png"), any()))
-        .willReturn(
-            new PublicUploadResponse("public/original.png", "https://cdn.test/original.png"));
-    given(characterizerClient.characterize(any(), eq("솜구름"), any()))
+    given(characterizerClient.characterize(any(), eq("image/png"), eq("솜구름"), any()))
         .willReturn(
             new CharacterizerResult(
                 "success",
                 "codex_exec",
                 "image/png",
-                Base64.getEncoder().encodeToString(bytes("ai-image")),
                 "not-base64",
                 Base64.getEncoder().encodeToString(bytes("back-image")),
                 10));
-    given(imageUploadService.uploadPublic(eq("characterization-ai"), eq("image/png"), any()))
-        .willReturn(new PublicUploadResponse("public/ai.png", "https://cdn.test/ai.png"));
 
     BusinessException exception =
         assertThrows(BusinessException.class, () -> service.characterize(1L, image(), "솜구름"));

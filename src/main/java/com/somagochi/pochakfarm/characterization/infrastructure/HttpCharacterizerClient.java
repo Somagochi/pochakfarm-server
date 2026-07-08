@@ -35,23 +35,28 @@ public class HttpCharacterizerClient implements CharacterizerClient {
 
   @Override
   public CharacterizerResult characterize(
-      String sourceImageUrl, String animalName, CardMetadata metadata) {
+      String sourceImageBase64,
+      String sourceImageContentType,
+      String animalName,
+      CardMetadata metadata) {
     long startedAt = System.nanoTime();
     try {
       log.info(
-          "characterizer_request_started baseUrl={} sourceImageUrl={}", baseUrl, sourceImageUrl);
+          "characterizer_request_started baseUrl={} sourceImageContentType={}",
+          baseUrl,
+          sourceImageContentType);
       HttpCharacterizationResponse response =
           restClient
               .post()
               .uri("/internal/characterize")
               .contentType(MediaType.APPLICATION_JSON)
-              .body(createRequestBody(sourceImageUrl, animalName, metadata))
+              .body(
+                  createRequestBody(
+                      sourceImageBase64, sourceImageContentType, animalName, metadata))
               .retrieve()
               .body(HttpCharacterizationResponse.class);
       if (response == null
           || !"success".equals(response.status())
-          || response.aiImageBase64() == null
-          || response.aiImageBase64().isBlank()
           || response.cardImageBase64() == null
           || response.cardImageBase64().isBlank()
           || response.cardBackImageBase64() == null
@@ -81,9 +86,13 @@ public class HttpCharacterizerClient implements CharacterizerClient {
   }
 
   private HttpCharacterizationRequest createRequestBody(
-      String sourceImageUrl, String animalName, CardMetadata metadata) {
+      String sourceImageBase64,
+      String sourceImageContentType,
+      String animalName,
+      CardMetadata metadata) {
     return new HttpCharacterizationRequest(
-        sourceImageUrl,
+        sourceImageBase64,
+        sourceImageContentType,
         animalName,
         metadata.cardType().name(),
         metadata.cardTypeLabel(),
@@ -96,7 +105,8 @@ public class HttpCharacterizerClient implements CharacterizerClient {
   }
 
   private record HttpCharacterizationRequest(
-      @JsonProperty("source_image_url") String sourceImageUrl,
+      @JsonProperty("source_image_base64") String sourceImageBase64,
+      @JsonProperty("source_image_content_type") String sourceImageContentType,
       @JsonProperty("animal_name") String animalName,
       @JsonProperty("card_type") String cardType,
       @JsonProperty("card_type_label") String cardTypeLabel,
@@ -111,20 +121,13 @@ public class HttpCharacterizerClient implements CharacterizerClient {
       String status,
       String provider,
       @JsonProperty("content_type") String contentType,
-      @JsonProperty("ai_image_base64") String aiImageBase64,
       @JsonProperty("card_image_base64") String cardImageBase64,
       @JsonProperty("card_back_image_base64") String cardBackImageBase64,
       @JsonProperty("elapsed_ms") Integer elapsedMs) {
 
     private CharacterizerResult toResult() {
       return new CharacterizerResult(
-          status,
-          provider,
-          contentType,
-          aiImageBase64,
-          cardImageBase64,
-          cardBackImageBase64,
-          elapsedMs);
+          status, provider, contentType, cardImageBase64, cardBackImageBase64, elapsedMs);
     }
   }
 }
