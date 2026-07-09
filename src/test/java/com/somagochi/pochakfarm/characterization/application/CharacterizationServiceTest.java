@@ -52,6 +52,15 @@ class CharacterizationServiceTest {
     MockMultipartFile image = image("animal.png", "image/png", "original-image");
     CardMetadata metadata = metadata();
     given(cardMetadataGenerator.generate()).willReturn(metadata);
+    given(characterizationRepository.save(any(Characterization.class)))
+        .willAnswer(
+            invocation -> {
+              Characterization characterization = invocation.getArgument(0);
+              if (characterization.getId() == null) {
+                ReflectionTestUtils.setField(characterization, "id", 1L);
+              }
+              return characterization;
+            });
     given(
             characterizerClient.characterize(
                 Base64.getEncoder().encodeToString(bytes("original-image")),
@@ -77,6 +86,7 @@ class CharacterizationServiceTest {
 
     CharacterizationResponse response = service.characterize(1L, image, " 솜구름 ");
 
+    assertEquals(1L, response.characterizationId());
     assertEquals("https://cdn.test/result.png", response.resultImageUrl());
     assertEquals("https://cdn.test/back.png", response.cardBackImageUrl());
     verify(imageUploadService, never()).uploadPublic(eq("characterization-original"), any(), any());

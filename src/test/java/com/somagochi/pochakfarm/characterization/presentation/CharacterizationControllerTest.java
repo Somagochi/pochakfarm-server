@@ -64,7 +64,7 @@ class CharacterizationControllerTest {
 
     mockMvc
         .perform(
-            multipart("/api/characterizations")
+            multipart("/api/characterizations/public")
                 .file(image())
                 .param("animalName", "솜구름")
                 .contentType(MediaType.MULTIPART_FORM_DATA))
@@ -75,6 +75,7 @@ class CharacterizationControllerTest {
                     HttpHeaders.SET_COOKIE,
                     org.hamcrest.Matchers.containsString("deviceToken=dev_new")))
         .andExpect(jsonPath("$.data.aiImageUrl").doesNotExist())
+        .andExpect(jsonPath("$.data.characterizationId").value(100L))
         .andExpect(jsonPath("$.data.resultImageUrl").value("https://cdn.test/result.png"))
         .andExpect(jsonPath("$.data.cardBackImageUrl").value("https://cdn.test/back.png"));
   }
@@ -88,13 +89,14 @@ class CharacterizationControllerTest {
 
     mockMvc
         .perform(
-            multipart("/api/characterizations")
+            multipart("/api/characterizations/public")
                 .file(image())
                 .param("animalName", "솜구름")
                 .cookie(new Cookie(DeviceTokenCookieFactory.COOKIE_NAME, "dev_abc"))
                 .contentType(MediaType.MULTIPART_FORM_DATA))
         .andExpect(status().isOk())
         .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE))
+        .andExpect(jsonPath("$.data.characterizationId").value(100L))
         .andExpect(jsonPath("$.data.resultImageUrl").value("https://cdn.test/result.png"))
         .andExpect(jsonPath("$.data.cardBackImageUrl").value("https://cdn.test/back.png"));
   }
@@ -104,7 +106,8 @@ class CharacterizationControllerTest {
   }
 
   private static CharacterizationResponse response() {
-    return new CharacterizationResponse("https://cdn.test/result.png", "https://cdn.test/back.png");
+    return new CharacterizationResponse(
+        100L, "https://cdn.test/result.png", "https://cdn.test/back.png");
   }
 
   private static AnonymousDevice device(Long id, String deviceToken) {
