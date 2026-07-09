@@ -25,6 +25,7 @@ public enum ErrorCode {
       409, "CHARACTERIZATION_ALREADY_PROCESSING", "Characterization already processing"),
   DEVICE_NOT_FOUND(404, "DEVICE_NOT_FOUND", "Device not found"),
   INVALID_PHONE_NUMBER(400, "INVALID_PHONE_NUMBER", "Invalid phone number"),
+  INVALID_CHARACTERIZATION_ID(400, "INVALID_CHARACTERIZATION_ID", "Invalid characterization id"),
   REQUIRED_CONSENT_REQUIRED(400, "REQUIRED_CONSENT_REQUIRED", "Required consent is missing"),
   PHONE_NUMBER_ALREADY_REGISTERED(
       409, "PHONE_NUMBER_ALREADY_REGISTERED", "Phone number already registered"),

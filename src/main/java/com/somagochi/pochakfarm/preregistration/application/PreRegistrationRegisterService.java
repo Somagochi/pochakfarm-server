@@ -30,10 +30,11 @@ public class PreRegistrationRegisterService {
   public PreRegistrationResponse register(PreRegistrationRequest request) {
     String phoneNumber = normalizePhoneNumber(request.phoneNumber());
     validateRequiredConsent(request);
-    return reactivateOrCreate(phoneNumber);
+    Long characterizationId = validateCharacterizationId(request.characterizationId());
+    return reactivateOrCreate(phoneNumber, characterizationId);
   }
 
-  private PreRegistrationResponse reactivateOrCreate(String phoneNumber) {
+  private PreRegistrationResponse reactivateOrCreate(String phoneNumber, Long characterizationId) {
     String phoneNumberHash = preRegistrationCryptoService.hash(phoneNumber);
     PreRegistration existing =
         preRegistrationRepository.findByPhoneNumberHash(phoneNumberHash).orElse(null);
@@ -41,18 +42,26 @@ public class PreRegistrationRegisterService {
       if (existing.isRegistered()) {
         throw new BusinessException(ErrorCode.PHONE_NUMBER_ALREADY_REGISTERED);
       }
-      existing.reactivate(preRegistrationCryptoService.encrypt(phoneNumber), phoneNumberHash, true);
+      existing.reactivate(
+          preRegistrationCryptoService.encrypt(phoneNumber),
+          phoneNumberHash,
+          true,
+          characterizationId);
       return PreRegistrationResponse.from(existing);
     }
-    return create(phoneNumber, phoneNumberHash);
+    return create(phoneNumber, phoneNumberHash, characterizationId);
   }
 
-  private PreRegistrationResponse create(String phoneNumber, String phoneNumberHash) {
+  private PreRegistrationResponse create(
+      String phoneNumber, String phoneNumberHash, Long characterizationId) {
     try {
       PreRegistration saved =
           preRegistrationRepository.save(
               PreRegistration.create(
-                  preRegistrationCryptoService.encrypt(phoneNumber), phoneNumberHash, true));
+                  preRegistrationCryptoService.encrypt(phoneNumber),
+                  phoneNumberHash,
+                  true,
+                  characterizationId));
       return PreRegistrationResponse.from(saved);
     } catch (DataIntegrityViolationException exception) {
       // 동시 요청으로 같은 phone number 가 먼저 저장된 경우
@@ -64,6 +73,13 @@ public class PreRegistrationRegisterService {
     if (!Boolean.TRUE.equals(request.requiredConsent())) {
       throw new BusinessException(ErrorCode.REQUIRED_CONSENT_REQUIRED);
     }
+  }
+
+  private Long validateCharacterizationId(Long characterizationId) {
+    if (characterizationId == null || characterizationId <= 0) {
+      throw new BusinessException(ErrorCode.INVALID_CHARACTERIZATION_ID);
+    }
+    return characterizationId;
   }
 
   private String normalizePhoneNumber(String phoneNumber) {

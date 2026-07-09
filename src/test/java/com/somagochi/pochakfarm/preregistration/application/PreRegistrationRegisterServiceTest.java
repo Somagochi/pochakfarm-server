@@ -43,7 +43,7 @@ class PreRegistrationRegisterServiceTest {
   }
 
   private PreRegistrationRequest request(String phone, Boolean required) {
-    return new PreRegistrationRequest(phone, required);
+    return new PreRegistrationRequest(phone, required, 10L);
   }
 
   private PreRegistration preRegistration(boolean registered) {
@@ -63,7 +63,13 @@ class PreRegistrationRegisterServiceTest {
             .collect(Collectors.toSet());
 
     assertEquals(
-        Set.of("id", "phoneNumberEncrypted", "phoneNumberHash", "requiredConsent", "status"),
+        Set.of(
+            "id",
+            "phoneNumberEncrypted",
+            "phoneNumberHash",
+            "requiredConsent",
+            "characterizationId",
+            "status"),
         fieldNames);
   }
 
@@ -93,6 +99,7 @@ class PreRegistrationRegisterServiceTest {
 
     assertEquals(PHONE_ENCRYPTED, saved.getPhoneNumberEncrypted());
     assertEquals(PHONE_HASH, saved.getPhoneNumberHash());
+    assertEquals(10L, saved.getCharacterizationId());
   }
 
   @Test
@@ -103,8 +110,28 @@ class PreRegistrationRegisterServiceTest {
 
     preRegistrationService.register(request(PHONE, true));
 
-    verify(canceled).reactivate(PHONE_ENCRYPTED, PHONE_HASH, true);
+    verify(canceled).reactivate(PHONE_ENCRYPTED, PHONE_HASH, true, 10L);
     verify(preRegistrationRepository, never()).save(any());
+  }
+
+  @Test
+  void rejectsWhenCharacterizationIdMissing() {
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () -> preRegistrationService.register(new PreRegistrationRequest(PHONE, true, null)));
+
+    assertEquals(ErrorCode.INVALID_CHARACTERIZATION_ID.getCode(), exception.getCode());
+  }
+
+  @Test
+  void rejectsWhenCharacterizationIdIsNotPositive() {
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () -> preRegistrationService.register(new PreRegistrationRequest(PHONE, true, 0L)));
+
+    assertEquals(ErrorCode.INVALID_CHARACTERIZATION_ID.getCode(), exception.getCode());
   }
 
   @Test

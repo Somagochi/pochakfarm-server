@@ -16,13 +16,17 @@ public interface PreRegistrationApiSpec {
 
   @Operation(
       summary = "사전예약 등록",
-      description = "출시 알림을 위한 사전예약을 등록한다. 휴대폰 번호당 1회만 등록 가능하며, 취소된 번호는 다시 등록할 수 있다.")
+      description =
+          "출시 알림을 위한 사전예약을 등록한다. 휴대폰 번호당 1회만 등록 가능하며, "
+              + "취소된 번호는 다시 등록할 수 있다. 요청 본문에 characterization_id를 함께 전달한다.")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "200",
       description = "사전예약 성공")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "400",
-      description = "잘못된 휴대폰 번호(INVALID_PHONE_NUMBER) 또는 필수 동의 누락(REQUIRED_CONSENT_REQUIRED)",
+      description =
+          "잘못된 휴대폰 번호(INVALID_PHONE_NUMBER), 유효하지 않은 캐릭터라이징 ID"
+              + "(INVALID_CHARACTERIZATION_ID), 또는 필수 동의 누락(REQUIRED_CONSENT_REQUIRED)",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "409",
