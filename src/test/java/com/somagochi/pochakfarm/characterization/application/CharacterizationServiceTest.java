@@ -92,6 +92,7 @@ class CharacterizationServiceTest {
     assertEquals(CardSkill.SKY_WIND_DASH, saved.getSkill2());
     assertEquals("001", saved.getCardNo());
     assertEquals("public/result.png", saved.getResultImageKey());
+    assertEquals("public/back.png", saved.getCardBackImageKey());
     assertEquals(CharacterizationStatus.SUCCEEDED, saved.getStatus());
   }
 
