@@ -1,5 +1,6 @@
 package com.somagochi.pochakfarm.preregistration.application;
 
+import com.somagochi.pochakfarm.characterization.infrastructure.persistence.CharacterizationRepository;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.preregistration.domain.PreRegistration;
@@ -18,12 +19,15 @@ public class PreRegistrationRegisterService {
 
   private final PreRegistrationRepository preRegistrationRepository;
   private final PreRegistrationCryptoService preRegistrationCryptoService;
+  private final CharacterizationRepository characterizationRepository;
 
   public PreRegistrationRegisterService(
       PreRegistrationRepository preRegistrationRepository,
-      PreRegistrationCryptoService preRegistrationCryptoService) {
+      PreRegistrationCryptoService preRegistrationCryptoService,
+      CharacterizationRepository characterizationRepository) {
     this.preRegistrationRepository = preRegistrationRepository;
     this.preRegistrationCryptoService = preRegistrationCryptoService;
+    this.characterizationRepository = characterizationRepository;
   }
 
   @Transactional
@@ -78,6 +82,9 @@ public class PreRegistrationRegisterService {
   private Long validateCharacterizationId(Long characterizationId) {
     if (characterizationId == null || characterizationId <= 0) {
       throw new BusinessException(ErrorCode.INVALID_CHARACTERIZATION_ID);
+    }
+    if (!characterizationRepository.existsById(characterizationId)) {
+      throw new BusinessException(ErrorCode.CHARACTERIZATION_NOT_FOUND);
     }
     return characterizationId;
   }

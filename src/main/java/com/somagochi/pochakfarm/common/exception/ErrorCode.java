@@ -18,6 +18,7 @@ public enum ErrorCode {
   FILE_TOO_LARGE(413, "FILE_TOO_LARGE", "File too large"),
   FORBIDDEN_FILE_ACCESS(403, "FORBIDDEN_FILE_ACCESS", "Forbidden file access"),
   INVALID_ANIMAL_NAME(400, "INVALID_ANIMAL_NAME", "Invalid animal name"),
+  CHARACTERIZATION_NOT_FOUND(404, "CHARACTERIZATION_NOT_FOUND", "Characterization not found"),
   CHARACTERIZATION_FAILED(502, "CHARACTERIZATION_FAILED", "Failed to characterize image"),
   CHARACTERIZATION_ALREADY_USED(
       409, "CHARACTERIZATION_ALREADY_USED", "Characterization already used"),

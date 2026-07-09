@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import com.somagochi.pochakfarm.characterization.infrastructure.persistence.CharacterizationRepository;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.preregistration.domain.PreRegistration;
@@ -33,13 +34,17 @@ class PreRegistrationRegisterServiceTest {
       mock(PreRegistrationRepository.class);
   private final PreRegistrationCryptoService preRegistrationCryptoService =
       mock(PreRegistrationCryptoService.class);
+  private final CharacterizationRepository characterizationRepository =
+      mock(CharacterizationRepository.class);
   private final PreRegistrationRegisterService preRegistrationService =
-      new PreRegistrationRegisterService(preRegistrationRepository, preRegistrationCryptoService);
+      new PreRegistrationRegisterService(
+          preRegistrationRepository, preRegistrationCryptoService, characterizationRepository);
 
   @BeforeEach
   void setUp() {
     given(preRegistrationCryptoService.hash(PHONE)).willReturn(PHONE_HASH);
     given(preRegistrationCryptoService.encrypt(PHONE)).willReturn(PHONE_ENCRYPTED);
+    given(characterizationRepository.existsById(10L)).willReturn(true);
   }
 
   private PreRegistrationRequest request(String phone, Boolean required) {
@@ -132,6 +137,18 @@ class PreRegistrationRegisterServiceTest {
             () -> preRegistrationService.register(new PreRegistrationRequest(PHONE, true, 0L)));
 
     assertEquals(ErrorCode.INVALID_CHARACTERIZATION_ID.getCode(), exception.getCode());
+  }
+
+  @Test
+  void rejectsWhenCharacterizationDoesNotExist() {
+    given(characterizationRepository.existsById(10L)).willReturn(false);
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class, () -> preRegistrationService.register(request(PHONE, true)));
+
+    assertEquals(ErrorCode.CHARACTERIZATION_NOT_FOUND.getCode(), exception.getCode());
+    verify(preRegistrationRepository, never()).save(any());
   }
 
   @Test

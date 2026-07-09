@@ -32,6 +32,10 @@ public interface PreRegistrationApiSpec {
       responseCode = "409",
       description = "이미 등록된 휴대폰 번호(PHONE_NUMBER_ALREADY_REGISTERED)",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "404",
+      description = "캐릭터라이징 내역 없음(CHARACTERIZATION_NOT_FOUND)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   ApiResponse<PreRegistrationResponse> register(PreRegistrationRequest request);
 
   @Operation(
