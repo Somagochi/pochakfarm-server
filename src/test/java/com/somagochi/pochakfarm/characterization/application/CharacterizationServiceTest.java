@@ -2,6 +2,7 @@ package com.somagochi.pochakfarm.characterization.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -10,6 +11,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.somagochi.pochakfarm.characterization.domain.CardMetadata;
 import com.somagochi.pochakfarm.characterization.domain.CardMetadataGenerator;
 import com.somagochi.pochakfarm.characterization.domain.CardSkill;
@@ -29,6 +33,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.slf4j.LoggerFactory;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -104,6 +109,60 @@ class CharacterizationServiceTest {
     assertEquals("public/result.png", saved.getResultImageKey());
     assertEquals("public/back.png", saved.getCardBackImageKey());
     assertEquals(CharacterizationStatus.SUCCEEDED, saved.getStatus());
+  }
+
+  @Test
+  void logsStageTimingSummaryWhenCharacterizationSucceeds() {
+    given(cardMetadataGenerator.generate()).willReturn(metadata());
+    given(characterizationRepository.save(any(Characterization.class)))
+        .willAnswer(
+            invocation -> {
+              Characterization characterization = invocation.getArgument(0);
+              if (characterization.getId() == null) {
+                ReflectionTestUtils.setField(characterization, "id", 1L);
+              }
+              return characterization;
+            });
+    given(characterizerClient.characterize(any(), eq("image/png"), eq("솜구름"), any()))
+        .willReturn(
+            new CharacterizerResult(
+                "success",
+                "codex_exec",
+                "image/png",
+                Base64.getEncoder().encodeToString(bytes("result-image")),
+                Base64.getEncoder().encodeToString(bytes("back-image")),
+                10));
+    given(imageUploadService.uploadPublic(eq("characterization-result"), eq("image/png"), any()))
+        .willReturn(new PublicUploadResponse("public/result.png", "https://cdn.test/result.png"));
+    givenBackUpload();
+    Logger logger = (Logger) LoggerFactory.getLogger(CharacterizationService.class);
+    ListAppender<ILoggingEvent> appender = new ListAppender<>();
+    appender.start();
+    logger.addAppender(appender);
+
+    try {
+      service.characterize(1L, image(), "솜구름");
+    } finally {
+      logger.detachAppender(appender);
+    }
+
+    String summaryLog =
+        appender.list.stream()
+            .map(ILoggingEvent::getFormattedMessage)
+            .filter(message -> message.contains("characterization_completed"))
+            .findFirst()
+            .orElse("");
+    assertTrue(summaryLog.contains("characterization_completed"));
+    assertTrue(summaryLog.contains("characterizationId=1"));
+    assertTrue(summaryLog.contains("deviceId=1"));
+    assertTrue(summaryLog.contains("provider=codex_exec"));
+    assertTrue(summaryLog.contains("pythonElapsedMs=10"));
+    assertTrue(summaryLog.contains("pythonClientMs="));
+    assertTrue(summaryLog.contains("resultUploadMs="));
+    assertTrue(summaryLog.contains("backUploadMs="));
+    assertTrue(summaryLog.contains("totalMs="));
+    assertTrue(summaryLog.contains("resultBytes="));
+    assertTrue(summaryLog.contains("backBytes="));
   }
 
   @Test

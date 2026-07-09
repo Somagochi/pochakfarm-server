@@ -51,6 +51,7 @@ public class CharacterizationService {
 
   public CharacterizationResponse characterize(
       Long deviceId, MultipartFile image, String animalName) {
+    long startedAt = System.nanoTime();
     validateImage(image);
     String normalizedAnimalName = normalizeAnimalName(animalName);
     if (properties.deviceLimitEnabled()) {
@@ -67,35 +68,33 @@ public class CharacterizationService {
       CharacterizerResult result =
           characterizerClient.characterize(
               encodeSourceImage(image), image.getContentType(), normalizedAnimalName, metadata);
-      log.info(
-          "characterization_python_completed provider={} pythonElapsedMs={} clientElapsedMs={}",
-          result.provider(),
-          result.elapsedMs(),
-          elapsedMsSince(characterizerStartedAt));
+      long pythonClientMs = elapsedMsSince(characterizerStartedAt);
 
       long resultUploadStartedAt = System.nanoTime();
       byte[] resultImage = decodeCardImage(result);
       PublicUploadResponse resultUpload =
           imageUploadService.uploadPublic(RESULT_PURPOSE, result.contentType(), resultImage);
-      log.info(
-          "characterization_result_uploaded key={} bytes={} elapsedMs={}",
-          resultUpload.key(),
-          resultImage.length,
-          elapsedMsSince(resultUploadStartedAt));
+      long resultUploadMs = elapsedMsSince(resultUploadStartedAt);
 
       long backUploadStartedAt = System.nanoTime();
       byte[] backImage = decodeCardBackImage(result);
       PublicUploadResponse backUpload =
           imageUploadService.uploadPublic(BACK_PURPOSE, result.contentType(), backImage);
-      log.info(
-          "characterization_back_uploaded key={} bytes={} elapsedMs={}",
-          backUpload.key(),
-          backImage.length,
-          elapsedMsSince(backUploadStartedAt));
+      long backUploadMs = elapsedMsSince(backUploadStartedAt);
 
       characterization.succeed(
           resultUpload.key(), backUpload.key(), result.provider(), result.elapsedMs());
       save(characterization);
+      logCharacterizationCompleted(
+          characterization,
+          deviceId,
+          result,
+          pythonClientMs,
+          resultUploadMs,
+          backUploadMs,
+          elapsedMsSince(startedAt),
+          resultImage.length,
+          backImage.length);
       return new CharacterizationResponse(
           characterization.getId(), resultUpload.url(), backUpload.url());
     } catch (BusinessException exception) {
@@ -122,6 +121,32 @@ public class CharacterizationService {
 
   private long elapsedMsSince(long startedAtNanos) {
     return (System.nanoTime() - startedAtNanos) / 1_000_000;
+  }
+
+  private void logCharacterizationCompleted(
+      Characterization characterization,
+      Long deviceId,
+      CharacterizerResult result,
+      long pythonClientMs,
+      long resultUploadMs,
+      long backUploadMs,
+      long totalMs,
+      int resultBytes,
+      int backBytes) {
+    log.info(
+        "characterization_completed characterizationId={} deviceId={} provider={} "
+            + "pythonElapsedMs={} pythonClientMs={} resultUploadMs={} backUploadMs={} "
+            + "totalMs={} resultBytes={} backBytes={}",
+        characterization.getId(),
+        deviceId,
+        result.provider(),
+        result.elapsedMs(),
+        pythonClientMs,
+        resultUploadMs,
+        backUploadMs,
+        totalMs,
+        resultBytes,
+        backBytes);
   }
 
   private String encodeSourceImage(MultipartFile image) {
