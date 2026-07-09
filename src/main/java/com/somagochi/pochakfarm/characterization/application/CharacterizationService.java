@@ -93,7 +93,8 @@ public class CharacterizationService {
           backImage.length,
           elapsedMsSince(backUploadStartedAt));
 
-      characterization.succeed(resultUpload.key(), result.provider(), result.elapsedMs());
+      characterization.succeed(
+          resultUpload.key(), backUpload.key(), result.provider(), result.elapsedMs());
       save(characterization);
       return new CharacterizationResponse(resultUpload.url(), backUpload.url());
     } catch (BusinessException exception) {
