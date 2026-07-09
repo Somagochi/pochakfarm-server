@@ -27,7 +27,7 @@ public class CharacterizationController implements CharacterizationApiSpec {
   private final DeviceTokenCookieFactory deviceTokenCookieFactory;
 
   @Override
-  @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PostMapping(value = "/public", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ApiResponse<CharacterizationResponse> characterize(
       @CookieValue(value = DeviceTokenCookieFactory.COOKIE_NAME, required = false)
           String deviceToken,

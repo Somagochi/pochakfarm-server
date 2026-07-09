@@ -96,7 +96,8 @@ public class CharacterizationService {
       characterization.succeed(
           resultUpload.key(), backUpload.key(), result.provider(), result.elapsedMs());
       save(characterization);
-      return new CharacterizationResponse(resultUpload.url(), backUpload.url());
+      return new CharacterizationResponse(
+          characterization.getId(), resultUpload.url(), backUpload.url());
     } catch (BusinessException exception) {
       characterization.fail(exception.getCode());
       save(characterization);
