@@ -31,8 +31,12 @@ public class CharacterizationReadService {
     if (characterization.getStatus() != CharacterizationStatus.SUCCEEDED) {
       throw new BusinessException(ErrorCode.CHARACTERIZATION_NOT_FOUND);
     }
-    String resultImageUrl = fileStorage.buildUrl(characterization.getResultImageKey());
-    String cardBackImageUrl = fileStorage.buildUrl(characterization.getCardBackImageKey());
+    String resultImageUrl = buildUrlOrNull(characterization.getResultImageKey());
+    String cardBackImageUrl = buildUrlOrNull(characterization.getCardBackImageKey());
     return new CharacterizationResponse(characterization.getId(), resultImageUrl, cardBackImageUrl);
+  }
+
+  private String buildUrlOrNull(String key) {
+    return key == null ? null : fileStorage.buildUrl(key);
   }
 }
