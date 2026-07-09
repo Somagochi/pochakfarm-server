@@ -23,7 +23,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
   private static final String[] PUBLIC_GET_ENDPOINTS = {
-    "/actuator/health", "/actuator/health/**", "/actuator/prometheus"
+    "/actuator/health",
+    "/actuator/health/**",
+    "/actuator/prometheus",
+    "/api/characterizations/public/*"
   };
 
   private static final String[] PUBLIC_POST_ENDPOINTS = {

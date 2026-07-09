@@ -67,4 +67,24 @@ public interface CharacterizationApiSpec {
       @Parameter(hidden = true) MultipartFile image,
       @Parameter(hidden = true) String animalName,
       @Parameter(hidden = true) HttpServletResponse response);
+
+  @Operation(
+      summary = "캐릭터라이징 결과 조회",
+      description =
+          "characterizationId로 성공한 캐릭터라이징 결과를 조회한다. "
+              + "data.resultImageUrl에 카드 앞면 URL, data.cardBackImageUrl에 카드 뒷면 URL을 반환한다.")
+  @Parameter(
+      in = ParameterIn.PATH,
+      name = "characterizationId",
+      required = true,
+      description = "조회할 캐릭터라이징 ID",
+      example = "1")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "200",
+      description = "조회 성공. data.characterizationId, data.resultImageUrl, data.cardBackImageUrl 반환")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "404",
+      description = "해당 ID의 성공한 캐릭터라이징이 없음 (CHARACTERIZATION_NOT_FOUND)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  ApiResponse<CharacterizationResponse> getCharacterization(Long characterizationId);
 }
