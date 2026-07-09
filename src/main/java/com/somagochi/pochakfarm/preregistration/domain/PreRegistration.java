@@ -41,21 +41,32 @@ public class PreRegistration extends BaseEntity {
   @Column(name = "required_consent", nullable = false)
   private boolean requiredConsent;
 
+  @Column(name = "characterization_id", nullable = false)
+  private Long characterizationId;
+
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false)
   private PreRegistrationStatus status;
 
   private PreRegistration(
-      String phoneNumberEncrypted, String phoneNumberHash, boolean requiredConsent) {
+      String phoneNumberEncrypted,
+      String phoneNumberHash,
+      boolean requiredConsent,
+      Long characterizationId) {
     this.phoneNumberEncrypted = phoneNumberEncrypted;
     this.phoneNumberHash = phoneNumberHash;
     this.requiredConsent = requiredConsent;
+    this.characterizationId = characterizationId;
     this.status = PreRegistrationStatus.REGISTERED;
   }
 
   public static PreRegistration create(
-      String phoneNumberEncrypted, String phoneNumberHash, boolean requiredConsent) {
-    return new PreRegistration(phoneNumberEncrypted, phoneNumberHash, requiredConsent);
+      String phoneNumberEncrypted,
+      String phoneNumberHash,
+      boolean requiredConsent,
+      Long characterizationId) {
+    return new PreRegistration(
+        phoneNumberEncrypted, phoneNumberHash, requiredConsent, characterizationId);
   }
 
   public boolean isRegistered() {
@@ -67,10 +78,14 @@ public class PreRegistration extends BaseEntity {
   }
 
   public void reactivate(
-      String phoneNumberEncrypted, String phoneNumberHash, boolean requiredConsent) {
+      String phoneNumberEncrypted,
+      String phoneNumberHash,
+      boolean requiredConsent,
+      Long characterizationId) {
     this.phoneNumberEncrypted = phoneNumberEncrypted;
     this.phoneNumberHash = phoneNumberHash;
     this.requiredConsent = requiredConsent;
+    this.characterizationId = characterizationId;
     this.status = PreRegistrationStatus.REGISTERED;
   }
 }

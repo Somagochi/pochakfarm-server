@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import com.somagochi.pochakfarm.characterization.infrastructure.persistence.CharacterizationRepository;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.preregistration.domain.PreRegistration;
@@ -33,17 +34,21 @@ class PreRegistrationRegisterServiceTest {
       mock(PreRegistrationRepository.class);
   private final PreRegistrationCryptoService preRegistrationCryptoService =
       mock(PreRegistrationCryptoService.class);
+  private final CharacterizationRepository characterizationRepository =
+      mock(CharacterizationRepository.class);
   private final PreRegistrationRegisterService preRegistrationService =
-      new PreRegistrationRegisterService(preRegistrationRepository, preRegistrationCryptoService);
+      new PreRegistrationRegisterService(
+          preRegistrationRepository, preRegistrationCryptoService, characterizationRepository);
 
   @BeforeEach
   void setUp() {
     given(preRegistrationCryptoService.hash(PHONE)).willReturn(PHONE_HASH);
     given(preRegistrationCryptoService.encrypt(PHONE)).willReturn(PHONE_ENCRYPTED);
+    given(characterizationRepository.existsById(10L)).willReturn(true);
   }
 
   private PreRegistrationRequest request(String phone, Boolean required) {
-    return new PreRegistrationRequest(phone, required);
+    return new PreRegistrationRequest(phone, required, 10L);
   }
 
   private PreRegistration preRegistration(boolean registered) {
@@ -63,7 +68,13 @@ class PreRegistrationRegisterServiceTest {
             .collect(Collectors.toSet());
 
     assertEquals(
-        Set.of("id", "phoneNumberEncrypted", "phoneNumberHash", "requiredConsent", "status"),
+        Set.of(
+            "id",
+            "phoneNumberEncrypted",
+            "phoneNumberHash",
+            "requiredConsent",
+            "characterizationId",
+            "status"),
         fieldNames);
   }
 
@@ -93,6 +104,7 @@ class PreRegistrationRegisterServiceTest {
 
     assertEquals(PHONE_ENCRYPTED, saved.getPhoneNumberEncrypted());
     assertEquals(PHONE_HASH, saved.getPhoneNumberHash());
+    assertEquals(10L, saved.getCharacterizationId());
   }
 
   @Test
@@ -103,7 +115,39 @@ class PreRegistrationRegisterServiceTest {
 
     preRegistrationService.register(request(PHONE, true));
 
-    verify(canceled).reactivate(PHONE_ENCRYPTED, PHONE_HASH, true);
+    verify(canceled).reactivate(PHONE_ENCRYPTED, PHONE_HASH, true, 10L);
+    verify(preRegistrationRepository, never()).save(any());
+  }
+
+  @Test
+  void rejectsWhenCharacterizationIdMissing() {
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () -> preRegistrationService.register(new PreRegistrationRequest(PHONE, true, null)));
+
+    assertEquals(ErrorCode.INVALID_CHARACTERIZATION_ID.getCode(), exception.getCode());
+  }
+
+  @Test
+  void rejectsWhenCharacterizationIdIsNotPositive() {
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () -> preRegistrationService.register(new PreRegistrationRequest(PHONE, true, 0L)));
+
+    assertEquals(ErrorCode.INVALID_CHARACTERIZATION_ID.getCode(), exception.getCode());
+  }
+
+  @Test
+  void rejectsWhenCharacterizationDoesNotExist() {
+    given(characterizationRepository.existsById(10L)).willReturn(false);
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class, () -> preRegistrationService.register(request(PHONE, true)));
+
+    assertEquals(ErrorCode.CHARACTERIZATION_NOT_FOUND.getCode(), exception.getCode());
     verify(preRegistrationRepository, never()).save(any());
   }
 
