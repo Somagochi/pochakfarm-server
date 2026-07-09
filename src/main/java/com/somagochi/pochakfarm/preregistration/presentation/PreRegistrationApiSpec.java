@@ -18,7 +18,7 @@ public interface PreRegistrationApiSpec {
       summary = "사전예약 등록",
       description =
           "출시 알림을 위한 사전예약을 등록한다. 휴대폰 번호당 1회만 등록 가능하며, "
-              + "취소된 번호는 다시 등록할 수 있다. 요청 본문에 characterization_id를 함께 전달한다.")
+              + "취소된 번호는 다시 등록할 수 있다. 요청 본문에 characterizationId를 함께 전달한다.")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "200",
       description = "사전예약 성공")

@@ -264,7 +264,7 @@
             body: JSON.stringify({
               phoneNumber: form.phoneNumber.value,
               requiredConsent: form.requiredConsent.checked,
-              characterization_id: characterPayload.data.characterizationId,
+              characterizationId: characterPayload.data.characterizationId,
             }),
           });
           if (!reservationResponse.ok) {

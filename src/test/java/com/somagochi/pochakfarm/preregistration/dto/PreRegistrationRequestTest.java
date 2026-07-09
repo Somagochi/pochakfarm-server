@@ -10,13 +10,13 @@ class PreRegistrationRequestTest {
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Test
-  void deserializesCharacterizationIdFromSnakeCaseRequestBody() throws Exception {
+  void deserializesCharacterizationIdFromRequestBody() throws Exception {
     String json =
         """
         {
           "phoneNumber": "010-1234-5678",
           "requiredConsent": true,
-          "characterization_id": 10
+          "characterizationId": 10
         }
         """;
 
