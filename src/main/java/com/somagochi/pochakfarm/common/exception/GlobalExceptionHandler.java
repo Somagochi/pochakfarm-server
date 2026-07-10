@@ -1,6 +1,7 @@
 package com.somagochi.pochakfarm.common.exception;
 
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -42,15 +43,15 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(AuthenticationException.class)
   public ResponseEntity<ErrorResponse> handleAuthenticationException(
-      AuthenticationException exception) {
-    logClientError(exception);
+      AuthenticationException exception, HttpServletRequest request) {
+    logAccessError("Authentication required", request, exception);
     return buildResponse(HttpStatus.UNAUTHORIZED.value(), "UNAUTHORIZED", UNAUTHORIZED_MESSAGE);
   }
 
   @ExceptionHandler(AccessDeniedException.class)
   public ResponseEntity<ErrorResponse> handleAccessDeniedException(
-      AccessDeniedException exception) {
-    logClientError(exception);
+      AccessDeniedException exception, HttpServletRequest request) {
+    logAccessError("Access denied", request, exception);
     return buildResponse(HttpStatus.FORBIDDEN.value(), "FORBIDDEN", FORBIDDEN_MESSAGE);
   }
 
@@ -82,7 +83,12 @@ public class GlobalExceptionHandler {
   }
 
   private void logClientError(Exception e) {
-    log.warn("Client error: {}", e.getMessage());
+    log.warn("Client error: {}", e.getMessage(), e);
+  }
+
+  private void logAccessError(String reason, HttpServletRequest request, Exception e) {
+    log.warn(
+        "{}: {} {} ({})", reason, request.getMethod(), request.getRequestURI(), e.getMessage());
   }
 
   private void logServerError(Exception e) {
