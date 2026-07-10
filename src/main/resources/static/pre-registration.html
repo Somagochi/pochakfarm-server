@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>포착팜 사전예약</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #17201a;
+        --muted: #637168;
+        --line: #d8e2d5;
+        --panel: #ffffff;
+        --accent: #16835a;
+        --accent-strong: #0e5f45;
+        --field: #f6f8f3;
+        --danger: #b54030;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--ink);
+        background: #edf3ea;
+      }
+
+      main {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: minmax(320px, 0.9fr) minmax(360px, 1.1fr);
+      }
+
+      .preview {
+        display: grid;
+        align-content: center;
+        gap: 20px;
+        padding: 48px;
+        background: #dfead9;
+        border-right: 1px solid var(--line);
+      }
+
+      .preview h1 {
+        margin: 0;
+        max-width: 520px;
+        font-size: 46px;
+        line-height: 1.05;
+        letter-spacing: 0;
+      }
+
+      .preview p {
+        margin: 0;
+        max-width: 460px;
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.55;
+      }
+
+      .result-frame {
+        width: min(100%, 520px);
+        aspect-ratio: 4 / 5;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #f9fbf7;
+      }
+
+      .result-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .placeholder {
+        padding: 28px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.5;
+      }
+
+      .panel {
+        display: grid;
+        align-content: center;
+        padding: 48px;
+      }
+
+      form {
+        width: min(100%, 520px);
+        display: grid;
+        gap: 18px;
+      }
+
+      label {
+        display: grid;
+        gap: 8px;
+        font-weight: 700;
+      }
+
+      input[type="text"],
+      input[type="tel"],
+      input[type="file"] {
+        width: 100%;
+        min-height: 48px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px 14px;
+        background: var(--field);
+        color: var(--ink);
+        font: inherit;
+      }
+
+      .checks {
+        display: grid;
+        gap: 10px;
+        color: var(--muted);
+      }
+
+      .checks label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 500;
+      }
+
+      button {
+        min-height: 50px;
+        border: 0;
+        border-radius: 8px;
+        background: var(--accent);
+        color: white;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      button:disabled {
+        cursor: wait;
+        background: #87a799;
+      }
+
+      .message {
+        min-height: 24px;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .message.error {
+        color: var(--danger);
+      }
+
+      @media (max-width: 860px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+
+        .preview,
+        .panel {
+          padding: 28px;
+        }
+
+        .preview {
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .preview h1 {
+          font-size: 34px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="preview" aria-label="캐릭터 카드 미리보기">
+        <h1>내 반려동물 카드로 포착팜 사전예약</h1>
+        <p>사진을 올리면 캐릭터 카드 이미지를 생성하고, 같은 화면에서 사전예약까지 완료합니다.</p>
+        <div class="result-frame" id="resultFrame">
+          <div class="placeholder">생성된 캐릭터 카드가 여기에 표시됩니다.</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <form id="reservationForm">
+          <label>
+            동물 이름
+            <input name="animalName" type="text" maxlength="20" placeholder="예: 솜구름" required />
+          </label>
+
+          <label>
+            동물 사진
+            <input name="image" type="file" accept="image/png,image/jpeg,image/webp" required />
+          </label>
+
+          <label>
+            휴대폰 번호
+            <input name="phoneNumber" type="tel" inputmode="numeric" placeholder="01012345678" required />
+          </label>
+
+          <div class="checks">
+            <label>
+              <input name="requiredConsent" type="checkbox" required />
+              개인정보 수집 및 이용에 동의합니다.
+            </label>
+          </div>
+
+          <button type="submit" id="submitButton">카드 생성하고 사전예약</button>
+          <div class="message" id="message" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+    </main>
+
+    <script>
+      const form = document.querySelector("#reservationForm");
+      const button = document.querySelector("#submitButton");
+      const message = document.querySelector("#message");
+      const resultFrame = document.querySelector("#resultFrame");
+
+      function setMessage(text, isError = false) {
+        message.textContent = text;
+        message.classList.toggle("error", isError);
+      }
+
+      function showResult(url) {
+        resultFrame.innerHTML = "";
+        const image = document.createElement("img");
+        image.src = url;
+        image.alt = "생성된 캐릭터 카드";
+        resultFrame.appendChild(image);
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        button.disabled = true;
+        setMessage("이미지 캐릭터화 중입니다.");
+
+        try {
+          const formData = new FormData();
+          formData.append("animalName", form.animalName.value);
+          formData.append("image", form.image.files[0]);
+
+          const characterResponse = await fetch("/api/characterizations/public", {
+            method: "POST",
+            body: formData,
+            credentials: "same-origin",
+          });
+          if (!characterResponse.ok) {
+            throw new Error("이미지 생성에 실패했습니다.");
+          }
+          const characterPayload = await characterResponse.json();
+          showResult(characterPayload.data.resultImageUrl);
+
+          setMessage("사전예약을 저장하는 중입니다.");
+          const reservationResponse = await fetch("/api/pre-registrations", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({
+              phoneNumber: form.phoneNumber.value,
+              requiredConsent: form.requiredConsent.checked,
+              characterizationId: characterPayload.data.characterizationId,
+            }),
+          });
+          if (!reservationResponse.ok) {
+            throw new Error("사전예약 저장에 실패했습니다.");
+          }
+          setMessage("사전예약이 완료되었습니다.");
+        } catch (error) {
+          setMessage(error.message || "요청 처리 중 오류가 발생했습니다.", true);
+        } finally {
+          button.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

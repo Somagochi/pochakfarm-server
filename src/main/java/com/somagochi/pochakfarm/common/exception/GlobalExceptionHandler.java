@@ -1,0 +1,102 @@
+package com.somagochi.pochakfarm.common.exception;
+
+import com.somagochi.pochakfarm.common.security.JwtAuthenticationException;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+
+@Slf4j
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+  private static final String BAD_REQUEST_MESSAGE = "Invalid request";
+  private static final String UNAUTHORIZED_MESSAGE = "Authentication is required";
+  private static final String FORBIDDEN_MESSAGE = "Access is denied";
+  private static final String INTERNAL_SERVER_ERROR_MESSAGE = "Unexpected server error";
+
+  @ExceptionHandler(BusinessException.class)
+  public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException exception) {
+    logByStatus(exception.getStatus(), exception);
+    return buildResponse(exception.getStatus(), exception.getCode(), exception.getMessage());
+  }
+
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
+      IllegalArgumentException exception) {
+    logClientError(exception);
+    return buildResponse(HttpStatus.BAD_REQUEST.value(), "BAD_REQUEST", BAD_REQUEST_MESSAGE);
+  }
+
+  @ExceptionHandler(JwtAuthenticationException.class)
+  public ResponseEntity<ErrorResponse> handleJwtAuthenticationException(
+      JwtAuthenticationException exception) {
+    logByStatus(exception.getStatus(), exception);
+    return buildResponse(exception.getStatus(), exception.getCode(), exception.getErrorMessage());
+  }
+
+  @ExceptionHandler(AuthenticationException.class)
+  public ResponseEntity<ErrorResponse> handleAuthenticationException(
+      AuthenticationException exception, HttpServletRequest request) {
+    logAccessError("Authentication required", request, exception);
+    return buildResponse(HttpStatus.UNAUTHORIZED.value(), "UNAUTHORIZED", UNAUTHORIZED_MESSAGE);
+  }
+
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ErrorResponse> handleAccessDeniedException(
+      AccessDeniedException exception, HttpServletRequest request) {
+    logAccessError("Access denied", request, exception);
+    return buildResponse(HttpStatus.FORBIDDEN.value(), "FORBIDDEN", FORBIDDEN_MESSAGE);
+  }
+
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceededException(
+      MaxUploadSizeExceededException exception) {
+    logClientError(exception);
+    return buildResponse(
+        ErrorCode.FILE_TOO_LARGE.getStatus(),
+        ErrorCode.FILE_TOO_LARGE.getCode(),
+        ErrorCode.FILE_TOO_LARGE.getMessage());
+  }
+
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<ErrorResponse> handleException(Exception exception) {
+    logServerError(exception);
+    return buildResponse(
+        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+        "INTERNAL_SERVER_ERROR",
+        INTERNAL_SERVER_ERROR_MESSAGE);
+  }
+
+  private void logByStatus(int status, Exception e) {
+    if (status >= HttpStatus.INTERNAL_SERVER_ERROR.value()) {
+      logServerError(e);
+    } else {
+      logClientError(e);
+    }
+  }
+
+  private void logClientError(Exception e) {
+    log.warn("Client error: {}", e.getMessage(), e);
+  }
+
+  private void logAccessError(String reason, HttpServletRequest request, Exception e) {
+    log.warn(
+        "{}: {} {} ({})", reason, request.getMethod(), request.getRequestURI(), e.getMessage());
+  }
+
+  private void logServerError(Exception e) {
+    log.error("Server error: {}", e.getMessage(), e);
+  }
+
+  private ResponseEntity<ErrorResponse> buildResponse(int status, String code, String message) {
+    return ResponseEntity.status(HttpStatusCode.valueOf(status))
+        .body(ErrorResponse.of(status, code, message));
+  }
+}

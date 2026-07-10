@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -e
+
+echo "Applying code style before commit..."
+./gradlew spotlessApply
+
+if ! git diff --quiet; then
+	echo
+	echo "Commit blocked: spotlessApply reformatted some files."
+	echo "Review the changes below, 'git add' them, then commit again."
+	git diff --name-only
+	exit 1
+fi

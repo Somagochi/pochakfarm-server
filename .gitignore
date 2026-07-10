@@ -35,3 +35,12 @@ out/
 
 ### VS Code ###
 .vscode/
+/src/main/resources/application-local.yml
+docker-compose.local.yml
+
+.DS_Store
+
+### Logs ###
+/logs/
+/deploy/logs/
+*.log

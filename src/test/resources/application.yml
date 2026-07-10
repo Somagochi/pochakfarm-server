@@ -1,0 +1,43 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+
+app:
+  jwt:
+    secret: 12345678901234567890123456789012
+    access-token-expiration: 1h
+    refresh-token-expiration: 336h
+  social:
+    kakao:
+      base-url: https://kapi.kakao.com
+      user-info-path: /v2/user/me
+    naver:
+      base-url: https://openapi.naver.com
+      user-info-path: /v1/nid/me
+    apple:
+      issuer: https://appleid.apple.com
+      jwks-uri: https://appleid.apple.com/auth/keys
+      audience: com.somagochi.pochakfarm
+    oidc:
+      jwks-cache:
+        ttl: 6h
+        min-refresh-interval: 5m
+  storage:
+    s3:
+      bucket: test-bucket
+      region: ap-northeast-2
+      access-key: test-access-key
+      secret-key: test-secret-key
+      presign-expiration: 5m
+      max-file-size: 10485760
+      allowed-content-types: image/jpeg,image/png,image/webp
+  pre-registration:
+    crypto:
+      encryption-key: 01234567890123456789012345678901
+      hash-key: hash-key-for-pre-registration-phone-number
