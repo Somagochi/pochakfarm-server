@@ -3,9 +3,9 @@ package com.somagochi.pochakfarm.characterization.infrastructure;
 import com.somagochi.pochakfarm.characterization.domain.CardMetadata;
 import com.somagochi.pochakfarm.characterization.domain.CharacterizerClient;
 import com.somagochi.pochakfarm.characterization.domain.CharacterizerResult;
-import com.somagochi.pochakfarm.characterization.infrastructure.dto.CharacterizerErrorResponse;
-import com.somagochi.pochakfarm.characterization.infrastructure.dto.CharacterizerRequest;
-import com.somagochi.pochakfarm.characterization.infrastructure.dto.CharacterizerResponse;
+import com.somagochi.pochakfarm.characterization.infrastructure.dto.HttpCharacterizerErrorResponse;
+import com.somagochi.pochakfarm.characterization.infrastructure.dto.HttpCharacterizerRequest;
+import com.somagochi.pochakfarm.characterization.infrastructure.dto.HttpCharacterizerResponse;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import java.time.Duration;
@@ -48,7 +48,7 @@ public class HttpCharacterizerClient implements CharacterizerClient {
           "characterizer_request_started baseUrl={} sourceImageContentType={}",
           baseUrl,
           sourceImageContentType);
-      CharacterizerResponse response =
+      HttpCharacterizerResponse response =
           restClient
               .post()
               .uri("/internal/characterize")
@@ -57,7 +57,7 @@ public class HttpCharacterizerClient implements CharacterizerClient {
                   createRequestBody(
                       sourceImageBase64, sourceImageContentType, animalName, metadata))
               .retrieve()
-              .body(CharacterizerResponse.class);
+              .body(HttpCharacterizerResponse.class);
       if (response == null
           || !"success".equals(response.status())
           || response.cardImageBase64() == null
@@ -100,8 +100,8 @@ public class HttpCharacterizerClient implements CharacterizerClient {
 
   private ErrorCode resolveCharacterizerError(RestClientResponseException exception) {
     try {
-      CharacterizerErrorResponse errorResponse =
-          exception.getResponseBodyAs(CharacterizerErrorResponse.class);
+      HttpCharacterizerErrorResponse errorResponse =
+          exception.getResponseBodyAs(HttpCharacterizerErrorResponse.class);
       if (errorResponse != null
           && ErrorCode.UNSUPPORTED_CHARACTERIZATION_IMAGE
               .getCode()
@@ -117,12 +117,12 @@ public class HttpCharacterizerClient implements CharacterizerClient {
     return ErrorCode.CHARACTERIZATION_FAILED;
   }
 
-  private CharacterizerRequest createRequestBody(
+  private HttpCharacterizerRequest createRequestBody(
       String sourceImageBase64,
       String sourceImageContentType,
       String animalName,
       CardMetadata metadata) {
-    return new CharacterizerRequest(
+    return new HttpCharacterizerRequest(
         sourceImageBase64,
         sourceImageContentType,
         animalName,

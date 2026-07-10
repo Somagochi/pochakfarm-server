@@ -3,7 +3,7 @@ package com.somagochi.pochakfarm.characterization.infrastructure.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.somagochi.pochakfarm.characterization.domain.CharacterizerResult;
 
-public record CharacterizerResponse(
+public record HttpCharacterizerResponse(
     String status,
     String provider,
     @JsonProperty("content_type") String contentType,

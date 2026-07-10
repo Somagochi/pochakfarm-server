@@ -2,7 +2,7 @@ package com.somagochi.pochakfarm.characterization.infrastructure.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public record CharacterizerRequest(
+public record HttpCharacterizerRequest(
     @JsonProperty("source_image_base64") String sourceImageBase64,
     @JsonProperty("source_image_content_type") String sourceImageContentType,
     @JsonProperty("animal_name") String animalName,
