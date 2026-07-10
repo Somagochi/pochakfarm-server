@@ -4,9 +4,11 @@ import java.time.Duration;
 
 public interface RefreshTokenWhitelist {
 
-  void register(String tokenId, Duration ttl);
+  void register(String subject, String tokenId, Duration ttl);
 
-  boolean contains(String tokenId);
+  boolean contains(String subject, String tokenId);
 
-  void remove(String tokenId);
+  void remove(String subject, String tokenId);
+
+  boolean rotate(String subject, String oldTokenId, String newTokenId, Duration ttl);
 }

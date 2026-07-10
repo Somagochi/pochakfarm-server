@@ -5,6 +5,7 @@ public enum ErrorCode {
   EXPIRED_TOKEN(401, "EXPIRED_TOKEN", "Token has expired"),
   INVALID_TOKEN_TYPE(401, "INVALID_TOKEN_TYPE", "Invalid token type"),
   BLACKLISTED_TOKEN(401, "BLACKLISTED_TOKEN", "Blacklisted token"),
+  REVOKED_REFRESH_TOKEN(401, "REVOKED_REFRESH_TOKEN", "Revoked refresh token"),
   UNSUPPORTED_SOCIAL_PROVIDER(400, "UNSUPPORTED_SOCIAL_PROVIDER", "Unsupported social provider"),
   INVALID_SOCIAL_TOKEN(401, "INVALID_SOCIAL_TOKEN", "Invalid social token"),
   SOCIAL_USER_INFO_FAILED(502, "SOCIAL_USER_INFO_FAILED", "Failed to fetch social user info"),
@@ -17,6 +18,7 @@ public enum ErrorCode {
   FILE_TOO_LARGE(413, "FILE_TOO_LARGE", "File too large"),
   FORBIDDEN_FILE_ACCESS(403, "FORBIDDEN_FILE_ACCESS", "Forbidden file access"),
   INVALID_ANIMAL_NAME(400, "INVALID_ANIMAL_NAME", "Invalid animal name"),
+  CHARACTERIZATION_NOT_FOUND(404, "CHARACTERIZATION_NOT_FOUND", "Characterization not found"),
   CHARACTERIZATION_FAILED(502, "CHARACTERIZATION_FAILED", "Failed to characterize image"),
   CHARACTERIZATION_ALREADY_USED(
       409, "CHARACTERIZATION_ALREADY_USED", "Characterization already used"),
@@ -24,6 +26,7 @@ public enum ErrorCode {
       409, "CHARACTERIZATION_ALREADY_PROCESSING", "Characterization already processing"),
   DEVICE_NOT_FOUND(404, "DEVICE_NOT_FOUND", "Device not found"),
   INVALID_PHONE_NUMBER(400, "INVALID_PHONE_NUMBER", "Invalid phone number"),
+  INVALID_CHARACTERIZATION_ID(400, "INVALID_CHARACTERIZATION_ID", "Invalid characterization id"),
   REQUIRED_CONSENT_REQUIRED(400, "REQUIRED_CONSENT_REQUIRED", "Required consent is missing"),
   PHONE_NUMBER_ALREADY_REGISTERED(
       409, "PHONE_NUMBER_ALREADY_REGISTERED", "Phone number already registered"),

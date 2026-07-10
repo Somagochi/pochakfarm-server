@@ -27,11 +27,18 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
   private static final String[] PUBLIC_GET_ENDPOINTS = {
-    "/actuator/health", "/actuator/health/**", "/actuator/prometheus", "/api/auth/oauth2/**",
+    "/actuator/health",
+    "/actuator/health/**",
+    "/actuator/prometheus",
+    "/api/characterizations/public/*",
+    "/api/auth/oauth2/**"
   };
 
   private static final String[] PUBLIC_POST_ENDPOINTS = {
-    "/api/auth/login", "/api/characterizations", "/api/pre-registrations"
+    "/api/auth/login",
+    "/api/characterizations/public",
+    "/api/pre-registrations",
+    "/api/auth/refresh"
   };
 
   private static final String[] PUBLIC_DELETE_ENDPOINTS = {"/api/pre-registrations"};

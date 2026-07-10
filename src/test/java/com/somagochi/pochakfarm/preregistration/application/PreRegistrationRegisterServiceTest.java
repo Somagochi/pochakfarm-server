@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import com.somagochi.pochakfarm.characterization.infrastructure.persistence.CharacterizationRepository;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.preregistration.domain.PreRegistration;
@@ -19,19 +20,35 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 class PreRegistrationRegisterServiceTest {
 
   private static final String PHONE = "01012345678";
+  private static final String PHONE_HASH = "phone-hash";
+  private static final String PHONE_ENCRYPTED = "phone-encrypted";
 
   private final PreRegistrationRepository preRegistrationRepository =
       mock(PreRegistrationRepository.class);
+  private final PreRegistrationCryptoService preRegistrationCryptoService =
+      mock(PreRegistrationCryptoService.class);
+  private final CharacterizationRepository characterizationRepository =
+      mock(CharacterizationRepository.class);
   private final PreRegistrationRegisterService preRegistrationService =
-      new PreRegistrationRegisterService(preRegistrationRepository);
+      new PreRegistrationRegisterService(
+          preRegistrationRepository, preRegistrationCryptoService, characterizationRepository);
+
+  @BeforeEach
+  void setUp() {
+    given(preRegistrationCryptoService.hash(PHONE)).willReturn(PHONE_HASH);
+    given(preRegistrationCryptoService.encrypt(PHONE)).willReturn(PHONE_ENCRYPTED);
+    given(characterizationRepository.existsById(10L)).willReturn(true);
+  }
 
   private PreRegistrationRequest request(String phone, Boolean required) {
-    return new PreRegistrationRequest(phone, required);
+    return new PreRegistrationRequest(phone, required, 10L);
   }
 
   private PreRegistration preRegistration(boolean registered) {
@@ -51,13 +68,19 @@ class PreRegistrationRegisterServiceTest {
             .collect(Collectors.toSet());
 
     assertEquals(
-        Set.of("id", "phoneNumber", "requiredConsent", "status"),
+        Set.of(
+            "id",
+            "phoneNumberEncrypted",
+            "phoneNumberHash",
+            "requiredConsent",
+            "characterizationId",
+            "status"),
         fieldNames);
   }
 
   @Test
   void registersNewPreRegistration() {
-    given(preRegistrationRepository.findByPhoneNumber(PHONE)).willReturn(Optional.empty());
+    given(preRegistrationRepository.findByPhoneNumberHash(PHONE_HASH)).willReturn(Optional.empty());
     PreRegistration saved = preRegistration(true);
     given(preRegistrationRepository.save(any())).willReturn(saved);
 
@@ -68,13 +91,63 @@ class PreRegistrationRegisterServiceTest {
   }
 
   @Test
-  void reactivatesCanceledRegistrationByPhoneNumber() {
-    PreRegistration canceled = preRegistration(false);
-    given(preRegistrationRepository.findByPhoneNumber(PHONE)).willReturn(Optional.of(canceled));
+  void storesEncryptedPhoneNumberAndHashWithoutPlainPhoneNumber() {
+    given(preRegistrationRepository.findByPhoneNumberHash(PHONE_HASH)).willReturn(Optional.empty());
+    given(preRegistrationRepository.save(any()))
+        .willAnswer(invocation -> invocation.getArgument(0));
 
     preRegistrationService.register(request(PHONE, true));
 
-    verify(canceled).reactivate(PHONE, true);
+    ArgumentCaptor<PreRegistration> captor = ArgumentCaptor.forClass(PreRegistration.class);
+    verify(preRegistrationRepository).save(captor.capture());
+    PreRegistration saved = captor.getValue();
+
+    assertEquals(PHONE_ENCRYPTED, saved.getPhoneNumberEncrypted());
+    assertEquals(PHONE_HASH, saved.getPhoneNumberHash());
+    assertEquals(10L, saved.getCharacterizationId());
+  }
+
+  @Test
+  void reactivatesCanceledRegistrationByPhoneNumber() {
+    PreRegistration canceled = preRegistration(false);
+    given(preRegistrationRepository.findByPhoneNumberHash(PHONE_HASH))
+        .willReturn(Optional.of(canceled));
+
+    preRegistrationService.register(request(PHONE, true));
+
+    verify(canceled).reactivate(PHONE_ENCRYPTED, PHONE_HASH, true, 10L);
+    verify(preRegistrationRepository, never()).save(any());
+  }
+
+  @Test
+  void rejectsWhenCharacterizationIdMissing() {
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () -> preRegistrationService.register(new PreRegistrationRequest(PHONE, true, null)));
+
+    assertEquals(ErrorCode.INVALID_CHARACTERIZATION_ID.getCode(), exception.getCode());
+  }
+
+  @Test
+  void rejectsWhenCharacterizationIdIsNotPositive() {
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () -> preRegistrationService.register(new PreRegistrationRequest(PHONE, true, 0L)));
+
+    assertEquals(ErrorCode.INVALID_CHARACTERIZATION_ID.getCode(), exception.getCode());
+  }
+
+  @Test
+  void rejectsWhenCharacterizationDoesNotExist() {
+    given(characterizationRepository.existsById(10L)).willReturn(false);
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class, () -> preRegistrationService.register(request(PHONE, true)));
+
+    assertEquals(ErrorCode.CHARACTERIZATION_NOT_FOUND.getCode(), exception.getCode());
     verify(preRegistrationRepository, never()).save(any());
   }
 
@@ -99,7 +172,8 @@ class PreRegistrationRegisterServiceTest {
   @Test
   void rejectsAlreadyRegisteredPhoneNumber() {
     PreRegistration registered = preRegistration(true);
-    given(preRegistrationRepository.findByPhoneNumber(PHONE)).willReturn(Optional.of(registered));
+    given(preRegistrationRepository.findByPhoneNumberHash(PHONE_HASH))
+        .willReturn(Optional.of(registered));
 
     BusinessException exception =
         assertThrows(
@@ -110,7 +184,7 @@ class PreRegistrationRegisterServiceTest {
 
   @Test
   void rejectsConcurrentDuplicatePhoneNumber() {
-    given(preRegistrationRepository.findByPhoneNumber(PHONE)).willReturn(Optional.empty());
+    given(preRegistrationRepository.findByPhoneNumberHash(PHONE_HASH)).willReturn(Optional.empty());
     given(preRegistrationRepository.save(any()))
         .willThrow(new org.springframework.dao.DataIntegrityViolationException("duplicate"));
 

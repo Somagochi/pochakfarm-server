@@ -23,7 +23,7 @@ public interface CharacterizationApiSpec {
           "홍보 페이지에서 업로드한 이미지를 반려동물 이름과 함께 캐릭터라이즈한다. "
               + "deviceToken 쿠키가 없으면 같은 요청에서 익명 디바이스를 생성하고 Set-Cookie로 내려준다. "
               + "device별 성공 변환은 1회만 허용하며, FAILED 기록만 있는 경우에는 재시도할 수 있다. "
-              + "Spring 서버가 원본/결과 이미지를 S3에 저장하고 Python 변환 서버는 내부 엔진으로만 호출된다.",
+              + "Spring 서버는 원본 이미지를 저장하지 않고 결과 카드 이미지만 S3에 저장한다.",
       requestBody =
           @io.swagger.v3.oas.annotations.parameters.RequestBody(
               required = true,
@@ -40,7 +40,9 @@ public interface CharacterizationApiSpec {
       example = "dev_0123456789abcdef0123456789abcdef0123456789abcdef")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "200",
-      description = "변환 성공. data.resultImageUrl에 카드 앞면 URL, data.cardBackImageUrl에 카드 뒷면 URL 반환")
+      description =
+          "변환 성공. data.characterizationId에 생성된 캐릭터라이징 ID, "
+              + "data.resultImageUrl에 카드 앞면 URL, data.cardBackImageUrl에 카드 뒷면 URL 반환")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "400",
       description =
@@ -65,4 +67,24 @@ public interface CharacterizationApiSpec {
       @Parameter(hidden = true) MultipartFile image,
       @Parameter(hidden = true) String animalName,
       @Parameter(hidden = true) HttpServletResponse response);
+
+  @Operation(
+      summary = "캐릭터라이징 결과 조회",
+      description =
+          "characterizationId로 성공한 캐릭터라이징 결과를 조회한다. "
+              + "data.resultImageUrl에 카드 앞면 URL, data.cardBackImageUrl에 카드 뒷면 URL을 반환한다.")
+  @Parameter(
+      in = ParameterIn.PATH,
+      name = "characterizationId",
+      required = true,
+      description = "조회할 캐릭터라이징 ID",
+      example = "1")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "200",
+      description = "조회 성공. data.characterizationId, data.resultImageUrl, data.cardBackImageUrl 반환")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "404",
+      description = "해당 ID의 성공한 캐릭터라이징이 없음 (CHARACTERIZATION_NOT_FOUND)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  ApiResponse<CharacterizationResponse> getCharacterization(Long characterizationId);
 }

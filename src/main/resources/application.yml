@@ -125,6 +125,9 @@ app:
         min-refresh-interval: ${secret.social.oidc.jwks-cache.min-refresh-interval}
   pre-registration:
     enabled: ${secret.pre-registration.enabled:true}
+    crypto:
+      encryption-key: ${secret.pre-registration.crypto.encryption-key}
+      hash-key: ${secret.pre-registration.crypto.hash-key}
   characterization:
     device-limit-enabled: ${secret.characterization.device-limit-enabled:false}
   characterizer:

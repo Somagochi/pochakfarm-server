@@ -27,8 +27,6 @@ public class CharacterizationService {
   private static final Set<String> ALLOWED_CONTENT_TYPES =
       Set.of("image/jpeg", "image/png", "image/webp");
   private static final int MAX_ANIMAL_NAME_LENGTH = 6;
-  private static final String ORIGINAL_PURPOSE = "characterization-original";
-  private static final String AI_PURPOSE = "characterization-ai";
   private static final String RESULT_PURPOSE = "characterization-result";
   private static final String BACK_PURPOSE = "characterization-back";
 
@@ -65,32 +63,15 @@ public class CharacterizationService {
     metadata = metadata.withCardNo(formatCardNo(characterization.getId()));
     characterization.cardNoAssigned(metadata.cardNo());
     try {
-      long originalUploadStartedAt = System.nanoTime();
-      PublicUploadResponse original = uploadOriginal(image);
-      log.info(
-          "characterization_original_uploaded key={} elapsedMs={}",
-          original.key(),
-          elapsedMsSince(originalUploadStartedAt));
-      characterization.originalUploaded(original.key());
-
       long characterizerStartedAt = System.nanoTime();
       CharacterizerResult result =
-          characterizerClient.characterize(original.url(), normalizedAnimalName, metadata);
+          characterizerClient.characterize(
+              encodeSourceImage(image), image.getContentType(), normalizedAnimalName, metadata);
       log.info(
           "characterization_python_completed provider={} pythonElapsedMs={} clientElapsedMs={}",
           result.provider(),
           result.elapsedMs(),
           elapsedMsSince(characterizerStartedAt));
-
-      long aiUploadStartedAt = System.nanoTime();
-      byte[] aiImage = decodeBase64Image(result.aiImageBase64());
-      PublicUploadResponse aiUpload =
-          imageUploadService.uploadPublic(AI_PURPOSE, result.contentType(), aiImage);
-      log.info(
-          "characterization_ai_uploaded key={} bytes={} elapsedMs={}",
-          aiUpload.key(),
-          aiImage.length,
-          elapsedMsSince(aiUploadStartedAt));
 
       long resultUploadStartedAt = System.nanoTime();
       byte[] resultImage = decodeCardImage(result);
@@ -112,9 +93,11 @@ public class CharacterizationService {
           backImage.length,
           elapsedMsSince(backUploadStartedAt));
 
-      characterization.succeed(resultUpload.key(), result.provider(), result.elapsedMs());
+      characterization.succeed(
+          resultUpload.key(), backUpload.key(), result.provider(), result.elapsedMs());
       save(characterization);
-      return new CharacterizationResponse(aiUpload.url(), resultUpload.url(), backUpload.url());
+      return new CharacterizationResponse(
+          characterization.getId(), resultUpload.url(), backUpload.url());
     } catch (BusinessException exception) {
       characterization.fail(exception.getCode());
       save(characterization);
@@ -141,10 +124,9 @@ public class CharacterizationService {
     return (System.nanoTime() - startedAtNanos) / 1_000_000;
   }
 
-  private PublicUploadResponse uploadOriginal(MultipartFile image) {
+  private String encodeSourceImage(MultipartFile image) {
     try {
-      return imageUploadService.uploadPublic(
-          ORIGINAL_PURPOSE, image.getContentType(), image.getBytes());
+      return Base64.getEncoder().encodeToString(image.getBytes());
     } catch (IOException exception) {
       throw new BusinessException(ErrorCode.CHARACTERIZATION_FAILED);
     }

@@ -3,14 +3,18 @@ package com.somagochi.pochakfarm.characterization.presentation;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.somagochi.pochakfarm.characterization.application.CharacterizationReadService;
 import com.somagochi.pochakfarm.characterization.application.CharacterizationService;
 import com.somagochi.pochakfarm.characterization.dto.CharacterizationResponse;
 import com.somagochi.pochakfarm.common.config.SecurityConfig;
+import com.somagochi.pochakfarm.common.exception.BusinessException;
+import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.exception.GlobalExceptionHandler;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationFilter;
 import com.somagochi.pochakfarm.common.security.SecurityAccessDeniedHandler;
@@ -53,6 +57,8 @@ class CharacterizationControllerTest {
 
   @MockitoBean private CharacterizationService characterizationService;
 
+  @MockitoBean private CharacterizationReadService characterizationReadService;
+
   @MockitoBean private DeviceService deviceService;
 
   @Test
@@ -64,7 +70,7 @@ class CharacterizationControllerTest {
 
     mockMvc
         .perform(
-            multipart("/api/characterizations")
+            multipart("/api/characterizations/public")
                 .file(image())
                 .param("animalName", "솜구름")
                 .contentType(MediaType.MULTIPART_FORM_DATA))
@@ -74,7 +80,8 @@ class CharacterizationControllerTest {
                 .string(
                     HttpHeaders.SET_COOKIE,
                     org.hamcrest.Matchers.containsString("deviceToken=dev_new")))
-        .andExpect(jsonPath("$.data.aiImageUrl").value("https://cdn.test/ai.png"))
+        .andExpect(jsonPath("$.data.aiImageUrl").doesNotExist())
+        .andExpect(jsonPath("$.data.characterizationId").value(100L))
         .andExpect(jsonPath("$.data.resultImageUrl").value("https://cdn.test/result.png"))
         .andExpect(jsonPath("$.data.cardBackImageUrl").value("https://cdn.test/back.png"));
   }
@@ -88,15 +95,39 @@ class CharacterizationControllerTest {
 
     mockMvc
         .perform(
-            multipart("/api/characterizations")
+            multipart("/api/characterizations/public")
                 .file(image())
                 .param("animalName", "솜구름")
                 .cookie(new Cookie(DeviceTokenCookieFactory.COOKIE_NAME, "dev_abc"))
                 .contentType(MediaType.MULTIPART_FORM_DATA))
         .andExpect(status().isOk())
         .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE))
+        .andExpect(jsonPath("$.data.characterizationId").value(100L))
         .andExpect(jsonPath("$.data.resultImageUrl").value("https://cdn.test/result.png"))
         .andExpect(jsonPath("$.data.cardBackImageUrl").value("https://cdn.test/back.png"));
+  }
+
+  @Test
+  void returnsCharacterizationById() throws Exception {
+    given(characterizationReadService.getCharacterization(100L)).willReturn(response());
+
+    mockMvc
+        .perform(get("/api/characterizations/public/{characterizationId}", 100L))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.characterizationId").value(100L))
+        .andExpect(jsonPath("$.data.resultImageUrl").value("https://cdn.test/result.png"))
+        .andExpect(jsonPath("$.data.cardBackImageUrl").value("https://cdn.test/back.png"));
+  }
+
+  @Test
+  void returnsNotFoundWhenCharacterizationMissing() throws Exception {
+    given(characterizationReadService.getCharacterization(999L))
+        .willThrow(new BusinessException(ErrorCode.CHARACTERIZATION_NOT_FOUND));
+
+    mockMvc
+        .perform(get("/api/characterizations/public/{characterizationId}", 999L))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("CHARACTERIZATION_NOT_FOUND"));
   }
 
   private static MockMultipartFile image() {
@@ -105,7 +136,7 @@ class CharacterizationControllerTest {
 
   private static CharacterizationResponse response() {
     return new CharacterizationResponse(
-        "https://cdn.test/ai.png", "https://cdn.test/result.png", "https://cdn.test/back.png");
+        100L, "https://cdn.test/result.png", "https://cdn.test/back.png");
   }
 
   private static AnonymousDevice device(Long id, String deviceToken) {

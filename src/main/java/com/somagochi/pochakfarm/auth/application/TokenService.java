@@ -77,7 +77,7 @@ public class TokenService {
     String refreshToken =
         jwtHelper.generateToken(
             subject, withReservedClaims(claims, REFRESH_TOKEN_TYPE, tokenId), refreshTokenTtl);
-    refreshTokenWhitelist.register(tokenId, refreshTokenTtl);
+    refreshTokenWhitelist.register(subject, tokenId, refreshTokenTtl);
     return refreshToken;
   }
 
@@ -105,6 +105,34 @@ public class TokenService {
     return payload;
   }
 
+  public void revokeTokens(String accessToken, String refreshToken) {
+    JwtPayload accessPayload = parseAccessToken(accessToken);
+    JwtPayload refreshPayload = parseRefreshToken(refreshToken);
+    if (!accessPayload.subject().equals(refreshPayload.subject())) {
+      throw new JwtAuthenticationException(ErrorCode.TOKEN_OWNER_MISMATCH);
+    }
+    revokeRefreshToken(refreshToken);
+    blacklistToken(accessToken);
+  }
+
+  public TokenResponse refreshTokens(JwtPayload oldRefreshPayload) {
+    String subject = oldRefreshPayload.subject();
+    String accessToken = generateAccessToken(subject);
+    String newRefreshTokenId = UUID.randomUUID().toString();
+    String newRefreshToken =
+        jwtHelper.generateToken(
+            subject,
+            withReservedClaims(Map.of(), REFRESH_TOKEN_TYPE, newRefreshTokenId),
+            refreshTokenTtl);
+    boolean rotated =
+        refreshTokenWhitelist.rotate(
+            subject, oldRefreshPayload.tokenId(), newRefreshTokenId, refreshTokenTtl);
+    if (!rotated) {
+      throw new JwtAuthenticationException(ErrorCode.REVOKED_REFRESH_TOKEN);
+    }
+    return new TokenResponse(accessToken, newRefreshToken);
+  }
+
   public void blacklistToken(String token) {
     JwtPayload payload = parseAccessToken(token);
     Duration ttl = Duration.between(Instant.now(), payload.expiresAt());
@@ -113,7 +141,7 @@ public class TokenService {
 
   public void revokeRefreshToken(String token) {
     JwtPayload payload = parseRefreshToken(token);
-    refreshTokenWhitelist.remove(payload.tokenId());
+    refreshTokenWhitelist.remove(payload.subject(), payload.tokenId());
   }
 
   private JwtPayload parseOrThrow(String token) {

@@ -2,15 +2,17 @@ package com.somagochi.pochakfarm.common.jwt;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import com.somagochi.pochakfarm.auth.application.TokenService;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationException;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationFilter;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationToken;
+import jakarta.servlet.FilterChain;
 import java.time.Instant;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
@@ -22,7 +24,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 class JwtAuthenticationFilterTest {
 
-  private final TokenService tokenService = org.mockito.Mockito.mock(TokenService.class);
+  private final TokenService tokenService = mock(TokenService.class);
   private final JwtAuthenticationFilter jwtAuthenticationFilter =
       new JwtAuthenticationFilter(tokenService);
 
@@ -59,38 +61,34 @@ class JwtAuthenticationFilterTest {
   }
 
   @Test
-  void rejectsRequestWhenAccessTokenIsBlacklisted() throws Exception {
+  void clearsAuthenticationAndContinuesChainWhenAccessTokenIsBlacklisted() throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.addHeader("Authorization", "Bearer blacklisted-token");
     MockHttpServletResponse response = new MockHttpServletResponse();
+    FilterChain filterChain = mock(FilterChain.class);
 
     given(tokenService.verifyAccessToken("blacklisted-token"))
         .willThrow(new JwtAuthenticationException(ErrorCode.BLACKLISTED_TOKEN));
 
-    JwtAuthenticationException thrown =
-        assertThrows(
-            JwtAuthenticationException.class,
-            () -> jwtAuthenticationFilter.doFilter(request, response, new MockFilterChain()));
+    jwtAuthenticationFilter.doFilter(request, response, filterChain);
 
     assertNull(SecurityContextHolder.getContext().getAuthentication());
-    assertEquals(ErrorCode.BLACKLISTED_TOKEN.getCode(), thrown.getCode());
+    verify(filterChain).doFilter(request, response);
   }
 
   @Test
-  void delegatesExceptionResolutionWhenBearerTokenIsInvalid() throws Exception {
+  void clearsAuthenticationAndContinuesChainWhenBearerTokenIsInvalid() throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.addHeader("Authorization", "Bearer invalid-token");
     MockHttpServletResponse response = new MockHttpServletResponse();
-    JwtAuthenticationException exception = new JwtAuthenticationException(ErrorCode.INVALID_TOKEN);
+    FilterChain filterChain = mock(FilterChain.class);
 
-    given(tokenService.verifyAccessToken("invalid-token")).willThrow(exception);
+    given(tokenService.verifyAccessToken("invalid-token"))
+        .willThrow(new JwtAuthenticationException(ErrorCode.INVALID_TOKEN));
 
-    JwtAuthenticationException thrown =
-        assertThrows(
-            JwtAuthenticationException.class,
-            () -> jwtAuthenticationFilter.doFilter(request, response, new MockFilterChain()));
+    jwtAuthenticationFilter.doFilter(request, response, filterChain);
 
     assertNull(SecurityContextHolder.getContext().getAuthentication());
-    assertEquals(ErrorCode.INVALID_TOKEN.getCode(), thrown.getCode());
+    verify(filterChain).doFilter(request, response);
   }
 }
