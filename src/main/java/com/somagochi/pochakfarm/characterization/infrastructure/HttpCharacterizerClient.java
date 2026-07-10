@@ -1,6 +1,8 @@
 package com.somagochi.pochakfarm.characterization.infrastructure;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.somagochi.pochakfarm.characterization.domain.CardMetadata;
 import com.somagochi.pochakfarm.characterization.domain.CharacterizerClient;
 import com.somagochi.pochakfarm.characterization.domain.CharacterizerResult;
@@ -14,6 +16,7 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
 @Component
 @Slf4j
@@ -21,6 +24,7 @@ public class HttpCharacterizerClient implements CharacterizerClient {
 
   private final RestClient restClient;
   private final String baseUrl;
+  private final ObjectMapper objectMapper = new ObjectMapper();
 
   public HttpCharacterizerClient(
       @Value("${app.characterizer.base-url:http://localhost:8000}") String baseUrl,
@@ -71,6 +75,16 @@ public class HttpCharacterizerClient implements CharacterizerClient {
           response.elapsedMs(),
           elapsedMsSince(startedAt));
       return response.toResult();
+    } catch (RestClientResponseException exception) {
+      ErrorCode errorCode = resolveCharacterizerError(exception.getResponseBodyAsString());
+      log.warn(
+          "characterizer_request_failed baseUrl={} elapsedMs={} status={} errorCode={} exception={}",
+          baseUrl,
+          elapsedMsSince(startedAt),
+          exception.getStatusCode().value(),
+          errorCode.getCode(),
+          exception.getClass().getSimpleName());
+      throw new BusinessException(errorCode);
     } catch (RestClientException exception) {
       log.warn(
           "characterizer_request_failed baseUrl={} elapsedMs={} exception={}",
@@ -83,6 +97,21 @@ public class HttpCharacterizerClient implements CharacterizerClient {
 
   private long elapsedMsSince(long startedAtNanos) {
     return (System.nanoTime() - startedAtNanos) / 1_000_000;
+  }
+
+  private ErrorCode resolveCharacterizerError(String responseBody) {
+    try {
+      HttpCharacterizationErrorResponse errorResponse =
+          objectMapper.readValue(responseBody, HttpCharacterizationErrorResponse.class);
+      if (ErrorCode.UNSUPPORTED_CHARACTERIZATION_IMAGE
+          .getCode()
+          .equals(errorResponse.errorCode())) {
+        return ErrorCode.UNSUPPORTED_CHARACTERIZATION_IMAGE;
+      }
+    } catch (JsonProcessingException exception) {
+      log.debug("characterizer_error_response_parse_failed body={}", responseBody, exception);
+    }
+    return ErrorCode.CHARACTERIZATION_FAILED;
   }
 
   private HttpCharacterizationRequest createRequestBody(
@@ -116,6 +145,9 @@ public class HttpCharacterizerClient implements CharacterizerClient {
       @JsonProperty("skill_2_name") String skill2Name,
       @JsonProperty("skill_2_description") String skill2Description,
       @JsonProperty("card_no") String cardNo) {}
+
+  private record HttpCharacterizationErrorResponse(
+      String status, @JsonProperty("error_code") String errorCode, String message) {}
 
   private record HttpCharacterizationResponse(
       String status,
