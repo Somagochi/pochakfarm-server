@@ -62,8 +62,7 @@ class ShareControllerTest {
                 .string(Matchers.containsString("<meta property=\"og:type\" content=\"website\"")))
         .andExpect(
             content()
-                .string(
-                    Matchers.containsString("<meta property=\"og:title\" content=\"POCHAKFARM\"")))
+                .string(Matchers.containsString("<meta property=\"og:title\" content=\"포착팜\"")))
         .andExpect(
             content().string(Matchers.containsString("content=\"https://cdn.test/result.png\"")))
         .andExpect(
