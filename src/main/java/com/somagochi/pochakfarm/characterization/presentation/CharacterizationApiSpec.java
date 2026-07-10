@@ -46,7 +46,12 @@ public interface CharacterizationApiSpec {
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "400",
       description =
-          "빈 파일(EMPTY_FILE), 지원하지 않는 이미지 형식(UNSUPPORTED_CONTENT_TYPE), 또는 비어 있거나 6글자를 초과한 animalName(INVALID_ANIMAL_NAME)",
+          "빈 파일(EMPTY_FILE), 지원하지 않는 이미지 형식(UNSUPPORTED_CONTENT_TYPE), "
+              + "또는 비어 있거나 6글자를 초과한 animalName(INVALID_ANIMAL_NAME)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "422",
+      description = "이미지 내용상 캐릭터라이징 변환이 불가능함 (UNSUPPORTED_CHARACTERIZATION_IMAGE)",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "404",
