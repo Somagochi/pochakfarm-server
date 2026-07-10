@@ -31,7 +31,8 @@ public class SecurityConfig {
     "/actuator/health/**",
     "/actuator/prometheus",
     "/api/characterizations/public/*",
-    "/api/auth/oauth2/**"
+    "/api/auth/oauth2/**",
+    "/share/**"
   };
 
   private static final String[] PUBLIC_POST_ENDPOINTS = {
