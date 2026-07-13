@@ -44,7 +44,7 @@ public class HttpCharacterizerClient implements CharacterizerClient {
       CardMetadata metadata) {
     long startedAt = System.nanoTime();
     try {
-      log.info(
+      log.debug(
           "characterizer_request_started baseUrl={} sourceImageContentType={}",
           baseUrl,
           sourceImageContentType);
@@ -68,7 +68,7 @@ public class HttpCharacterizerClient implements CharacterizerClient {
           || response.contentType().isBlank()) {
         throw new BusinessException(ErrorCode.CHARACTERIZATION_FAILED);
       }
-      log.info(
+      log.debug(
           "characterizer_request_succeeded provider={} pythonElapsedMs={} clientElapsedMs={}",
           response.provider(),
           response.elapsedMs(),
