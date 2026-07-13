@@ -63,6 +63,21 @@ class DeviceServiceTest {
   }
 
   @Test
+  void issuesAnonymousDeviceWhenTokenNotFound() {
+    given(deviceRepository.findByDeviceToken("dev_missing")).willReturn(Optional.empty());
+    given(deviceTokenGenerator.generate()).willReturn("dev_new");
+    AnonymousDevice saved = AnonymousDevice.issue("dev_new");
+    given(deviceRepository.save(argThat(device -> device.getDeviceToken().equals("dev_new"))))
+        .willReturn(saved);
+
+    DeviceService.DeviceResolution resolution = deviceService.resolveOrIssue("dev_missing");
+
+    assertSame(saved, resolution.device());
+    assertEquals(true, resolution.issued());
+    verify(deviceRepository).save(argThat(device -> device.getDeviceToken().equals("dev_new")));
+  }
+
+  @Test
   void resolvesExistingDeviceWhenTokenIsPresent() {
     AnonymousDevice device = mock(AnonymousDevice.class);
     given(deviceRepository.findByDeviceToken("dev_abc")).willReturn(Optional.of(device));
