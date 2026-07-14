@@ -123,7 +123,7 @@ class CharacterizationControllerTest {
         .andExpect(jsonPath("$.data.characterizationId").value(100L))
         .andExpect(jsonPath("$.data.status").value("SUCCEEDED"))
         .andExpect(jsonPath("$.data.resultImageUrl").value("https://cdn.test/result.png"))
-        .andExpect(jsonPath("$.data.cardType").doesNotExist())
+        .andExpect(jsonPath("$.data.cardType").value("SKY"))
         .andExpect(jsonPath("$.data.cardBackImageUrl").doesNotExist());
   }
 
@@ -148,7 +148,7 @@ class CharacterizationControllerTest {
 
   private static CharacterizationResponse resultResponse() {
     return new CharacterizationResponse(
-        100L, CharacterizationStatus.SUCCEEDED, "https://cdn.test/result.png", null);
+        100L, CharacterizationStatus.SUCCEEDED, "https://cdn.test/result.png", CardType.SKY, null);
   }
 
   private static AnonymousDevice device(Long id, String deviceToken) {
