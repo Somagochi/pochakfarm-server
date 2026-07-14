@@ -1,10 +1,8 @@
 package com.somagochi.pochakfarm.characterization.application;
 
 import com.somagochi.pochakfarm.characterization.domain.CardMetadata;
-import com.somagochi.pochakfarm.characterization.domain.Characterization;
 import com.somagochi.pochakfarm.characterization.domain.CharacterizerClient;
 import com.somagochi.pochakfarm.characterization.domain.CharacterizerResult;
-import com.somagochi.pochakfarm.characterization.infrastructure.persistence.CharacterizationRepository;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.storage.application.ImageUploadService;
@@ -13,7 +11,6 @@ import java.util.Base64;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
@@ -21,31 +18,26 @@ public class CharacterizationAsyncService {
 
   private static final String RESULT_PURPOSE = "characterization-result";
 
-  private final CharacterizationRepository characterizationRepository;
   private final CharacterizerClient characterizerClient;
   private final ImageUploadService imageUploadService;
+  private final CharacterizationStatusService characterizationStatusService;
 
   public CharacterizationAsyncService(
-      CharacterizationRepository characterizationRepository,
       CharacterizerClient characterizerClient,
-      ImageUploadService imageUploadService) {
-    this.characterizationRepository = characterizationRepository;
+      ImageUploadService imageUploadService,
+      CharacterizationStatusService characterizationStatusService) {
     this.characterizerClient = characterizerClient;
     this.imageUploadService = imageUploadService;
+    this.characterizationStatusService = characterizationStatusService;
   }
 
   @Async
-  @Transactional
   public void characterizeAsync(
       Long characterizationId,
       byte[] sourceImage,
       String sourceImageContentType,
       String animalName,
       CardMetadata metadata) {
-    Characterization characterization =
-        characterizationRepository
-            .findById(characterizationId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.CHARACTERIZATION_NOT_FOUND));
     try {
       long characterizerStartedAt = System.nanoTime();
       CharacterizerResult result =
@@ -69,9 +61,10 @@ public class CharacterizationAsyncService {
           resultImage.length,
           elapsedMsSince(resultUploadStartedAt));
 
-      characterization.succeed(resultUpload.key(), result.provider(), result.elapsedMs());
+      characterizationStatusService.succeed(
+          characterizationId, resultUpload.key(), result.provider(), result.elapsedMs());
     } catch (BusinessException exception) {
-      characterization.fail(exception.getCode());
+      characterizationStatusService.fail(characterizationId, exception.getCode());
       log.warn(
           "characterization_async_failed id={} errorCode={} message={}",
           characterizationId,
@@ -79,7 +72,8 @@ public class CharacterizationAsyncService {
           exception.getMessage(),
           exception);
     } catch (RuntimeException exception) {
-      characterization.fail(ErrorCode.CHARACTERIZATION_FAILED.getCode());
+      characterizationStatusService.fail(
+          characterizationId, ErrorCode.CHARACTERIZATION_FAILED.getCode());
       log.warn(
           "characterization_async_failed id={} errorCode={} exception={} message={}",
           characterizationId,
