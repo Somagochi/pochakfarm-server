@@ -73,16 +73,20 @@ public class CharacterizationAsyncService {
     } catch (BusinessException exception) {
       characterization.fail(exception.getCode());
       log.warn(
-          "characterization_async_failed id={} errorCode={}",
+          "characterization_async_failed id={} errorCode={} message={}",
           characterizationId,
-          exception.getCode());
+          exception.getCode(),
+          exception.getMessage(),
+          exception);
     } catch (RuntimeException exception) {
       characterization.fail(ErrorCode.CHARACTERIZATION_FAILED.getCode());
       log.warn(
-          "characterization_async_failed id={} errorCode={} exception={}",
+          "characterization_async_failed id={} errorCode={} exception={} message={}",
           characterizationId,
           ErrorCode.CHARACTERIZATION_FAILED.getCode(),
-          exception.getClass().getSimpleName());
+          exception.getClass().getSimpleName(),
+          exception.getMessage(),
+          exception);
     }
   }
 
