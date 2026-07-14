@@ -30,7 +30,7 @@ class CharacterizationReadServiceTest {
 
   @Test
   void returnsResultUrlForSucceededCharacterization() {
-    Characterization characterization = succeeded("front-key", "back-key");
+    Characterization characterization = succeeded("front-key");
     given(characterizationRepository.findById(1L)).willReturn(Optional.of(characterization));
     given(fileStorage.buildUrl("front-key")).willReturn("https://cdn.test/front.png");
 
@@ -76,7 +76,7 @@ class CharacterizationReadServiceTest {
     assertEquals(ErrorCode.CHARACTERIZATION_NOT_FOUND.getCode(), exception.getCode());
   }
 
-  private static Characterization succeeded(String resultImageKey, String cardBackImageKey) {
+  private static Characterization succeeded(String resultImageKey) {
     CardMetadata metadata =
         new CardMetadata(
             CardType.SKY, 82, CardSkill.SKY_CLOUD_JUMP, CardSkill.SKY_WIND_DASH, "001");

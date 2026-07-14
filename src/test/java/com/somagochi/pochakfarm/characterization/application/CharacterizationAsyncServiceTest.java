@@ -57,7 +57,6 @@ class CharacterizationAsyncServiceTest {
 
     assertEquals(CharacterizationStatus.SUCCEEDED, characterization.getStatus());
     assertEquals("public/result.png", characterization.getResultImageKey());
-    assertEquals(null, characterization.getCardBackImageKey());
     verify(imageUploadService, never()).uploadPublic(eq("characterization-back"), any(), any());
   }
 

@@ -50,9 +50,6 @@ public class Characterization extends BaseEntity {
   @Column(name = "result_image_key")
   private String resultImageKey;
 
-  @Column(name = "card_back_image_key")
-  private String cardBackImageKey;
-
   @Column(name = "provider")
   private String provider;
 
@@ -87,7 +84,6 @@ public class Characterization extends BaseEntity {
 
   public void succeed(String resultImageKey, String provider, Integer elapsedMs) {
     this.resultImageKey = resultImageKey;
-    this.cardBackImageKey = null;
     this.provider = provider;
     this.elapsedMs = elapsedMs;
     this.status = CharacterizationStatus.SUCCEEDED;
