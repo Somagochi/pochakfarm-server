@@ -11,7 +11,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.somagochi.pochakfarm.characterization.application.CharacterizationReadService;
 import com.somagochi.pochakfarm.characterization.application.CharacterizationService;
+import com.somagochi.pochakfarm.characterization.domain.CardType;
+import com.somagochi.pochakfarm.characterization.domain.CharacterizationStatus;
 import com.somagochi.pochakfarm.characterization.dto.CharacterizationResponse;
+import com.somagochi.pochakfarm.characterization.dto.CharacterizationStartResponse;
 import com.somagochi.pochakfarm.common.config.SecurityConfig;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
@@ -82,8 +85,10 @@ class CharacterizationControllerTest {
                     org.hamcrest.Matchers.containsString("deviceToken=dev_new")))
         .andExpect(jsonPath("$.data.aiImageUrl").doesNotExist())
         .andExpect(jsonPath("$.data.characterizationId").value(100L))
-        .andExpect(jsonPath("$.data.resultImageUrl").value("https://cdn.test/result.png"))
-        .andExpect(jsonPath("$.data.cardBackImageUrl").value("https://cdn.test/back.png"));
+        .andExpect(jsonPath("$.data.status").value("PROCESSING"))
+        .andExpect(jsonPath("$.data.cardType").value("SKY"))
+        .andExpect(jsonPath("$.data.resultImageUrl").doesNotExist())
+        .andExpect(jsonPath("$.data.cardBackImageUrl").doesNotExist());
   }
 
   @Test
@@ -103,20 +108,23 @@ class CharacterizationControllerTest {
         .andExpect(status().isOk())
         .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE))
         .andExpect(jsonPath("$.data.characterizationId").value(100L))
-        .andExpect(jsonPath("$.data.resultImageUrl").value("https://cdn.test/result.png"))
-        .andExpect(jsonPath("$.data.cardBackImageUrl").value("https://cdn.test/back.png"));
+        .andExpect(jsonPath("$.data.status").value("PROCESSING"))
+        .andExpect(jsonPath("$.data.cardType").value("SKY"))
+        .andExpect(jsonPath("$.data.cardBackImageUrl").doesNotExist());
   }
 
   @Test
   void returnsCharacterizationById() throws Exception {
-    given(characterizationReadService.getCharacterization(100L)).willReturn(response());
+    given(characterizationReadService.getCharacterization(100L)).willReturn(resultResponse());
 
     mockMvc
         .perform(get("/api/characterizations/public/{characterizationId}", 100L))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.characterizationId").value(100L))
+        .andExpect(jsonPath("$.data.status").value("SUCCEEDED"))
         .andExpect(jsonPath("$.data.resultImageUrl").value("https://cdn.test/result.png"))
-        .andExpect(jsonPath("$.data.cardBackImageUrl").value("https://cdn.test/back.png"));
+        .andExpect(jsonPath("$.data.cardType").doesNotExist())
+        .andExpect(jsonPath("$.data.cardBackImageUrl").doesNotExist());
   }
 
   @Test
@@ -134,9 +142,13 @@ class CharacterizationControllerTest {
     return new MockMultipartFile("image", "animal.png", "image/png", "fake-image".getBytes());
   }
 
-  private static CharacterizationResponse response() {
+  private static CharacterizationStartResponse response() {
+    return new CharacterizationStartResponse(100L, CharacterizationStatus.PROCESSING, CardType.SKY);
+  }
+
+  private static CharacterizationResponse resultResponse() {
     return new CharacterizationResponse(
-        100L, "https://cdn.test/result.png", "https://cdn.test/back.png");
+        100L, CharacterizationStatus.SUCCEEDED, "https://cdn.test/result.png", null);
   }
 
   private static AnonymousDevice device(Long id, String deviceToken) {

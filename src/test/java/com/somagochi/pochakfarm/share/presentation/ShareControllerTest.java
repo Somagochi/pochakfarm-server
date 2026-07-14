@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.somagochi.pochakfarm.characterization.application.CharacterizationReadService;
+import com.somagochi.pochakfarm.characterization.domain.CharacterizationStatus;
 import com.somagochi.pochakfarm.characterization.dto.CharacterizationResponse;
 import com.somagochi.pochakfarm.common.config.SecurityConfig;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
@@ -48,7 +49,7 @@ class ShareControllerTest {
     BDDMockito.given(characterizationReadService.getCharacterization(100L))
         .willReturn(
             new CharacterizationResponse(
-                100L, "https://cdn.test/result.png", "https://cdn.test/back.png"));
+                100L, CharacterizationStatus.SUCCEEDED, "https://cdn.test/result.png", null));
 
     mockMvc
         .perform(
