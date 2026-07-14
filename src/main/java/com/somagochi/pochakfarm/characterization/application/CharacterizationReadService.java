@@ -32,6 +32,7 @@ public class CharacterizationReadService {
         characterization.getId(),
         characterization.getStatus(),
         resultImageUrl,
+        characterization.getCardType(),
         characterization.getFailureReason());
   }
 
