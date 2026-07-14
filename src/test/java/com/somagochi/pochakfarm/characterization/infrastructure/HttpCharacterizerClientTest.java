@@ -41,7 +41,6 @@ class HttpCharacterizerClientTest {
           "provider": "codex_exec",
           "content_type": "image/png",
           "card_image_base64": "Y2FyZA==",
-          "card_back_image_base64": "YmFjaw==",
           "elapsed_ms": 123
         }
         """);
@@ -55,7 +54,6 @@ class HttpCharacterizerClientTest {
     assertEquals("codex_exec", result.provider());
     assertEquals("image/png", result.contentType());
     assertEquals("Y2FyZA==", result.cardImageBase64());
-    assertEquals("YmFjaw==", result.cardBackImageBase64());
     assertEquals(123, result.elapsedMs());
     assertTrue(requestBody.contains("\"source_image_base64\":\"b3JpZ2luYWw=\""));
     assertTrue(requestBody.contains("\"source_image_content_type\":\"image/png\""));

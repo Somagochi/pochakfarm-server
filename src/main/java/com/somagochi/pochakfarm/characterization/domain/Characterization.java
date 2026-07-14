@@ -85,10 +85,9 @@ public class Characterization extends BaseEntity {
     this.cardNo = cardNo;
   }
 
-  public void succeed(
-      String resultImageKey, String cardBackImageKey, String provider, Integer elapsedMs) {
+  public void succeed(String resultImageKey, String provider, Integer elapsedMs) {
     this.resultImageKey = resultImageKey;
-    this.cardBackImageKey = cardBackImageKey;
+    this.cardBackImageKey = null;
     this.provider = provider;
     this.elapsedMs = elapsedMs;
     this.status = CharacterizationStatus.SUCCEEDED;
