@@ -130,6 +130,10 @@ app:
       hash-key: ${secret.pre-registration.crypto.hash-key}
   characterization:
     device-limit-enabled: ${secret.characterization.device-limit-enabled:false}
+    reaper:
+      enabled: ${secret.characterization.reaper.enabled:true}
+      interval: ${secret.characterization.reaper.interval:PT1M}
+      stale-threshold: ${secret.characterization.reaper.stale-threshold:PT15M}
   promotion:
     base-url: ${secret.promotion.base-url}
   characterizer:
