@@ -62,8 +62,6 @@ public class HttpCharacterizerClient implements CharacterizerClient {
           || !"success".equals(response.status())
           || response.cardImageBase64() == null
           || response.cardImageBase64().isBlank()
-          || response.cardBackImageBase64() == null
-          || response.cardBackImageBase64().isBlank()
           || response.contentType() == null
           || response.contentType().isBlank()) {
         throw new BusinessException(ErrorCode.CHARACTERIZATION_FAILED);

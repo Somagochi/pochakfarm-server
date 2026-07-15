@@ -5,11 +5,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.somagochi.pochakfarm.characterization.application.CharacterizationReadService;
+import com.somagochi.pochakfarm.characterization.domain.CardType;
+import com.somagochi.pochakfarm.characterization.domain.CharacterizationStatus;
 import com.somagochi.pochakfarm.characterization.dto.CharacterizationResponse;
 import com.somagochi.pochakfarm.common.config.SecurityConfig;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.exception.GlobalExceptionHandler;
+import com.somagochi.pochakfarm.common.properties.PromotionProperties;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationFilter;
 import com.somagochi.pochakfarm.common.security.SecurityAccessDeniedHandler;
 import com.somagochi.pochakfarm.common.security.SecurityAuthenticationEntryPoint;
@@ -48,7 +51,11 @@ class ShareControllerTest {
     BDDMockito.given(characterizationReadService.getCharacterization(100L))
         .willReturn(
             new CharacterizationResponse(
-                100L, "https://cdn.test/result.png", "https://cdn.test/back.png"));
+                100L,
+                CharacterizationStatus.SUCCEEDED,
+                "https://cdn.test/result.png",
+                CardType.SKY,
+                null));
 
     mockMvc
         .perform(
@@ -70,11 +77,8 @@ class ShareControllerTest {
                 .string(
                     Matchers.containsString(
                         "content=\"https://share.pochakfarm.com/share/characterizations/100\"")))
-        .andExpect(
-            content()
-                .string(
-                    Matchers.containsString(
-                        "https://pochakfarm-promotion.vercel.app/result?characterization_id=")));
+        .andExpect(content().string(Matchers.containsString("pochakfarm-promotion.vercel.app")))
+        .andExpect(content().string(Matchers.containsString("characterization_id=100")));
   }
 
   @Test
@@ -89,6 +93,11 @@ class ShareControllerTest {
 
   @TestConfiguration
   static class TestConfig {
+
+    @Bean
+    PromotionProperties promotionProperties() {
+      return new PromotionProperties("https://pochakfarm-promotion.vercel.app");
+    }
 
     @Bean
     JwtAuthenticationFilter jwtAuthenticationFilter() {

@@ -1,7 +1,6 @@
 package com.somagochi.pochakfarm.characterization.application;
 
 import com.somagochi.pochakfarm.characterization.domain.Characterization;
-import com.somagochi.pochakfarm.characterization.domain.CharacterizationStatus;
 import com.somagochi.pochakfarm.characterization.dto.CharacterizationResponse;
 import com.somagochi.pochakfarm.characterization.infrastructure.persistence.CharacterizationRepository;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
@@ -28,12 +27,13 @@ public class CharacterizationReadService {
         characterizationRepository
             .findById(characterizationId)
             .orElseThrow(() -> new BusinessException(ErrorCode.CHARACTERIZATION_NOT_FOUND));
-    if (characterization.getStatus() != CharacterizationStatus.SUCCEEDED) {
-      throw new BusinessException(ErrorCode.CHARACTERIZATION_NOT_FOUND);
-    }
     String resultImageUrl = buildUrlOrNull(characterization.getResultImageKey());
-    String cardBackImageUrl = buildUrlOrNull(characterization.getCardBackImageKey());
-    return new CharacterizationResponse(characterization.getId(), resultImageUrl, cardBackImageUrl);
+    return new CharacterizationResponse(
+        characterization.getId(),
+        characterization.getStatus(),
+        resultImageUrl,
+        characterization.getCardType(),
+        characterization.getFailureReason());
   }
 
   private String buildUrlOrNull(String key) {

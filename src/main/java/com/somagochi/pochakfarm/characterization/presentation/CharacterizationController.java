@@ -3,6 +3,7 @@ package com.somagochi.pochakfarm.characterization.presentation;
 import com.somagochi.pochakfarm.characterization.application.CharacterizationReadService;
 import com.somagochi.pochakfarm.characterization.application.CharacterizationService;
 import com.somagochi.pochakfarm.characterization.dto.CharacterizationResponse;
+import com.somagochi.pochakfarm.characterization.dto.CharacterizationStartResponse;
 import com.somagochi.pochakfarm.common.response.ApiResponse;
 import com.somagochi.pochakfarm.device.application.DeviceService;
 import com.somagochi.pochakfarm.device.application.DeviceService.DeviceResolution;
@@ -32,7 +33,7 @@ public class CharacterizationController implements CharacterizationApiSpec {
 
   @Override
   @PostMapping(value = "/public", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  public ApiResponse<CharacterizationResponse> characterize(
+  public ApiResponse<CharacterizationStartResponse> characterize(
       @CookieValue(value = DeviceTokenCookieFactory.COOKIE_NAME, required = false)
           String deviceToken,
       @RequestParam("image") MultipartFile image,

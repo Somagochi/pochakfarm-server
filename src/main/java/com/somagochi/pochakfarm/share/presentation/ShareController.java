@@ -2,6 +2,7 @@ package com.somagochi.pochakfarm.share.presentation;
 
 import com.somagochi.pochakfarm.characterization.application.CharacterizationReadService;
 import com.somagochi.pochakfarm.characterization.dto.CharacterizationResponse;
+import com.somagochi.pochakfarm.common.properties.PromotionProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -17,6 +18,7 @@ import org.springframework.web.servlet.ModelAndView;
 public class ShareController {
 
   private final CharacterizationReadService characterizationReadService;
+  private final PromotionProperties promotionProperties;
 
   @GetMapping("/characterizations/{characterizationId}")
   public ModelAndView share(@PathVariable Long characterizationId, HttpServletRequest request) {
@@ -26,8 +28,12 @@ public class ShareController {
     ModelAndView modelAndView = new ModelAndView("share/characterization");
     modelAndView.addObject("imageUrl", characterization.resultImageUrl());
     modelAndView.addObject("pageUrl", buildOgUrl(request, characterizationId));
-    modelAndView.addObject("characterizationId", characterizationId);
+    modelAndView.addObject("redirectUrl", buildRedirectUrl(characterizationId));
     return modelAndView;
+  }
+
+  private String buildRedirectUrl(Long characterizationId) {
+    return promotionProperties.baseUrl() + "/result?characterization_id=" + characterizationId;
   }
 
   private String buildOgUrl(HttpServletRequest request, Long characterizationId) {

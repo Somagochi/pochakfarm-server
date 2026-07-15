@@ -2,6 +2,7 @@ package com.somagochi.pochakfarm.characterization.presentation;
 
 import com.somagochi.pochakfarm.characterization.dto.CharacterizationRequestDoc;
 import com.somagochi.pochakfarm.characterization.dto.CharacterizationResponse;
+import com.somagochi.pochakfarm.characterization.dto.CharacterizationStartResponse;
 import com.somagochi.pochakfarm.common.exception.ErrorResponse;
 import com.somagochi.pochakfarm.common.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,8 +42,8 @@ public interface CharacterizationApiSpec {
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "200",
       description =
-          "변환 성공. data.characterizationId에 생성된 캐릭터라이징 ID, "
-              + "data.resultImageUrl에 카드 앞면 URL, data.cardBackImageUrl에 카드 뒷면 URL 반환")
+          "변환 작업 접수 성공. data.characterizationId에 생성된 캐릭터라이징 ID, "
+              + "data.status에 작업 상태, data.cardType에 카드 뒷면 리소스 매칭용 카드 타입 반환")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "400",
       description =
@@ -67,7 +68,11 @@ public interface CharacterizationApiSpec {
       responseCode = "502",
       description = "Python 변환 서버 호출 실패, 실패 응답, 또는 결과 이미지 디코딩/업로드 실패 (CHARACTERIZATION_FAILED)",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-  ApiResponse<CharacterizationResponse> characterize(
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "503",
+      description = "변환 처리 큐가 가득 차 요청을 접수할 수 없음. 잠시 후 재시도 필요 (CHARACTERIZATION_BUSY)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  ApiResponse<CharacterizationStartResponse> characterize(
       String deviceToken,
       @Parameter(hidden = true) MultipartFile image,
       @Parameter(hidden = true) String animalName,
@@ -76,8 +81,11 @@ public interface CharacterizationApiSpec {
   @Operation(
       summary = "캐릭터라이징 결과 조회",
       description =
-          "characterizationId로 성공한 캐릭터라이징 결과를 조회한다. "
-              + "data.resultImageUrl에 카드 앞면 URL, data.cardBackImageUrl에 카드 뒷면 URL을 반환한다.")
+          "characterizationId로 캐릭터라이징 작업 상태와 결과를 조회한다. "
+              + "PROCESSING이면 진행 중 상태, SUCCEEDED이면 data.resultImageUrl, "
+              + "FAILED이면 data.failureReason을 반환한다. "
+              + "일정 시간 이상 PROCESSING에 고착된 작업은 서버가 FAILED로 정리하며, "
+              + "이 경우 data.failureReason은 CHARACTERIZATION_TIMED_OUT이다.")
   @Parameter(
       in = ParameterIn.PATH,
       name = "characterizationId",
@@ -86,10 +94,11 @@ public interface CharacterizationApiSpec {
       example = "1")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "200",
-      description = "조회 성공. data.characterizationId, data.resultImageUrl, data.cardBackImageUrl 반환")
+      description =
+          "조회 성공. data.characterizationId, data.status, data.resultImageUrl, data.failureReason 반환")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "404",
-      description = "해당 ID의 성공한 캐릭터라이징이 없음 (CHARACTERIZATION_NOT_FOUND)",
+      description = "해당 ID의 캐릭터라이징이 없음 (CHARACTERIZATION_NOT_FOUND)",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   ApiResponse<CharacterizationResponse> getCharacterization(Long characterizationId);
 }

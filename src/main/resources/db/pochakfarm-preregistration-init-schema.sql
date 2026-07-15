@@ -48,7 +48,6 @@ CREATE TABLE `characterizations` (
   `deleted_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) NOT NULL,
   `animal_name` varchar(255) NOT NULL,
-  `card_back_image_key` varchar(255) DEFAULT NULL,
   `card_no` varchar(255) DEFAULT NULL,
   `card_type` enum('GROUND','SEA','SKY','SPACE') DEFAULT NULL,
   `device_id` bigint NOT NULL,
