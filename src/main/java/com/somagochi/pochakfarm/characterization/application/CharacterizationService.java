@@ -12,6 +12,7 @@ import com.somagochi.pochakfarm.common.properties.CharacterizationProperties;
 import java.io.IOException;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.task.TaskRejectedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -54,12 +55,23 @@ public class CharacterizationService {
     metadata = metadata.withCardNo(formatCardNo(characterization.getId()));
     characterization.cardNoAssigned(metadata.cardNo());
     save(characterization);
-    characterizationAsyncService.characterizeAsync(
-        characterization.getId(),
-        sourceImage,
-        image.getContentType(),
-        normalizedAnimalName,
-        metadata);
+    try {
+      characterizationAsyncService.characterizeAsync(
+          characterization.getId(),
+          sourceImage,
+          image.getContentType(),
+          normalizedAnimalName,
+          metadata);
+    } catch (TaskRejectedException exception) {
+      characterization.fail(ErrorCode.CHARACTERIZATION_BUSY.getCode());
+      save(characterization);
+      log.warn(
+          "characterization_async_rejected id={} deviceId={}",
+          characterization.getId(),
+          deviceId,
+          exception);
+      throw new BusinessException(ErrorCode.CHARACTERIZATION_BUSY);
+    }
     return new CharacterizationStartResponse(
         characterization.getId(), characterization.getStatus(), characterization.getCardType());
   }

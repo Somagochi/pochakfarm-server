@@ -3,6 +3,7 @@ package com.somagochi.pochakfarm.characterization.application;
 import com.somagochi.pochakfarm.characterization.domain.CardMetadata;
 import com.somagochi.pochakfarm.characterization.domain.CharacterizerClient;
 import com.somagochi.pochakfarm.characterization.domain.CharacterizerResult;
+import com.somagochi.pochakfarm.common.config.AsyncConfig;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.storage.application.ImageUploadService;
@@ -31,7 +32,7 @@ public class CharacterizationAsyncService {
     this.characterizationStatusService = characterizationStatusService;
   }
 
-  @Async
+  @Async(AsyncConfig.CHARACTERIZATION_EXECUTOR)
   public void characterizeAsync(
       Long characterizationId,
       byte[] sourceImage,
