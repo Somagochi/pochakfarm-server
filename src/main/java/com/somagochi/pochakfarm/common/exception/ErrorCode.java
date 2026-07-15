@@ -27,6 +27,7 @@ public enum ErrorCode {
   CHARACTERIZATION_ALREADY_PROCESSING(
       409, "CHARACTERIZATION_ALREADY_PROCESSING", "Characterization already processing"),
   CHARACTERIZATION_BUSY(503, "CHARACTERIZATION_BUSY", "Characterization service is busy"),
+  CHARACTERIZATION_TIMED_OUT(504, "CHARACTERIZATION_TIMED_OUT", "Characterization timed out"),
   DEVICE_NOT_FOUND(404, "DEVICE_NOT_FOUND", "Device not found"),
   INVALID_PHONE_NUMBER(400, "INVALID_PHONE_NUMBER", "Invalid phone number"),
   INVALID_CHARACTERIZATION_ID(400, "INVALID_CHARACTERIZATION_ID", "Invalid characterization id"),

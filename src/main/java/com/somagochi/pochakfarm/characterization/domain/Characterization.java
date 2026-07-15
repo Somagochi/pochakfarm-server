@@ -8,6 +8,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -16,7 +17,10 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "characterizations")
+@Table(
+    name = "characterizations",
+    indexes =
+        @Index(name = "idx_characterizations_status_created_at", columnList = "status, created_at"))
 public class Characterization extends BaseEntity {
 
   @Id

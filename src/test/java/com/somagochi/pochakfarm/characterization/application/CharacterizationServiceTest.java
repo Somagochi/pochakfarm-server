@@ -37,7 +37,7 @@ class CharacterizationServiceTest {
           characterizationRepository,
           cardMetadataGenerator,
           characterizationAsyncService,
-          new CharacterizationProperties(true));
+          new CharacterizationProperties(true, null));
 
   @Test
   void startsCharacterizationAndReturnsIdStatusAndCardTypeWithoutWaitingForResult() {
@@ -112,7 +112,7 @@ class CharacterizationServiceTest {
             characterizationRepository,
             cardMetadataGenerator,
             characterizationAsyncService,
-            new CharacterizationProperties(false));
+            new CharacterizationProperties(false, null));
     given(
             characterizationRepository.existsByDeviceIdAndStatus(
                 1L, CharacterizationStatus.SUCCEEDED))
