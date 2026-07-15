@@ -68,6 +68,10 @@ public interface CharacterizationApiSpec {
       responseCode = "502",
       description = "Python 변환 서버 호출 실패, 실패 응답, 또는 결과 이미지 디코딩/업로드 실패 (CHARACTERIZATION_FAILED)",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "503",
+      description = "변환 처리 큐가 가득 차 요청을 접수할 수 없음. 잠시 후 재시도 필요 (CHARACTERIZATION_BUSY)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   ApiResponse<CharacterizationStartResponse> characterize(
       String deviceToken,
       @Parameter(hidden = true) MultipartFile image,
