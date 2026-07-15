@@ -83,7 +83,9 @@ public interface CharacterizationApiSpec {
       description =
           "characterizationId로 캐릭터라이징 작업 상태와 결과를 조회한다. "
               + "PROCESSING이면 진행 중 상태, SUCCEEDED이면 data.resultImageUrl, "
-              + "FAILED이면 data.failureReason을 반환한다.")
+              + "FAILED이면 data.failureReason을 반환한다. "
+              + "일정 시간 이상 PROCESSING에 고착된 작업은 서버가 FAILED로 정리하며, "
+              + "이 경우 data.failureReason은 CHARACTERIZATION_TIMED_OUT이다.")
   @Parameter(
       in = ParameterIn.PATH,
       name = "characterizationId",
