@@ -31,12 +31,6 @@ public interface UserApiSpec {
   ApiResponse<UserResponse> getMe(UserPrincipal principal);
 
   @Operation(summary = "닉네임 변경", description = "현재 로그인한 회원의 닉네임을 변경한다.")
-  @Parameter(
-      in = ParameterIn.HEADER,
-      name = "Authorization",
-      required = true,
-      description = "액세스 토큰 (형식: `Bearer {accessToken}`)",
-      example = "Bearer eyJhbGciOiJIUzI1NiJ9.xxxxx.yyyyy")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "변경 성공")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "400",
