@@ -10,6 +10,7 @@ public enum ErrorCode {
   INVALID_SOCIAL_TOKEN(401, "INVALID_SOCIAL_TOKEN", "Invalid social token"),
   SOCIAL_USER_INFO_FAILED(502, "SOCIAL_USER_INFO_FAILED", "Failed to fetch social user info"),
   USER_NOT_FOUND(404, "USER_NOT_FOUND", "User not found"),
+  INVALID_NICKNAME(400, "INVALID_NICKNAME", "Invalid nickname"),
   TOKEN_OWNER_MISMATCH(401, "TOKEN_OWNER_MISMATCH", "Token owner mismatch"),
   UNSUPPORTED_CONTENT_TYPE(400, "UNSUPPORTED_CONTENT_TYPE", "Unsupported content type"),
   INVALID_UPLOAD_PURPOSE(400, "INVALID_UPLOAD_PURPOSE", "Invalid upload purpose"),

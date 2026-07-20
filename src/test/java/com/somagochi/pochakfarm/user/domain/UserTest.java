@@ -3,12 +3,54 @@ package com.somagochi.pochakfarm.user.domain;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.somagochi.pochakfarm.common.exception.BusinessException;
+import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
 import org.junit.jupiter.api.Test;
 
 class UserTest {
+
+  @Test
+  void changeNicknameUpdatesTrimmedNickname() {
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+
+    user.changeNickname("  포착이  ");
+
+    assertEquals("포착이", user.getNickname());
+  }
+
+  @Test
+  void changeNicknameRejectsBlankNickname() {
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+
+    BusinessException exception =
+        assertThrows(BusinessException.class, () -> user.changeNickname("   "));
+
+    assertEquals(ErrorCode.INVALID_NICKNAME.getCode(), exception.getCode());
+  }
+
+  @Test
+  void changeNicknameRejectsNullNickname() {
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+
+    BusinessException exception =
+        assertThrows(BusinessException.class, () -> user.changeNickname(null));
+
+    assertEquals(ErrorCode.INVALID_NICKNAME.getCode(), exception.getCode());
+  }
+
+  @Test
+  void changeNicknameRejectsTooLongNickname() {
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+
+    BusinessException exception =
+        assertThrows(BusinessException.class, () -> user.changeNickname("a".repeat(21)));
+
+    assertEquals(ErrorCode.INVALID_NICKNAME.getCode(), exception.getCode());
+  }
 
   @Test
   void withdrawMarksDeletedAndAnonymizesUniqueIdentifiers() {

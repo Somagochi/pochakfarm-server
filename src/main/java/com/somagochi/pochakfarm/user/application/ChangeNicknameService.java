@@ -1,32 +1,29 @@
 package com.somagochi.pochakfarm.user.application;
 
-import com.somagochi.pochakfarm.auth.application.TokenService;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
-import com.somagochi.pochakfarm.common.transaction.AfterCommitExecutor;
 import com.somagochi.pochakfarm.user.domain.User;
+import com.somagochi.pochakfarm.user.dto.NicknameResponse;
 import com.somagochi.pochakfarm.user.infrastructure.persistence.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class WithdrawService {
+public class ChangeNicknameService {
 
   private final UserRepository userRepository;
-  private final TokenService tokenService;
 
-  public WithdrawService(UserRepository userRepository, TokenService tokenService) {
+  public ChangeNicknameService(UserRepository userRepository) {
     this.userRepository = userRepository;
-    this.tokenService = tokenService;
   }
 
   @Transactional
-  public void withdraw(Long userId, String accessToken, String refreshToken) {
+  public NicknameResponse changeNickname(Long userId, String nickname) {
     User user =
         userRepository
             .findById(userId)
             .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-    user.withdraw();
-    AfterCommitExecutor.execute(() -> tokenService.revokeTokens(accessToken, refreshToken));
+    user.changeNickname(nickname);
+    return NicknameResponse.from(user);
   }
 }
