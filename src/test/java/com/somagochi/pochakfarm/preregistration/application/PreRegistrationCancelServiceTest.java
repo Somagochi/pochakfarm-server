@@ -19,11 +19,14 @@ import org.junit.jupiter.api.Test;
 class PreRegistrationCancelServiceTest {
 
   private static final String PHONE = "01012345678";
+  private static final String PHONE_HASH = "phone-hash";
 
   private final PreRegistrationRepository preRegistrationRepository =
       mock(PreRegistrationRepository.class);
+  private final PreRegistrationCryptoService preRegistrationCryptoService =
+      mock(PreRegistrationCryptoService.class);
   private final PreRegistrationCancelService preRegistrationCancelService =
-      new PreRegistrationCancelService(preRegistrationRepository);
+      new PreRegistrationCancelService(preRegistrationRepository, preRegistrationCryptoService);
 
   private PreRegistration preRegistration(boolean registered) {
     PreRegistration preRegistration = mock(PreRegistration.class);
@@ -36,8 +39,10 @@ class PreRegistrationCancelServiceTest {
 
   @Test
   void cancelsRegistration() {
+    given(preRegistrationCryptoService.hash(PHONE)).willReturn(PHONE_HASH);
     PreRegistration registered = preRegistration(true);
-    given(preRegistrationRepository.findByPhoneNumber(PHONE)).willReturn(Optional.of(registered));
+    given(preRegistrationRepository.findByPhoneNumberHash(PHONE_HASH))
+        .willReturn(Optional.of(registered));
 
     preRegistrationCancelService.cancel(PHONE);
 
@@ -46,8 +51,10 @@ class PreRegistrationCancelServiceTest {
 
   @Test
   void isIdempotentWhenAlreadyCanceled() {
+    given(preRegistrationCryptoService.hash(PHONE)).willReturn(PHONE_HASH);
     PreRegistration canceled = preRegistration(false);
-    given(preRegistrationRepository.findByPhoneNumber(PHONE)).willReturn(Optional.of(canceled));
+    given(preRegistrationRepository.findByPhoneNumberHash(PHONE_HASH))
+        .willReturn(Optional.of(canceled));
 
     PreRegistrationResponse response = preRegistrationCancelService.cancel(PHONE);
 
@@ -57,7 +64,8 @@ class PreRegistrationCancelServiceTest {
 
   @Test
   void rejectsWhenNoRegistration() {
-    given(preRegistrationRepository.findByPhoneNumber(PHONE)).willReturn(Optional.empty());
+    given(preRegistrationCryptoService.hash(PHONE)).willReturn(PHONE_HASH);
+    given(preRegistrationRepository.findByPhoneNumberHash(PHONE_HASH)).willReturn(Optional.empty());
 
     BusinessException exception =
         assertThrows(BusinessException.class, () -> preRegistrationCancelService.cancel(PHONE));

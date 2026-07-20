@@ -245,7 +245,7 @@
           formData.append("animalName", form.animalName.value);
           formData.append("image", form.image.files[0]);
 
-          const characterResponse = await fetch("/api/characterizations", {
+          const characterResponse = await fetch("/api/characterizations/public", {
             method: "POST",
             body: formData,
             credentials: "same-origin",
@@ -264,6 +264,7 @@
             body: JSON.stringify({
               phoneNumber: form.phoneNumber.value,
               requiredConsent: form.requiredConsent.checked,
+              characterizationId: characterPayload.data.characterizationId,
             }),
           });
           if (!reservationResponse.ok) {

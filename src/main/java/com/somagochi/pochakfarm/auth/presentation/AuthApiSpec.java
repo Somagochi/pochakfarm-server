@@ -8,17 +8,22 @@ import com.somagochi.pochakfarm.auth.dto.TokenResponse;
 import com.somagochi.pochakfarm.common.exception.ErrorResponse;
 import com.somagochi.pochakfarm.common.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.core.Authentication;
 
 @Tag(name = "Auth", description = "인증 관련 API")
 public interface AuthApiSpec {
 
-  @Operation(summary = "소셜 로그인", description = "소셜 provider 토큰으로 로그인하고 액세스/리프레시 토큰을 발급한다.")
+  @Operation(
+      summary = "소셜 로그인 (App SDK 방식)",
+      description =
+          "App SDK로 발급받은 provider 토큰으로 로그인하고 서비스 access/refresh 토큰을 발급한다.<br>"
+              + "- provider: kakao / naver / apple (대소문자 무관)<br>"
+              + "- token: 카카오·네이버는 access token, 애플은 id token(JWT)<br>"
+              + "REST(OAuth2 리다이렉트) 방식은 `GET /api/auth/oauth2/{provider}` 참고.")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그인 성공")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "400",
@@ -43,12 +48,7 @@ public interface AuthApiSpec {
   ApiResponse<TokenResponse> refresh(RefreshRequest request);
 
   @Operation(summary = "로그아웃", description = "액세스 토큰을 블랙리스트 처리하고 리프레시 토큰을 무효화한다.")
-  @Parameter(
-      in = ParameterIn.HEADER,
-      name = "Authorization",
-      required = true,
-      description = "액세스 토큰 (형식: `Bearer {accessToken}`)",
-      example = "Bearer eyJhbGciOiJIUzI1NiJ9.xxxxx.yyyyy")
+  @SecurityRequirement(name = "bearerAuth")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "200",
       description = "로그아웃 성공")

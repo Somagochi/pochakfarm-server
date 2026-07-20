@@ -77,7 +77,7 @@ public class TokenService {
     String refreshToken =
         jwtHelper.generateToken(
             subject, withReservedClaims(claims, REFRESH_TOKEN_TYPE, tokenId), refreshTokenTtl);
-    refreshTokenWhitelist.register(tokenId, refreshTokenTtl);
+    refreshTokenWhitelist.register(subject, tokenId, refreshTokenTtl);
     return refreshToken;
   }
 
@@ -126,7 +126,7 @@ public class TokenService {
             refreshTokenTtl);
     boolean rotated =
         refreshTokenWhitelist.rotate(
-            oldRefreshPayload.tokenId(), newRefreshTokenId, refreshTokenTtl);
+            subject, oldRefreshPayload.tokenId(), newRefreshTokenId, refreshTokenTtl);
     if (!rotated) {
       throw new JwtAuthenticationException(ErrorCode.REVOKED_REFRESH_TOKEN);
     }
@@ -141,7 +141,7 @@ public class TokenService {
 
   public void revokeRefreshToken(String token) {
     JwtPayload payload = parseRefreshToken(token);
-    refreshTokenWhitelist.remove(payload.tokenId());
+    refreshTokenWhitelist.remove(payload.subject(), payload.tokenId());
   }
 
   private JwtPayload parseOrThrow(String token) {

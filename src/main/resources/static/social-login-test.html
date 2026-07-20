@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>소셜 로그인 테스트</title>
+    <style>
+      :root {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f4f5f7;
+        color: #1f2328;
+      }
+      .card {
+        width: 320px;
+        padding: 32px 28px;
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 20px;
+        text-align: center;
+      }
+      p.sub {
+        margin: 0 0 24px;
+        font-size: 13px;
+        color: #6b7280;
+        text-align: center;
+      }
+      label {
+        display: block;
+        font-size: 12px;
+        color: #6b7280;
+        margin-bottom: 6px;
+      }
+      input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 13px;
+        margin-bottom: 20px;
+      }
+      .btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 12px;
+        margin-bottom: 12px;
+        border: none;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+      }
+      .kakao {
+        background: #fee500;
+        color: #191600;
+      }
+      .naver {
+        background: #03c75a;
+        color: #fff;
+      }
+      .apple {
+        background: #000;
+        color: #fff;
+      }
+      .hint {
+        margin: 16px 0 0;
+        font-size: 11px;
+        color: #9ca3af;
+        text-align: center;
+        line-height: 1.5;
+        word-break: break-all;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>소셜 로그인 테스트</h1>
+      <p class="sub">REST API(OAuth2) 방식</p>
+
+      <label for="base">서버 Base URL</label>
+      <input id="base" />
+
+      <a class="btn kakao" data-provider="kakao" href="#">카카오로 로그인</a>
+      <a class="btn naver" data-provider="naver" href="#">네이버로 로그인</a>
+      <a class="btn apple" data-provider="apple" href="#">Apple로 로그인</a>
+
+      <p class="hint" id="hint"></p>
+    </div>
+
+    <script>
+      const baseInput = document.getElementById("base");
+      const hint = document.getElementById("hint");
+
+      // 정적 리소스로 서빙되면 현재 origin, file://로 열면 localhost:8080을 기본값으로.
+      baseInput.value = location.origin.startsWith("http")
+        ? location.origin
+        : "http://localhost:8080";
+
+      function startUrl(provider) {
+        const base = baseInput.value.replace(/\/+$/, "");
+        return `${base}/api/auth/oauth2/${provider}`;
+      }
+
+      function refreshHint() {
+        hint.textContent = "이동 예: " + startUrl("kakao");
+      }
+
+      document.querySelectorAll(".btn").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          window.location.href = startUrl(btn.dataset.provider);
+        });
+      });
+
+      baseInput.addEventListener("input", refreshHint);
+      refreshHint();
+    </script>
+  </body>
+</html>

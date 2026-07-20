@@ -18,7 +18,7 @@ public class DevelopSecurityConfig {
   @Bean
   @Order(Ordered.HIGHEST_PRECEDENCE)
   SecurityFilterChain devSecurityFilterChain(HttpSecurity http) throws Exception {
-    http.securityMatcher("/api/dev/**", "/", "/pre-registration.html")
+    http.securityMatcher("/api/dev/**", "/", "/pre-registration.html", "/social-login-test.html")
         .csrf(AbstractHttpConfigurer::disable)
         .formLogin(AbstractHttpConfigurer::disable)
         .httpBasic(AbstractHttpConfigurer::disable)

@@ -9,6 +9,7 @@ import com.somagochi.pochakfarm.characterization.domain.CardSkill;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.characterization.domain.CharacterizerResult;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
+import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -39,9 +40,7 @@ class HttpCharacterizerClientTest {
           "status": "success",
           "provider": "codex_exec",
           "content_type": "image/png",
-          "ai_image_base64": "YWk=",
           "card_image_base64": "Y2FyZA==",
-          "card_back_image_base64": "YmFjaw==",
           "elapsed_ms": 123
         }
         """);
@@ -49,16 +48,15 @@ class HttpCharacterizerClientTest {
         new HttpCharacterizerClient(baseUrl(), Duration.ofSeconds(1), Duration.ofSeconds(1));
 
     CharacterizerResult result =
-        client.characterize("https://cdn.test/original.png", "솜구름", metadata());
+        client.characterize("b3JpZ2luYWw=", "image/png", "솜구름", metadata());
 
     assertEquals("success", result.status());
     assertEquals("codex_exec", result.provider());
     assertEquals("image/png", result.contentType());
-    assertEquals("YWk=", result.aiImageBase64());
     assertEquals("Y2FyZA==", result.cardImageBase64());
-    assertEquals("YmFjaw==", result.cardBackImageBase64());
     assertEquals(123, result.elapsedMs());
-    assertTrue(requestBody.contains("\"source_image_url\":\"https://cdn.test/original.png\""));
+    assertTrue(requestBody.contains("\"source_image_base64\":\"b3JpZ2luYWw=\""));
+    assertTrue(requestBody.contains("\"source_image_content_type\":\"image/png\""));
     assertTrue(requestBody.contains("\"card_type\":\"SKY\""));
     assertTrue(requestBody.contains("SKY"));
     assertTrue(requestBody.contains("\"card_type_label\":\"하늘\""));
@@ -80,10 +78,62 @@ class HttpCharacterizerClientTest {
 
     assertThrows(
         BusinessException.class,
-        () -> client.characterize("https://cdn.test/original.png", "솜구름", metadata()));
+        () -> client.characterize("b3JpZ2luYWw=", "image/png", "솜구름", metadata()));
+  }
+
+  @Test
+  void mapsUnsupportedCharacterizationImageError() throws IOException {
+    startServer(
+        0,
+        422,
+        """
+        {
+          "status": "failed",
+          "error_code": "UNSUPPORTED_CHARACTERIZATION_IMAGE",
+          "message": "Unsupported characterization image"
+        }
+        """);
+    HttpCharacterizerClient client =
+        new HttpCharacterizerClient(baseUrl(), Duration.ofSeconds(1), Duration.ofSeconds(1));
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () -> client.characterize("b3JpZ2luYWw=", "image/png", "솜구름", metadata()));
+
+    assertEquals(ErrorCode.UNSUPPORTED_CHARACTERIZATION_IMAGE.getCode(), exception.getCode());
+    assertEquals(ErrorCode.UNSUPPORTED_CHARACTERIZATION_IMAGE.getStatus(), exception.getStatus());
+  }
+
+  @Test
+  void mapsUnknownCharacterizerErrorToCharacterizationFailed() throws IOException {
+    startServer(
+        0,
+        500,
+        """
+        {
+          "status": "failed",
+          "error_code": "PROVIDER_INTERNAL_ERROR",
+          "message": "Provider failed"
+        }
+        """);
+    HttpCharacterizerClient client =
+        new HttpCharacterizerClient(baseUrl(), Duration.ofSeconds(1), Duration.ofSeconds(1));
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () -> client.characterize("b3JpZ2luYWw=", "image/png", "솜구름", metadata()));
+
+    assertEquals(ErrorCode.CHARACTERIZATION_FAILED.getCode(), exception.getCode());
   }
 
   private void startServer(long responseDelayMillis, String responseBody) throws IOException {
+    startServer(responseDelayMillis, 200, responseBody);
+  }
+
+  private void startServer(long responseDelayMillis, int statusCode, String responseBody)
+      throws IOException {
     server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
     server.createContext(
         "/internal/characterize",
@@ -96,7 +146,7 @@ class HttpCharacterizerClientTest {
             requestBody =
                 new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
             exchange.getResponseHeaders().add("Content-Type", "application/json");
-            exchange.sendResponseHeaders(200, response.length);
+            exchange.sendResponseHeaders(statusCode, response.length);
             try (OutputStream outputStream = exchange.getResponseBody()) {
               outputStream.write(response);
             }
