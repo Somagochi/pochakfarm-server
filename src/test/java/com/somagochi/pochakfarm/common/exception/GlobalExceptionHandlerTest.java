@@ -3,8 +3,10 @@ package com.somagochi.pochakfarm.common.exception;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 class GlobalExceptionHandlerTest {
 
@@ -21,6 +23,20 @@ class GlobalExceptionHandlerTest {
     assertEquals(400, response.getBody().status());
     assertEquals("BAD_REQUEST", response.getBody().code());
     assertEquals("Invalid request", response.getBody().message());
+  }
+
+  @Test
+  void handlesNoResourceFoundException() {
+    NoResourceFoundException exception =
+        new NoResourceFoundException(HttpMethod.GET, "/share/init_data", "share/init_data");
+
+    ResponseEntity<ErrorResponse> response =
+        globalExceptionHandler.handleNoResourceFoundException(exception);
+
+    assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    assertEquals(404, response.getBody().status());
+    assertEquals("NOT_FOUND", response.getBody().code());
+    assertEquals("Resource not found", response.getBody().message());
   }
 
   @Test
