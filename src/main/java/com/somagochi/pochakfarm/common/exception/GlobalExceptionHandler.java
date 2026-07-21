@@ -11,6 +11,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Slf4j
 @RestControllerAdvice
@@ -19,6 +20,7 @@ public class GlobalExceptionHandler {
   private static final String BAD_REQUEST_MESSAGE = "Invalid request";
   private static final String UNAUTHORIZED_MESSAGE = "Authentication is required";
   private static final String FORBIDDEN_MESSAGE = "Access is denied";
+  private static final String NOT_FOUND_MESSAGE = "Resource not found";
   private static final String INTERNAL_SERVER_ERROR_MESSAGE = "Unexpected server error";
 
   @ExceptionHandler(BusinessException.class)
@@ -63,6 +65,13 @@ public class GlobalExceptionHandler {
         ErrorCode.FILE_TOO_LARGE.getStatus(),
         ErrorCode.FILE_TOO_LARGE.getCode(),
         ErrorCode.FILE_TOO_LARGE.getMessage());
+  }
+
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ResponseEntity<ErrorResponse> handleNoResourceFoundException(
+      NoResourceFoundException exception) {
+    log.warn("Resource not found: {} {}", exception.getHttpMethod(), exception.getResourcePath());
+    return buildResponse(HttpStatus.NOT_FOUND.value(), "NOT_FOUND", NOT_FOUND_MESSAGE);
   }
 
   @ExceptionHandler(Exception.class)
