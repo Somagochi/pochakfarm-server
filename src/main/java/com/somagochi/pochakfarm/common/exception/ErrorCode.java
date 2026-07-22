@@ -38,6 +38,7 @@ public enum ErrorCode {
   DEVICE_ALREADY_REGISTERED(409, "DEVICE_ALREADY_REGISTERED", "Device already registered"),
   PRE_REGISTRATION_NOT_FOUND(404, "PRE_REGISTRATION_NOT_FOUND", "Pre-registration not found"),
   INVALID_PARAMETER(400, "INVALID_PARAMETER", "Invalid request parameter"),
+  FARM_SPACE_NOT_FOUND(404, "FARM_SPACE_NOT_FOUND", "Farm space not found"),
   ;
 
   private final int status;
