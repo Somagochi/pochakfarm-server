@@ -37,6 +37,7 @@ public enum ErrorCode {
       409, "PHONE_NUMBER_ALREADY_REGISTERED", "Phone number already registered"),
   DEVICE_ALREADY_REGISTERED(409, "DEVICE_ALREADY_REGISTERED", "Device already registered"),
   PRE_REGISTRATION_NOT_FOUND(404, "PRE_REGISTRATION_NOT_FOUND", "Pre-registration not found"),
+  INVALID_PARAMETER(400, "INVALID_PARAMETER", "Invalid request parameter"),
   ;
 
   private final int status;

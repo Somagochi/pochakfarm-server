@@ -2,6 +2,8 @@ package com.somagochi.pochakfarm.common.exception;
 
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationException;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -10,6 +12,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -34,6 +37,16 @@ public class GlobalExceptionHandler {
       IllegalArgumentException exception) {
     logClientError(exception);
     return buildResponse(HttpStatus.BAD_REQUEST.value(), "BAD_REQUEST", BAD_REQUEST_MESSAGE);
+  }
+
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(
+      MethodArgumentTypeMismatchException exception) {
+    logClientError(exception);
+    return buildResponse(
+        ErrorCode.INVALID_PARAMETER.getStatus(),
+        ErrorCode.INVALID_PARAMETER.getCode(),
+        invalidParameterMessage(exception));
   }
 
   @ExceptionHandler(JwtAuthenticationException.class)
@@ -81,6 +94,18 @@ public class GlobalExceptionHandler {
         HttpStatus.INTERNAL_SERVER_ERROR.value(),
         "INTERNAL_SERVER_ERROR",
         INTERNAL_SERVER_ERROR_MESSAGE);
+  }
+
+  private String invalidParameterMessage(MethodArgumentTypeMismatchException exception) {
+    Class<?> requiredType = exception.getRequiredType();
+    if (requiredType != null && requiredType.isEnum()) {
+      String allowed =
+          Arrays.stream(requiredType.getEnumConstants())
+              .map(constant -> ((Enum<?>) constant).name())
+              .collect(Collectors.joining(", "));
+      return exception.getName() + " must be one of [" + allowed + "]";
+    }
+    return exception.getName() + " has an invalid value";
   }
 
   private void logByStatus(int status, Exception e) {
