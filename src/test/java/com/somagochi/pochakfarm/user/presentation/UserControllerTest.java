@@ -21,7 +21,7 @@ import com.somagochi.pochakfarm.common.security.SecurityAuthenticationEntryPoint
 import com.somagochi.pochakfarm.common.security.UserPrincipal;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
 import com.somagochi.pochakfarm.user.application.ChangeNicknameService;
-import com.somagochi.pochakfarm.user.application.UserService;
+import com.somagochi.pochakfarm.user.application.UserQueryService;
 import com.somagochi.pochakfarm.user.application.WithdrawService;
 import com.somagochi.pochakfarm.user.dto.NicknameResponse;
 import com.somagochi.pochakfarm.user.dto.UserProfileResponse;
@@ -55,13 +55,13 @@ class UserControllerTest {
 
   @Autowired private MockMvc mockMvc;
 
-  @MockitoBean private UserService userService;
+  @MockitoBean private UserQueryService userQueryService;
   @MockitoBean private ChangeNicknameService changeNicknameService;
   @MockitoBean private WithdrawService withdrawService;
 
   @Test
   void returnsCurrentUserWhenAuthenticated() throws Exception {
-    given(userService.getMe(1L))
+    given(userQueryService.getMe(1L))
         .willReturn(new UserResponse("user@example.com", SocialProvider.KAKAO, "포착이"));
 
     mockMvc
@@ -74,7 +74,7 @@ class UserControllerTest {
 
   @Test
   void returnsProfileWhenAuthenticated() throws Exception {
-    given(userService.getProfile(1L)).willReturn(new UserProfileResponse("포착이", 3, 1200L));
+    given(userQueryService.getProfile(1L)).willReturn(new UserProfileResponse("포착이", 3, 1200L));
 
     mockMvc
         .perform(get("/api/users/profile").with(authentication(authenticationFor(1L))))
@@ -91,7 +91,7 @@ class UserControllerTest {
 
   @Test
   void mapsBusinessExceptionToErrorResponse() throws Exception {
-    given(userService.getMe(1L)).willThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
+    given(userQueryService.getMe(1L)).willThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
 
     mockMvc
         .perform(get("/api/users/me").with(authentication(authenticationFor(1L))))
