@@ -68,7 +68,9 @@ class FarmControllerTest {
         .andExpect(jsonPath("$.data.totalPages").value(FarmSpace.TOTAL_PAGE_COUNT))
         .andExpect(jsonPath("$.data.floors.length()").value(2))
         .andExpect(jsonPath("$.data.floors[0].unlocked").value(true))
+        .andExpect(jsonPath("$.data.floors[0].slots[0].slotId").value(1001))
         .andExpect(jsonPath("$.data.floors[0].slots[0].animal.animalId").value(11))
+        .andExpect(jsonPath("$.data.floors[0].slots[1].slotId").value(1002))
         .andExpect(jsonPath("$.data.floors[0].slots[1].animal").doesNotExist())
         .andExpect(jsonPath("$.data.floors[1].unlocked").value(false))
         .andExpect(jsonPath("$.data.floors[1].slots.length()").value(0));
@@ -134,13 +136,14 @@ class FarmControllerTest {
             true,
             List.of(
                 new FarmSlotResponse(
+                    1001L,
                     1,
                     new FarmAnimalResponse(
                         11L,
                         "첫번째",
                         "https://cdn.example.com/a.png",
                         "https://cdn.example.com/a-cutout.png")),
-                FarmSlotResponse.empty(2)));
+                FarmSlotResponse.empty(1002L, 2)));
     return new FarmSpaceResponse(
         CardType.SEA,
         FarmSpace.FIRST_PAGE,

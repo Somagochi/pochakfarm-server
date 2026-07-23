@@ -11,6 +11,7 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Getter
@@ -21,6 +22,7 @@ import lombok.NoArgsConstructor;
         @UniqueConstraint(
             name = "uk_farm_floors_space_id_sequence",
             columnNames = {"space_id", "sequence"}))
+@SQLRestriction("deleted_at is null")
 public class FarmFloor extends BaseEntity {
 
   public static final int SLOT_COUNT_PER_FLOOR = 4;

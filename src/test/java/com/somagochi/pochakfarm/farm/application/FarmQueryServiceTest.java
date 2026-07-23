@@ -186,8 +186,12 @@ class FarmQueryServiceTest {
   }
 
   private FarmSpace space() {
-    FarmSpace space = FarmSpace.create(USER_ID, CardType.SEA);
-    setField(space, "id", SPACE_ID);
+    return spaceOf(CardType.SEA, SPACE_ID);
+  }
+
+  private FarmSpace spaceOf(CardType type, Long id) {
+    FarmSpace space = FarmSpace.create(USER_ID, type);
+    setField(space, "id", id);
     return space;
   }
 

@@ -50,10 +50,13 @@ public class FarmQueryService {
   @Transactional(readOnly = true)
   public FarmSpaceResponse getFarmSpace(Long userId, CardType type, int page) {
     FarmFloorRange range = FarmFloorRange.ofPage(page);
-    FarmSpace space = findSpace(userId, type);
+    return toSpaceResponse(findSpace(userId, type), range);
+  }
+
+  private FarmSpaceResponse toSpaceResponse(FarmSpace space, FarmFloorRange range) {
     Map<Integer, List<FarmSlot>> slotsByFloorSequence =
         findSlotsByFloorSequence(findUnlockedFloors(space, range));
-    return FarmSpaceResponse.of(type, range, toFloors(range, slotsByFloorSequence));
+    return FarmSpaceResponse.of(space.getType(), range, toFloors(range, slotsByFloorSequence));
   }
 
   private FarmSpace findSpace(Long userId, CardType type) {
@@ -121,10 +124,11 @@ public class FarmQueryService {
 
   private FarmSlotResponse toSlot(
       Integer sequence, FarmSlot slot, Map<Long, AnimalResponse> animals) {
+    Long slotId = slot == null ? null : slot.getId();
     AnimalResponse animal = slot == null || slot.isEmpty() ? null : animals.get(slot.getAnimalId());
     return animal == null
-        ? FarmSlotResponse.empty(sequence)
-        : FarmSlotResponse.occupied(sequence, toAnimal(animal));
+        ? FarmSlotResponse.empty(slotId, sequence)
+        : FarmSlotResponse.occupied(slotId, sequence, toAnimal(animal));
   }
 
   private FarmAnimalResponse toAnimal(AnimalResponse animal) {
