@@ -43,6 +43,12 @@ public class User extends BaseEntity {
 
   private String nickname;
 
+  private int level;
+
+  private long experience;
+
+  private long coins;
+
   private User(SocialAccount socialAccount, String email) {
     this.socialAccount = socialAccount;
     this.email = email;

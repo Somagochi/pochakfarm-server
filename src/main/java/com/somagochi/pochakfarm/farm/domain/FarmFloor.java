@@ -26,6 +26,7 @@ import org.hibernate.annotations.SQLRestriction;
 public class FarmFloor extends BaseEntity {
 
   public static final int SLOT_COUNT_PER_FLOOR = 4;
+  public static final int FIRST_SEQUENCE = 1;
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
