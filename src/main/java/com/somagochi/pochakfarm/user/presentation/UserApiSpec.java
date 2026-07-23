@@ -5,6 +5,7 @@ import com.somagochi.pochakfarm.common.response.ApiResponse;
 import com.somagochi.pochakfarm.common.security.UserPrincipal;
 import com.somagochi.pochakfarm.user.dto.NicknameResponse;
 import com.somagochi.pochakfarm.user.dto.NicknameUpdateRequest;
+import com.somagochi.pochakfarm.user.dto.UserProfileResponse;
 import com.somagochi.pochakfarm.user.dto.UserResponse;
 import com.somagochi.pochakfarm.user.dto.WithdrawRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,7 +18,7 @@ import org.springframework.security.core.Authentication;
 @Tag(name = "User", description = "회원 관련 API")
 public interface UserApiSpec {
 
-  @Operation(summary = "내 정보 조회", description = "액세스 토큰으로 인증된 사용자의 프로필을 조회한다.")
+  @Operation(summary = "내 가입정보 조회", description = "액세스 토큰으로 인증된 사용자의 가입정보(이메일, 소셜 연동, 닉네임)를 조회한다.")
   @SecurityRequirement(name = "bearerAuth")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -29,6 +30,19 @@ public interface UserApiSpec {
       description = "회원을 찾을 수 없음",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   ApiResponse<UserResponse> getMe(UserPrincipal principal);
+
+  @Operation(summary = "내 프로필 조회", description = "액세스 토큰으로 인증된 사용자의 게임 프로필(닉네임, 레벨, 코인)을 조회한다.")
+  @SecurityRequirement(name = "bearerAuth")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "401",
+      description = "인증 실패 (토큰 만료/무효)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "404",
+      description = "회원을 찾을 수 없음",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  ApiResponse<UserProfileResponse> getProfile(UserPrincipal principal);
 
   @Operation(summary = "닉네임 변경", description = "현재 로그인한 회원의 닉네임을 변경한다.")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "변경 성공")

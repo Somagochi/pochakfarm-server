@@ -24,6 +24,7 @@ import com.somagochi.pochakfarm.user.application.ChangeNicknameService;
 import com.somagochi.pochakfarm.user.application.UserService;
 import com.somagochi.pochakfarm.user.application.WithdrawService;
 import com.somagochi.pochakfarm.user.dto.NicknameResponse;
+import com.somagochi.pochakfarm.user.dto.UserProfileResponse;
 import com.somagochi.pochakfarm.user.dto.UserResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -60,19 +61,37 @@ class UserControllerTest {
 
   @Test
   void returnsCurrentUserWhenAuthenticated() throws Exception {
-    given(userService.getProfile(1L))
-        .willReturn(new UserResponse(1L, "user@example.com", SocialProvider.KAKAO));
+    given(userService.getMe(1L))
+        .willReturn(new UserResponse("user@example.com", SocialProvider.KAKAO, "포착이"));
 
     mockMvc
         .perform(get("/api/users/me").with(authentication(authenticationFor(1L))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.email").value("user@example.com"))
-        .andExpect(jsonPath("$.data.provider").value("KAKAO"));
+        .andExpect(jsonPath("$.data.provider").value("KAKAO"))
+        .andExpect(jsonPath("$.data.nickname").value("포착이"));
+  }
+
+  @Test
+  void returnsProfileWhenAuthenticated() throws Exception {
+    given(userService.getProfile(1L)).willReturn(new UserProfileResponse("포착이", 3, 1200L));
+
+    mockMvc
+        .perform(get("/api/users/profile").with(authentication(authenticationFor(1L))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.nickname").value("포착이"))
+        .andExpect(jsonPath("$.data.level").value(3))
+        .andExpect(jsonPath("$.data.coins").value(1200));
+  }
+
+  @Test
+  void returnsUnauthorizedWhenGettingProfileWithoutAuthentication() throws Exception {
+    mockMvc.perform(get("/api/users/profile")).andExpect(status().isUnauthorized());
   }
 
   @Test
   void mapsBusinessExceptionToErrorResponse() throws Exception {
-    given(userService.getProfile(1L)).willThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
+    given(userService.getMe(1L)).willThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
 
     mockMvc
         .perform(get("/api/users/me").with(authentication(authenticationFor(1L))))

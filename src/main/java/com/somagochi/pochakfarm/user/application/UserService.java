@@ -5,6 +5,7 @@ import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.social.SocialUserInfo;
 import com.somagochi.pochakfarm.farm.application.FarmInitializationService;
 import com.somagochi.pochakfarm.user.domain.User;
+import com.somagochi.pochakfarm.user.dto.UserProfileResponse;
 import com.somagochi.pochakfarm.user.dto.UserRegistration;
 import com.somagochi.pochakfarm.user.dto.UserResponse;
 import com.somagochi.pochakfarm.user.infrastructure.persistence.UserRepository;
@@ -26,11 +27,19 @@ public class UserService {
   }
 
   @Transactional(readOnly = true)
-  public UserResponse getProfile(Long userId) {
-    return UserResponse.from(
-        userRepository
-            .findById(userId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND)));
+  public UserResponse getMe(Long userId) {
+    return UserResponse.from(findUser(userId));
+  }
+
+  @Transactional(readOnly = true)
+  public UserProfileResponse getProfile(Long userId) {
+    return UserProfileResponse.from(findUser(userId));
+  }
+
+  private User findUser(Long userId) {
+    return userRepository
+        .findById(userId)
+        .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
   }
 
   @Transactional
