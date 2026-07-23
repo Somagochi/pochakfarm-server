@@ -107,6 +107,37 @@ CREATE TABLE `users` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `captures`
+--
+
+DROP TABLE IF EXISTS `captures`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `captures` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `created_at` datetime(6) NOT NULL,
+  `deleted_at` datetime(6) DEFAULT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  `animal_name` varchar(255) DEFAULT NULL,
+  `card_type` enum('GROUND','SEA','SKY','SPACE') NOT NULL,
+  `tier` enum('A','B','C','S','SS','SSS') NOT NULL,
+  `skill_1` int DEFAULT NULL,
+  `skill_2` int DEFAULT NULL,
+  `card_no` varchar(255) DEFAULT NULL,
+  `card_image` varchar(255) DEFAULT NULL,
+  `animal_image` varchar(255) DEFAULT NULL,
+  `generation_status` enum('FAILED','PROCESSING','SUCCEEDED','WAITING_UPLOAD') NOT NULL,
+  `elapsed_ms` int DEFAULT NULL,
+  `failure_reason` varchar(255) DEFAULT NULL,
+  `game_status` enum('EXPIRED','FAILED','PENDING','SUCCEEDED') NOT NULL,
+  `user_id` bigint NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_captures_user_id` (`user_id`),
+  CONSTRAINT `fk_captures_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Dumping events for database 'pochakfarm'
 --
 
