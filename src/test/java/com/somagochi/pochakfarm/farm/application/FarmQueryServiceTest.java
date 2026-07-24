@@ -3,6 +3,7 @@ package com.somagochi.pochakfarm.farm.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -51,6 +52,29 @@ class FarmQueryServiceTest {
   private final FarmQueryService service =
       new FarmQueryService(
           farmSpaceRepository, farmFloorRepository, farmSlotRepository, animalQueryService);
+
+  @Test
+  void findSpaceBySlotIdTraversesSlotToSpace() {
+    Long slotId = 7000L;
+    FarmSlot slot = mock(FarmSlot.class);
+    given(slot.getFloorId()).willReturn(FIRST_FLOOR_ID);
+    FarmFloor floor = mock(FarmFloor.class);
+    given(floor.getSpaceId()).willReturn(SPACE_ID);
+    FarmSpace space = mock(FarmSpace.class);
+    given(farmSlotRepository.findById(slotId)).willReturn(Optional.of(slot));
+    given(farmFloorRepository.findById(FIRST_FLOOR_ID)).willReturn(Optional.of(floor));
+    given(farmSpaceRepository.findById(SPACE_ID)).willReturn(Optional.of(space));
+
+    assertSame(space, service.findSpaceBySlotId(slotId).orElseThrow());
+  }
+
+  @Test
+  void findSpaceBySlotIdEmptyWhenSlotMissing() {
+    Long slotId = 7001L;
+    given(farmSlotRepository.findById(slotId)).willReturn(Optional.empty());
+
+    assertTrue(service.findSpaceBySlotId(slotId).isEmpty());
+  }
 
   @Test
   void throwsWhenUserHasNoSpaceOfTheme() {

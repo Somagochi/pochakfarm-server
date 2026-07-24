@@ -19,6 +19,7 @@ import com.somagochi.pochakfarm.farm.infrastructure.persistence.FarmSpaceReposit
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
@@ -50,6 +51,14 @@ public class FarmQueryService {
   public FarmSpaceResponse getFarmSpace(Long userId, CardType type, int page) {
     FarmFloorRange range = FarmFloorRange.ofPage(page);
     return toSpaceResponse(findSpace(userId, type), range);
+  }
+
+  @Transactional(readOnly = true)
+  public Optional<FarmSpace> findSpaceBySlotId(Long slotId) {
+    return farmSlotRepository
+        .findById(slotId)
+        .flatMap(slot -> farmFloorRepository.findById(slot.getFloorId()))
+        .flatMap(floor -> farmSpaceRepository.findById(floor.getSpaceId()));
   }
 
   private FarmSpaceResponse toSpaceResponse(FarmSpace space, FarmFloorRange range) {
