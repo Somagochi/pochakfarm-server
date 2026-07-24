@@ -35,9 +35,6 @@ public class FarmSlot extends BaseEntity {
   @Column(name = "floor_id", nullable = false, updatable = false)
   private Long floorId;
 
-  @Column(name = "animal_id")
-  private Long animalId;
-
   private FarmSlot(Long floorId, Integer sequence) {
     this.floorId = floorId;
     this.sequence = sequence;
@@ -45,9 +42,5 @@ public class FarmSlot extends BaseEntity {
 
   public static FarmSlot create(Long floorId, Integer sequence) {
     return new FarmSlot(floorId, sequence);
-  }
-
-  public boolean isEmpty() {
-    return animalId == null;
   }
 }

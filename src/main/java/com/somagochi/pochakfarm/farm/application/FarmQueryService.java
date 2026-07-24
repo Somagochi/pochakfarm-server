@@ -1,6 +1,6 @@
 package com.somagochi.pochakfarm.farm.application;
 
-import com.somagochi.pochakfarm.animal.application.AnimalReadService;
+import com.somagochi.pochakfarm.animal.application.AnimalQueryService;
 import com.somagochi.pochakfarm.animal.dto.AnimalResponse;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
@@ -19,7 +19,6 @@ import com.somagochi.pochakfarm.farm.infrastructure.persistence.FarmSpaceReposit
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
@@ -34,17 +33,17 @@ public class FarmQueryService {
   private final FarmSpaceRepository farmSpaceRepository;
   private final FarmFloorRepository farmFloorRepository;
   private final FarmSlotRepository farmSlotRepository;
-  private final AnimalReadService animalReadService;
+  private final AnimalQueryService animalQueryService;
 
   public FarmQueryService(
       FarmSpaceRepository farmSpaceRepository,
       FarmFloorRepository farmFloorRepository,
       FarmSlotRepository farmSlotRepository,
-      AnimalReadService animalReadService) {
+      AnimalQueryService animalQueryService) {
     this.farmSpaceRepository = farmSpaceRepository;
     this.farmFloorRepository = farmFloorRepository;
     this.farmSlotRepository = farmSlotRepository;
-    this.animalReadService = animalReadService;
+    this.animalQueryService = animalQueryService;
   }
 
   @Transactional(readOnly = true)
@@ -88,44 +87,45 @@ public class FarmQueryService {
 
   private List<FarmFloorResponse> toFloors(
       FarmFloorRange range, Map<Integer, List<FarmSlot>> slotsByFloorSequence) {
-    Map<Long, AnimalResponse> animals = findAnimals(slotsByFloorSequence);
+    Map<Long, AnimalResponse> animalsBySlotId = findAnimalsBySlotId(slotsByFloorSequence);
     List<FarmFloorResponse> floors = new ArrayList<>();
     for (int sequence = range.firstSequence(); sequence <= range.lastSequence(); sequence++) {
       List<FarmSlot> slots = slotsByFloorSequence.get(sequence);
       floors.add(
           slots == null
               ? FarmFloorResponse.locked(sequence)
-              : FarmFloorResponse.unlocked(sequence, toSlots(slots, animals)));
+              : FarmFloorResponse.unlocked(sequence, toSlots(slots, animalsBySlotId)));
     }
     return floors;
   }
 
-  private Map<Long, AnimalResponse> findAnimals(Map<Integer, List<FarmSlot>> slotsByFloorSequence) {
-    Set<Long> animalIds =
+  private Map<Long, AnimalResponse> findAnimalsBySlotId(
+      Map<Integer, List<FarmSlot>> slotsByFloorSequence) {
+    Set<Long> slotIds =
         slotsByFloorSequence.values().stream()
             .flatMap(List::stream)
-            .map(FarmSlot::getAnimalId)
-            .filter(Objects::nonNull)
+            .map(FarmSlot::getId)
             .collect(Collectors.toSet());
-    return animalReadService.getAnimals(animalIds);
+    return animalQueryService.getBySlotIds(slotIds);
   }
 
-  private List<FarmSlotResponse> toSlots(List<FarmSlot> slots, Map<Long, AnimalResponse> animals) {
+  private List<FarmSlotResponse> toSlots(
+      List<FarmSlot> slots, Map<Long, AnimalResponse> animalsBySlotId) {
     Map<Integer, FarmSlot> slotsBySequence =
         slots.stream()
             .collect(
                 Collectors.toMap(FarmSlot::getSequence, slot -> slot, (first, second) -> first));
     List<FarmSlotResponse> responses = new ArrayList<>();
     for (int sequence = 1; sequence <= FarmFloor.SLOT_COUNT_PER_FLOOR; sequence++) {
-      responses.add(toSlot(sequence, slotsBySequence.get(sequence), animals));
+      responses.add(toSlot(sequence, slotsBySequence.get(sequence), animalsBySlotId));
     }
     return responses;
   }
 
   private FarmSlotResponse toSlot(
-      Integer sequence, FarmSlot slot, Map<Long, AnimalResponse> animals) {
+      Integer sequence, FarmSlot slot, Map<Long, AnimalResponse> animalsBySlotId) {
     Long slotId = slot == null ? null : slot.getId();
-    AnimalResponse animal = slot == null || slot.isEmpty() ? null : animals.get(slot.getAnimalId());
+    AnimalResponse animal = slot == null ? null : animalsBySlotId.get(slot.getId());
     return animal == null
         ? FarmSlotResponse.empty(slotId, sequence)
         : FarmSlotResponse.occupied(slotId, sequence, toAnimal(animal));

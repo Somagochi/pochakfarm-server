@@ -13,10 +13,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 
-import com.somagochi.pochakfarm.animal.application.AnimalReadService;
+import com.somagochi.pochakfarm.animal.application.AnimalQueryService;
 import com.somagochi.pochakfarm.animal.dto.AnimalResponse;
+import com.somagochi.pochakfarm.capture.domain.Tier;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
-import com.somagochi.pochakfarm.characterization.domain.CharacterizationStatus;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.farm.domain.FarmFloor;
@@ -28,6 +28,7 @@ import com.somagochi.pochakfarm.farm.dto.FarmSpaceResponse;
 import com.somagochi.pochakfarm.farm.infrastructure.persistence.FarmFloorRepository;
 import com.somagochi.pochakfarm.farm.infrastructure.persistence.FarmSlotRepository;
 import com.somagochi.pochakfarm.farm.infrastructure.persistence.FarmSpaceRepository;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,10 +47,10 @@ class FarmQueryServiceTest {
   private final FarmSpaceRepository farmSpaceRepository = mock(FarmSpaceRepository.class);
   private final FarmFloorRepository farmFloorRepository = mock(FarmFloorRepository.class);
   private final FarmSlotRepository farmSlotRepository = mock(FarmSlotRepository.class);
-  private final AnimalReadService animalReadService = mock(AnimalReadService.class);
+  private final AnimalQueryService animalQueryService = mock(AnimalQueryService.class);
   private final FarmQueryService service =
       new FarmQueryService(
-          farmSpaceRepository, farmFloorRepository, farmSlotRepository, animalReadService);
+          farmSpaceRepository, farmFloorRepository, farmSlotRepository, animalQueryService);
 
   @Test
   void throwsWhenUserHasNoSpaceOfTheme() {
@@ -62,7 +63,7 @@ class FarmQueryServiceTest {
             () -> service.getFarmSpace(USER_ID, CardType.SEA, FarmSpace.FIRST_PAGE));
 
     assertEquals(ErrorCode.FARM_SPACE_NOT_FOUND.getCode(), exception.getCode());
-    verifyNoInteractions(farmFloorRepository, farmSlotRepository, animalReadService);
+    verifyNoInteractions(farmFloorRepository, farmSlotRepository, animalQueryService);
   }
 
   @Test
@@ -115,14 +116,14 @@ class FarmQueryServiceTest {
     given(farmSlotRepository.findAllByFloorIdInOrderBySequenceAsc(any()))
         .willReturn(
             List.of(
-                slot(FIRST_FLOOR_ID, 1, 11L),
-                slot(FIRST_FLOOR_ID, 2, 22L),
-                slot(SECOND_FLOOR_ID, 1, null)));
-    given(animalReadService.getAnimals(Set.of(11L, 22L)))
+                slot(501L, FIRST_FLOOR_ID, 1),
+                slot(502L, FIRST_FLOOR_ID, 2),
+                slot(503L, SECOND_FLOOR_ID, 1)));
+    given(animalQueryService.getBySlotIds(any()))
         .willReturn(
             Map.of(
-                11L, animal(11L, "첫번째", "https://cdn.example.com/a.png"),
-                22L, animal(22L, "두번째", null)));
+                501L, animal(11L, "첫번째", "https://cdn.example.com/a.png"),
+                502L, animal(22L, "두번째", null)));
 
     FarmSpaceResponse response = service.getFarmSpace(USER_ID, CardType.SEA, FarmSpace.FIRST_PAGE);
 
@@ -146,29 +147,32 @@ class FarmQueryServiceTest {
   }
 
   @Test
-  void looksUpOnlyAnimalsPlacedOnThePage() {
+  void looksUpAnimalsByAllSlotIdsOnThePage() {
     givenSpace();
     givenFloors(floor(FIRST_FLOOR_ID, 1));
     given(farmSlotRepository.findAllByFloorIdInOrderBySequenceAsc(any()))
-        .willReturn(List.of(slot(FIRST_FLOOR_ID, 1, 11L), slot(FIRST_FLOOR_ID, 2, null)));
-    given(animalReadService.getAnimals(Set.of(11L)))
-        .willReturn(Map.of(11L, animal(11L, "첫번째", null)));
+        .willReturn(List.of(slot(501L, FIRST_FLOOR_ID, 1), slot(502L, FIRST_FLOOR_ID, 2)));
+    given(animalQueryService.getBySlotIds(any()))
+        .willReturn(Map.of(501L, animal(11L, "첫번째", null)));
 
     FarmSpaceResponse response = service.getFarmSpace(USER_ID, CardType.SEA, FarmSpace.FIRST_PAGE);
 
     List<FarmSlotResponse> slots = response.floors().get(0).slots();
     assertEquals(11L, slots.get(0).animal().animalId());
     assertNull(slots.get(1).animal());
-    verify(animalReadService).getAnimals(Set.of(11L));
+
+    ArgumentCaptor<Collection<Long>> captor = ArgumentCaptor.forClass(Collection.class);
+    verify(animalQueryService).getBySlotIds(captor.capture());
+    assertEquals(Set.of(501L, 502L), Set.copyOf(captor.getValue()));
   }
 
   @Test
-  void leavesSlotEmptyWhenCharacterizationIsMissing() {
+  void leavesSlotEmptyWhenAnimalIsMissing() {
     givenSpace();
     givenFloors(floor(FIRST_FLOOR_ID, 1));
     given(farmSlotRepository.findAllByFloorIdInOrderBySequenceAsc(any()))
-        .willReturn(List.of(slot(FIRST_FLOOR_ID, 1, 11L)));
-    given(animalReadService.getAnimals(Set.of(11L))).willReturn(Map.of());
+        .willReturn(List.of(slot(501L, FIRST_FLOOR_ID, 1)));
+    given(animalQueryService.getBySlotIds(any())).willReturn(Map.of());
 
     FarmSpaceResponse response = service.getFarmSpace(USER_ID, CardType.SEA, FarmSpace.FIRST_PAGE);
 
@@ -186,12 +190,8 @@ class FarmQueryServiceTest {
   }
 
   private FarmSpace space() {
-    return spaceOf(CardType.SEA, SPACE_ID);
-  }
-
-  private FarmSpace spaceOf(CardType type, Long id) {
-    FarmSpace space = FarmSpace.create(USER_ID, type);
-    setField(space, "id", id);
+    FarmSpace space = FarmSpace.create(USER_ID, CardType.SEA);
+    setField(space, "id", SPACE_ID);
     return space;
   }
 
@@ -201,14 +201,13 @@ class FarmQueryServiceTest {
     return floor;
   }
 
-  private AnimalResponse animal(Long id, String animalName, String resultImageUrl) {
-    return new AnimalResponse(
-        id, animalName, CharacterizationStatus.SUCCEEDED, resultImageUrl, null, CardType.SEA, null);
+  private AnimalResponse animal(Long captureId, String animalName, String cardImage) {
+    return new AnimalResponse(captureId, animalName, CardType.SEA, Tier.A, cardImage, null);
   }
 
-  private FarmSlot slot(Long floorId, Integer sequence, Long animalId) {
+  private FarmSlot slot(Long id, Long floorId, Integer sequence) {
     FarmSlot slot = FarmSlot.create(floorId, sequence);
-    setField(slot, "animalId", animalId);
+    setField(slot, "id", id);
     return slot;
   }
 }

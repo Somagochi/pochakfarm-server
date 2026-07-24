@@ -15,11 +15,13 @@ import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "captures", indexes = @Index(name = "idx_captures_user_id", columnList = "user_id"))
+@SQLRestriction("deleted_at is null")
 public class Capture extends BaseEntity {
 
   @Id
