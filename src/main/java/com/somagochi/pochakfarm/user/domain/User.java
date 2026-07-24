@@ -31,6 +31,7 @@ import org.hibernate.annotations.SQLRestriction;
 public class User extends BaseEntity {
 
   private static final int MAX_NICKNAME_LENGTH = 20;
+  private static final int INITIAL_LEVEL = 1;
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,9 +44,12 @@ public class User extends BaseEntity {
 
   private String nickname;
 
+  private int level;
+
   private User(SocialAccount socialAccount, String email) {
     this.socialAccount = socialAccount;
     this.email = email;
+    this.level = INITIAL_LEVEL;
   }
 
   public static User register(SocialProvider provider, String providerId, String email) {
