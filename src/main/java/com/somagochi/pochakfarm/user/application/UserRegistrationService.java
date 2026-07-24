@@ -1,5 +1,7 @@
 package com.somagochi.pochakfarm.user.application;
 
+import com.somagochi.pochakfarm.common.exception.BusinessException;
+import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.social.SocialUserInfo;
 import com.somagochi.pochakfarm.farm.application.FarmInitializationService;
 import com.somagochi.pochakfarm.user.domain.User;
@@ -42,7 +44,7 @@ public class UserRegistrationService {
       farmInitializationService.initialize(user.getId());
       return user;
     } catch (DataIntegrityViolationException exception) {
-      return findBySocialAccount(userInfo).orElseThrow(() -> exception);
+      throw new BusinessException(ErrorCode.USER_ALREADY_REGISTERED);
     }
   }
 }
