@@ -1,6 +1,7 @@
 package com.somagochi.pochakfarm.capture.domain;
 
 import com.somagochi.pochakfarm.characterization.domain.CardType;
+import com.somagochi.pochakfarm.common.random.RandomProvider;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -8,13 +9,13 @@ public class CardTypeSelectionPolicy {
 
   private static final CardType[] TYPES = CardType.values();
 
-  private final CaptureRandom random;
+  private final RandomProvider randomProvider;
 
-  public CardTypeSelectionPolicy(CaptureRandom random) {
-    this.random = random;
+  public CardTypeSelectionPolicy(RandomProvider randomProvider) {
+    this.randomProvider = randomProvider;
   }
 
   public CardType select() {
-    return TYPES[random.nextInt(TYPES.length)];
+    return TYPES[randomProvider.nextInt(TYPES.length)];
   }
 }

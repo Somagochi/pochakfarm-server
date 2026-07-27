@@ -1,11 +1,10 @@
-package com.somagochi.pochakfarm.capture.infrastructure;
+package com.somagochi.pochakfarm.common.random;
 
-import com.somagochi.pochakfarm.capture.domain.CaptureRandom;
 import java.util.concurrent.ThreadLocalRandom;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ThreadLocalCaptureRandom implements CaptureRandom {
+public class ThreadLocalRandomProvider implements RandomProvider {
 
   @Override
   public int nextInt(int bound) {

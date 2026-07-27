@@ -1,5 +1,6 @@
 package com.somagochi.pochakfarm.capture.domain;
 
+import com.somagochi.pochakfarm.common.random.RandomProvider;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -16,14 +17,14 @@ public class TierSelectionPolicy {
   private static final int[] LEVEL_41_TO_45 = {1_400, 2_600, 3_000, 1_900, 800, 300};
   private static final int[] LEVEL_46_TO_50 = {1_000, 2_300, 3_000, 2_200, 1_000, 500};
 
-  private final CaptureRandom random;
+  private final RandomProvider randomProvider;
 
-  public TierSelectionPolicy(CaptureRandom random) {
-    this.random = random;
+  public TierSelectionPolicy(RandomProvider randomProvider) {
+    this.randomProvider = randomProvider;
   }
 
   public Tier select(int level) {
-    int value = random.nextInt(TOTAL_WEIGHT);
+    int value = randomProvider.nextInt(TOTAL_WEIGHT);
     int cumulativeWeight = 0;
     int[] weights = weightsFor(level);
     for (int index = 0; index < TIER_ORDER.length; index++) {
