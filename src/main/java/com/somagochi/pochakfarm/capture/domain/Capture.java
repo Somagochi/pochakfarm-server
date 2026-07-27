@@ -1,5 +1,6 @@
 package com.somagochi.pochakfarm.capture.domain;
 
+import com.somagochi.pochakfarm.characterization.domain.CardSkill;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.entity.BaseEntity;
 import jakarta.persistence.Column;
@@ -57,11 +58,13 @@ public class Capture extends BaseEntity {
   @Column(name = "tier", nullable = false, updatable = false)
   private Tier tier;
 
+  @Enumerated(EnumType.STRING)
   @Column(name = "skill_1")
-  private Integer skill1;
+  private CardSkill skill1;
 
+  @Enumerated(EnumType.STRING)
   @Column(name = "skill_2")
-  private Integer skill2;
+  private CardSkill skill2;
 
   @Column(name = "card_no")
   private String cardNo;

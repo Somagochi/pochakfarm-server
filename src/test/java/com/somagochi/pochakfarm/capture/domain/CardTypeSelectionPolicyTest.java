@@ -3,6 +3,7 @@ package com.somagochi.pochakfarm.capture.domain;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.somagochi.pochakfarm.characterization.domain.CardType;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -19,10 +20,7 @@ class CardTypeSelectionPolicyTest {
   }
 
   private static Stream<Arguments> cardTypeCases() {
-    return Stream.of(
-        Arguments.of(0, CardType.SKY),
-        Arguments.of(1, CardType.GROUND),
-        Arguments.of(2, CardType.SPACE),
-        Arguments.of(3, CardType.SEA));
+    CardType[] types = CardType.values();
+    return IntStream.range(0, types.length).mapToObj(index -> Arguments.of(index, types[index]));
   }
 }
