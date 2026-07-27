@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,4 +29,8 @@ public class Animal extends BaseEntity {
 
   @Column(name = "slot_id")
   private Long slotId;
+
+  public void remove() {
+    delete(Instant.now());
+  }
 }
