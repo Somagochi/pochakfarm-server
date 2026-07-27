@@ -40,6 +40,7 @@ public enum ErrorCode {
   PRE_REGISTRATION_NOT_FOUND(404, "PRE_REGISTRATION_NOT_FOUND", "Pre-registration not found"),
   INVALID_PARAMETER(400, "INVALID_PARAMETER", "Invalid request parameter"),
   FARM_SPACE_NOT_FOUND(404, "FARM_SPACE_NOT_FOUND", "Farm space not found"),
+  ANIMAL_NOT_FOUND(404, "ANIMAL_NOT_FOUND", "Animal not found"),
   ;
 
   private final int status;
