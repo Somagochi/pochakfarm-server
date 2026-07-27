@@ -1,7 +1,10 @@
 package com.somagochi.pochakfarm.capture.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 
+import com.somagochi.pochakfarm.common.random.RandomProvider;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -12,7 +15,9 @@ class TierSelectionPolicyTest {
   @ParameterizedTest
   @MethodSource("tierCases")
   void selectsTierFromLevelAndWeightedRandomValue(int level, int randomValue, Tier expected) {
-    TierSelectionPolicy policy = new TierSelectionPolicy(bound -> randomValue);
+    RandomProvider randomProvider = mock(RandomProvider.class);
+    given(randomProvider.nextInt(10_000)).willReturn(randomValue);
+    TierSelectionPolicy policy = new TierSelectionPolicy(randomProvider);
 
     assertEquals(expected, policy.select(level));
   }

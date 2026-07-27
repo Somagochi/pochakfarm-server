@@ -1,7 +1,12 @@
 package com.somagochi.pochakfarm.common.random;
 
-@FunctionalInterface
-public interface RandomProvider {
+import java.util.concurrent.ThreadLocalRandom;
+import org.springframework.stereotype.Component;
 
-  int nextInt(int bound);
+@Component
+public class RandomProvider {
+
+  public int nextInt(int bound) {
+    return ThreadLocalRandom.current().nextInt(bound);
+  }
 }

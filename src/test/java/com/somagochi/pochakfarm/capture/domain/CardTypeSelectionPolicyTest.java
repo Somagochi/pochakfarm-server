@@ -1,8 +1,11 @@
 package com.somagochi.pochakfarm.capture.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 
 import com.somagochi.pochakfarm.characterization.domain.CardType;
+import com.somagochi.pochakfarm.common.random.RandomProvider;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -14,7 +17,9 @@ class CardTypeSelectionPolicyTest {
   @ParameterizedTest
   @MethodSource("cardTypeCases")
   void selectsEachCardTypeWithEqualProbability(int randomValue, CardType expected) {
-    CardTypeSelectionPolicy policy = new CardTypeSelectionPolicy(bound -> randomValue);
+    RandomProvider randomProvider = mock(RandomProvider.class);
+    given(randomProvider.nextInt(CardType.values().length)).willReturn(randomValue);
+    CardTypeSelectionPolicy policy = new CardTypeSelectionPolicy(randomProvider);
 
     assertEquals(expected, policy.select());
   }
