@@ -99,7 +99,6 @@ CREATE TABLE `users` (
   `deleted_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) NOT NULL,
   `email` varchar(255) DEFAULT NULL,
-  `level` int NOT NULL DEFAULT '1',
   `provider` enum('APPLE','KAKAO','NAVER') NOT NULL,
   `provider_id` varchar(255) NOT NULL,
   PRIMARY KEY (`id`),
@@ -119,10 +118,6 @@ CREATE TABLE `captures` (
   `created_at` datetime(6) NOT NULL,
   `deleted_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) NOT NULL,
-  `client_request_id` varchar(36) NOT NULL,
-  `original_image_key` varchar(255) NOT NULL,
-  `original_image_content_type` varchar(255) NOT NULL,
-  `game_result_expires_at` datetime(6) NOT NULL,
   `animal_name` varchar(255) DEFAULT NULL,
   `card_type` enum('GROUND','SEA','SKY','SPACE') NOT NULL,
   `tier` enum('A','B','C','S','SS','SSS') NOT NULL,
@@ -137,8 +132,7 @@ CREATE TABLE `captures` (
   `game_status` enum('EXPIRED','FAILED','PENDING','SUCCEEDED') NOT NULL,
   `user_id` bigint NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_captures_user_id_client_request_id` (`user_id`,`client_request_id`),
-  KEY `idx_captures_user_id_created_at` (`user_id`,`created_at`),
+  KEY `idx_captures_user_id` (`user_id`),
   CONSTRAINT `fk_captures_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
