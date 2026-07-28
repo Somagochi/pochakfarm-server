@@ -45,6 +45,7 @@ public interface UserApiSpec {
   ApiResponse<UserProfileResponse> getProfile(UserPrincipal principal);
 
   @Operation(summary = "닉네임 변경", description = "현재 로그인한 회원의 닉네임을 변경한다.")
+  @SecurityRequirement(name = "bearerAuth")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "변경 성공")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "400",
