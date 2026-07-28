@@ -1,12 +1,15 @@
 package com.somagochi.pochakfarm.animal.application;
 
 import com.somagochi.pochakfarm.animal.domain.Animal;
+import com.somagochi.pochakfarm.animal.dto.AnimalDetailResponse;
 import com.somagochi.pochakfarm.animal.dto.AnimalResponse;
 import com.somagochi.pochakfarm.animal.infrastructure.persistence.AnimalRepository;
 import com.somagochi.pochakfarm.capture.domain.Capture;
 import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureRepository;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.response.CursorPage;
+import com.somagochi.pochakfarm.common.exception.BusinessException;
+import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
 import java.util.Collection;
 import java.util.HashMap;
@@ -48,6 +51,23 @@ public class AnimalQueryService {
         animalRepository.findByCaptureIdInAndIdLessThanOrderByIdDesc(
             captureById.keySet(), effectiveCursor(cursor), PageRequest.of(0, PAGE_SIZE + 1));
     return toCursorPage(fetched, captureById);
+  }
+
+  @Transactional(readOnly = true)
+  public AnimalDetailResponse getAnimal(Long userId, Long animalId) {
+    Capture capture =
+        captureRepository
+            .findByUserIdAndAnimalId(userId, animalId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.ANIMAL_NOT_FOUND));
+    return new AnimalDetailResponse(
+        animalId,
+        capture.getAnimalName(),
+        capture.getCardType(),
+        capture.getTier(),
+        capture.getSkill1(),
+        capture.getSkill2(),
+        buildUrlOrNull(capture.getCardImage()),
+        buildUrlOrNull(capture.getAnimalImage()));
   }
 
   @Transactional(readOnly = true)
