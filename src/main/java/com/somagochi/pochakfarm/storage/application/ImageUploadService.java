@@ -32,6 +32,16 @@ public class ImageUploadService {
   public PresignResponse createPresign(Long userId, String purpose, String contentType) {
     validateContentType(contentType);
     String key = buildKey(userId, purpose, contentType);
+    return presign(key, contentType);
+  }
+
+  public PresignResponse refreshPresign(Long userId, String key, String contentType) {
+    validateOwnership(userId, key);
+    validateContentType(contentType);
+    return presign(key, contentType);
+  }
+
+  private PresignResponse presign(String key, String contentType) {
     PresignedUpload upload =
         fileStorage.presignPut(key, contentType, properties.presignExpiration());
     return new PresignResponse(upload.url(), key, upload.expiresAt());
