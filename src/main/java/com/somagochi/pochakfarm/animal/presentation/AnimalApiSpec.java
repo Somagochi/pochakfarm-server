@@ -38,4 +38,30 @@ public interface AnimalApiSpec {
       description = "해당 사용자가 소유한 동물이 없음 (ANIMAL_NOT_FOUND)",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   ApiResponse<AnimalDetailResponse> getAnimal(UserPrincipal principal, Long animalId);
+
+  @Operation(
+      summary = "동물 삭제",
+      description =
+          "로그인한 사용자가 소유한 동물을 삭제한다. 실제 행을 지우지 않고 소프트 삭제(deleted_at 설정)하며, "
+              + "삭제된 동물은 조회와 농장 슬롯 배치에서 자동으로 제외된다. "
+              + "이미 삭제되었거나 다른 사용자의 동물이면 404(ANIMAL_NOT_FOUND)로 응답한다.")
+  @SecurityRequirement(name = "bearerAuth")
+  @Parameter(
+      in = ParameterIn.PATH,
+      name = "animalId",
+      required = true,
+      description = "삭제할 동물 ID",
+      example = "1")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "200",
+      description = "삭제 성공. data 는 null")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "401",
+      description = "인증 실패 (토큰 만료/무효)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "404",
+      description = "해당 사용자가 소유한 동물이 없음 (ANIMAL_NOT_FOUND)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  ApiResponse<Void> deleteAnimal(UserPrincipal principal, Long animalId);
 }
