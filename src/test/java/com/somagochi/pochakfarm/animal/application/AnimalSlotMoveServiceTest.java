@@ -21,6 +21,7 @@ import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.farm.application.FarmQueryService;
 import com.somagochi.pochakfarm.farm.domain.FarmSpace;
+import java.util.Objects;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -54,6 +55,21 @@ class AnimalSlotMoveServiceTest {
 
     verify(animal).moveTo(SPACE_ID, TARGET_FLOOR, TARGET_SLOT);
     assertEquals(ANIMAL_ID, response.animalId());
+    assertEquals(TARGET_FLOOR, response.floorNum());
+    assertEquals(TARGET_SLOT, response.slotNum());
+  }
+
+  @Test
+  void placesUnplacedAnimalIntoEmptyTargetSlot() {
+    Animal animal = unplacedAnimal();
+    givenAnimalWithCapture(animal, capture(USER_ID, CardType.SEA));
+    givenSpace(TARGET_FLOOR);
+    givenOccupant(Optional.empty());
+
+    AnimalSlotMoveResponse response =
+        service.moveToSlot(USER_ID, ANIMAL_ID, TARGET_FLOOR, TARGET_SLOT);
+
+    verify(animal).moveTo(SPACE_ID, TARGET_FLOOR, TARGET_SLOT);
     assertEquals(TARGET_FLOOR, response.floorNum());
     assertEquals(TARGET_SLOT, response.slotNum());
   }
@@ -189,18 +205,26 @@ class AnimalSlotMoveServiceTest {
   }
 
   private Animal animal(Integer floorNum, Integer slotNum) {
+    return animal(SPACE_ID, floorNum, slotNum);
+  }
+
+  private Animal unplacedAnimal() {
+    return animal(null, 0, 0);
+  }
+
+  private Animal animal(Long spaceId, Integer floorNum, Integer slotNum) {
     Animal animal = mock(Animal.class);
     given(animal.getId()).willReturn(ANIMAL_ID);
     given(animal.getCaptureId()).willReturn(CAPTURE_ID);
-    given(animal.getSpaceId()).willReturn(SPACE_ID);
+    given(animal.getSpaceId()).willReturn(spaceId);
     given(animal.getFloorNum()).willReturn(floorNum);
     given(animal.getSlotNum()).willReturn(slotNum);
     given(animal.isAt(any(), any(), any()))
         .willAnswer(
             invocation ->
-                SPACE_ID.equals(invocation.getArgument(0))
-                    && floorNum.equals(invocation.getArgument(1))
-                    && slotNum.equals(invocation.getArgument(2)));
+                Objects.equals(spaceId, invocation.getArgument(0))
+                    && Objects.equals(floorNum, invocation.getArgument(1))
+                    && Objects.equals(slotNum, invocation.getArgument(2)));
     return animal;
   }
 

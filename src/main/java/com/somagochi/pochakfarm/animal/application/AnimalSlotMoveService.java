@@ -37,25 +37,27 @@ public class AnimalSlotMoveService {
             .orElseThrow(() -> new BusinessException(ErrorCode.ANIMAL_NOT_FOUND));
     Capture capture = findOwnedCapture(userId, animal.getCaptureId());
     FarmSpace space = farmQueryService.getSpace(userId, capture.getCardType());
+    Long spaceId = space.getId();
     if (!space.canPlaceAt(targetFloorNum, targetSlotNum)) {
       throw new BusinessException(ErrorCode.FARM_SLOT_NOT_FOUND);
     }
-    if (animal.isAt(space.getId(), targetFloorNum, targetSlotNum)) {
-      return new AnimalSlotMoveResponse(animal.getId(), targetFloorNum, targetSlotNum);
+    if (!animal.isAt(spaceId, targetFloorNum, targetSlotNum)) {
+      animalRepository
+          .findBySpaceIdAndFloorNumAndSlotNum(spaceId, targetFloorNum, targetSlotNum)
+          .ifPresentOrElse(
+              occupant -> swap(animal, occupant, spaceId, targetFloorNum, targetSlotNum),
+              () -> animal.moveTo(spaceId, targetFloorNum, targetSlotNum));
     }
-    swapOccupant(animal, space.getId(), targetFloorNum, targetSlotNum);
-    animal.moveTo(space.getId(), targetFloorNum, targetSlotNum);
     return new AnimalSlotMoveResponse(animal.getId(), targetFloorNum, targetSlotNum);
   }
 
-  private void swapOccupant(
-      Animal animal, Long spaceId, Integer targetFloorNum, Integer targetSlotNum) {
+  private void swap(
+      Animal animal, Animal occupant, Long spaceId, Integer targetFloorNum, Integer targetSlotNum) {
     Long sourceSpaceId = animal.getSpaceId();
     Integer sourceFloorNum = animal.getFloorNum();
     Integer sourceSlotNum = animal.getSlotNum();
-    animalRepository
-        .findBySpaceIdAndFloorNumAndSlotNum(spaceId, targetFloorNum, targetSlotNum)
-        .ifPresent(occupant -> occupant.moveTo(sourceSpaceId, sourceFloorNum, sourceSlotNum));
+    animal.moveTo(spaceId, targetFloorNum, targetSlotNum);
+    occupant.moveTo(sourceSpaceId, sourceFloorNum, sourceSlotNum);
   }
 
   private Capture findOwnedCapture(Long userId, Long captureId) {
