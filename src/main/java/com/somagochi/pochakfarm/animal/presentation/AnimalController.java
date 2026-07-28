@@ -2,9 +2,9 @@ package com.somagochi.pochakfarm.animal.presentation;
 
 import com.somagochi.pochakfarm.animal.application.AnimalDeleteService;
 import com.somagochi.pochakfarm.animal.application.AnimalQueryService;
+import com.somagochi.pochakfarm.animal.dto.AnimalDetailResponse;
 import com.somagochi.pochakfarm.animal.dto.AnimalResponse;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
-import com.somagochi.pochakfarm.animal.dto.AnimalDetailResponse;
 import com.somagochi.pochakfarm.common.response.ApiResponse;
 import com.somagochi.pochakfarm.common.response.CursorPage;
 import com.somagochi.pochakfarm.common.security.UserPrincipal;
@@ -43,9 +43,9 @@ public class AnimalController implements AnimalApiSpec {
   @Override
   @GetMapping
   public ApiResponse<CursorPage<AnimalResponse>> getMyAnimals(
-          @RequestParam(name = "type", required = false) CardType type,
-          @RequestParam(name = "cursor", required = false) Long cursor,
-          @AuthenticationPrincipal UserPrincipal principal) {
+      @RequestParam(name = "type", required = false) CardType type,
+      @RequestParam(name = "cursor", required = false) Long cursor,
+      @AuthenticationPrincipal UserPrincipal principal) {
     return ApiResponse.success(animalQueryService.getMyAnimals(principal.id(), type, cursor));
   }
 }

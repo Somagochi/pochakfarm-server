@@ -1,9 +1,9 @@
 package com.somagochi.pochakfarm.animal.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -20,8 +20,8 @@ import com.somagochi.pochakfarm.capture.domain.Tier;
 import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureRepository;
 import com.somagochi.pochakfarm.characterization.domain.CardSkill;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
-import com.somagochi.pochakfarm.common.response.CursorPage;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
+import com.somagochi.pochakfarm.common.response.CursorPage;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
 import java.util.ArrayList;
 import java.util.List;

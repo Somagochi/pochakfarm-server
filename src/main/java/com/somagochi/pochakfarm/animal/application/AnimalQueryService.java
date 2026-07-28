@@ -7,9 +7,9 @@ import com.somagochi.pochakfarm.animal.infrastructure.persistence.AnimalReposito
 import com.somagochi.pochakfarm.capture.domain.Capture;
 import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureRepository;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
-import com.somagochi.pochakfarm.common.response.CursorPage;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
+import com.somagochi.pochakfarm.common.response.CursorPage;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
 import java.util.Collection;
 import java.util.HashMap;
