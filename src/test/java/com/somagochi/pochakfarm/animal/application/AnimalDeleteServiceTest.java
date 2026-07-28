@@ -23,7 +23,7 @@ class AnimalDeleteServiceTest {
 
     service.deleteAnimal(1L, 10L);
 
-    verify(animal).remove();
+    verify(animalRepository).delete(animal);
   }
 
   @Test

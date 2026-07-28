@@ -6,7 +6,6 @@ import com.somagochi.pochakfarm.animal.dto.AnimalResponse;
 import com.somagochi.pochakfarm.animal.infrastructure.persistence.AnimalRepository;
 import com.somagochi.pochakfarm.capture.domain.Capture;
 import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureRepository;
-import com.somagochi.pochakfarm.characterization.domain.CardSkill;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
@@ -46,14 +45,10 @@ public class AnimalQueryService {
         capture.getAnimalName(),
         capture.getCardType(),
         capture.getTier(),
-        toCardSkill(capture.getSkill1()),
-        toCardSkill(capture.getSkill2()),
+        capture.getSkill1(),
+        capture.getSkill2(),
         buildUrlOrNull(capture.getCardImage()),
         buildUrlOrNull(capture.getAnimalImage()));
-  }
-
-  private CardSkill toCardSkill(Integer skillOrdinal) {
-    return skillOrdinal == null ? null : CardSkill.values()[skillOrdinal];
   }
 
   @Transactional(readOnly = true)

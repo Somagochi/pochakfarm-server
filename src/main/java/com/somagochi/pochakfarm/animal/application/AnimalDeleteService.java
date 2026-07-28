@@ -22,6 +22,6 @@ public class AnimalDeleteService {
         animalRepository
             .findOwnedAnimal(userId, animalId)
             .orElseThrow(() -> new BusinessException(ErrorCode.ANIMAL_NOT_FOUND));
-    animal.remove();
+    animalRepository.delete(animal);
   }
 }

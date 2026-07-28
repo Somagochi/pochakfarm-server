@@ -58,8 +58,8 @@ class AnimalQueryServiceTest {
     given(capture.getAnimalName()).willReturn("바다냥");
     given(capture.getCardType()).willReturn(CardType.SEA);
     given(capture.getTier()).willReturn(Tier.A);
-    given(capture.getSkill1()).willReturn(CardSkill.SEA_WAVE_DASH.ordinal());
-    given(capture.getSkill2()).willReturn(CardSkill.SEA_BUBBLE_GUARD.ordinal());
+    given(capture.getSkill1()).willReturn(CardSkill.SEA_WAVE_DASH);
+    given(capture.getSkill2()).willReturn(CardSkill.SEA_BUBBLE_GUARD);
     given(capture.getCardImage()).willReturn("card-key");
     given(capture.getAnimalImage()).willReturn("animal-key");
     given(fileStorage.buildUrl("card-key")).willReturn("https://cdn/card");
