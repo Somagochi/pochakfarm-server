@@ -10,6 +10,7 @@ public enum ErrorCode {
   INVALID_SOCIAL_TOKEN(401, "INVALID_SOCIAL_TOKEN", "Invalid social token"),
   SOCIAL_USER_INFO_FAILED(502, "SOCIAL_USER_INFO_FAILED", "Failed to fetch social user info"),
   USER_NOT_FOUND(404, "USER_NOT_FOUND", "User not found"),
+  USER_ALREADY_REGISTERED(409, "USER_ALREADY_REGISTERED", "User already registered"),
   INVALID_NICKNAME(400, "INVALID_NICKNAME", "Invalid nickname"),
   TOKEN_OWNER_MISMATCH(401, "TOKEN_OWNER_MISMATCH", "Token owner mismatch"),
   UNSUPPORTED_CONTENT_TYPE(400, "UNSUPPORTED_CONTENT_TYPE", "Unsupported content type"),
@@ -40,6 +41,13 @@ public enum ErrorCode {
       409, "PHONE_NUMBER_ALREADY_REGISTERED", "Phone number already registered"),
   DEVICE_ALREADY_REGISTERED(409, "DEVICE_ALREADY_REGISTERED", "Device already registered"),
   PRE_REGISTRATION_NOT_FOUND(404, "PRE_REGISTRATION_NOT_FOUND", "Pre-registration not found"),
+  INVALID_PARAMETER(400, "INVALID_PARAMETER", "Invalid request parameter"),
+  FARM_SPACE_NOT_FOUND(404, "FARM_SPACE_NOT_FOUND", "Farm space not found"),
+  ANIMAL_NOT_FOUND(404, "ANIMAL_NOT_FOUND", "Animal not found"),
+  FORBIDDEN_ANIMAL_ACCESS(403, "FORBIDDEN_ANIMAL_ACCESS", "Forbidden animal access"),
+  FARM_SLOT_NOT_FOUND(404, "FARM_SLOT_NOT_FOUND", "Farm slot not found"),
+  FORBIDDEN_FARM_SLOT_ACCESS(403, "FORBIDDEN_FARM_SLOT_ACCESS", "Forbidden farm slot access"),
+  FARM_SLOT_TYPE_MISMATCH(400, "FARM_SLOT_TYPE_MISMATCH", "Farm slot type mismatch"),
   ;
 
   private final int status;

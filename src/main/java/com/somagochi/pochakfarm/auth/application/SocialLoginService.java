@@ -8,7 +8,7 @@ import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.social.SocialLoginResolver;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
 import com.somagochi.pochakfarm.common.social.SocialUserInfo;
-import com.somagochi.pochakfarm.user.application.UserService;
+import com.somagochi.pochakfarm.user.application.UserRegistrationService;
 import com.somagochi.pochakfarm.user.domain.User;
 import com.somagochi.pochakfarm.user.dto.UserRegistration;
 import org.springframework.stereotype.Service;
@@ -17,13 +17,15 @@ import org.springframework.stereotype.Service;
 public class SocialLoginService {
 
   private final SocialLoginResolver socialLoginResolver;
-  private final UserService userService;
+  private final UserRegistrationService userRegistrationService;
   private final TokenService tokenService;
 
   public SocialLoginService(
-      SocialLoginResolver socialLoginResolver, UserService userService, TokenService tokenService) {
+      SocialLoginResolver socialLoginResolver,
+      UserRegistrationService userRegistrationService,
+      TokenService tokenService) {
     this.socialLoginResolver = socialLoginResolver;
-    this.userService = userService;
+    this.userRegistrationService = userRegistrationService;
     this.tokenService = tokenService;
   }
 
@@ -32,7 +34,7 @@ public class SocialLoginService {
     validateToken(request.token());
 
     SocialUserInfo userInfo = socialLoginResolver.fetchUserInfo(provider, request.token());
-    UserRegistration registration = userService.getOrRegister(userInfo);
+    UserRegistration registration = userRegistrationService.getOrRegister(userInfo);
     User user = registration.user();
 
     TokenResponse tokenResponse = tokenService.generateTokenPair(String.valueOf(user.getId()));

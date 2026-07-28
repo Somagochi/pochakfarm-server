@@ -18,6 +18,7 @@ import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Getter
@@ -29,6 +30,7 @@ import lombok.NoArgsConstructor;
         @UniqueConstraint(
             name = "uk_captures_user_id_client_request_id",
             columnNames = {"user_id", "client_request_id"}))
+@SQLRestriction("deleted_at is null")
 public class Capture extends BaseEntity {
 
   @Id
