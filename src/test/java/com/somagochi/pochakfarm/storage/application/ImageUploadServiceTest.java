@@ -50,6 +50,26 @@ class ImageUploadServiceTest {
   }
 
   @Test
+  void refreshesPresignForExistingOwnerScopedKey() {
+    String key = "images/capture-source/42/source.jpg";
+
+    PresignResponse response = service.refreshPresign(42L, key, "image/jpeg");
+
+    assertEquals(key, response.key());
+    assertEquals("https://upload.test/" + key, response.uploadUrl());
+  }
+
+  @Test
+  void rejectsPresignRefreshForAnotherUsersKey() {
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () -> service.refreshPresign(42L, "images/capture-source/99/source.jpg", "image/jpeg"));
+
+    assertEquals(ErrorCode.FORBIDDEN_FILE_ACCESS.getCode(), exception.getCode());
+  }
+
+  @Test
   void rejectsUnsupportedContentTypeOnPresign() {
     BusinessException exception =
         assertThrows(
