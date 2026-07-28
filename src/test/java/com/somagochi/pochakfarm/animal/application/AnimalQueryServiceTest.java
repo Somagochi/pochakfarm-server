@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.somagochi.pochakfarm.animal.domain.Animal;
@@ -25,11 +26,14 @@ import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.response.CursorPage;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
-import org.springframework.data.domain.PageRequest;
+import org.mockito.ArgumentCaptor;
+import org.springframework.data.domain.Limit;
 
 class AnimalQueryServiceTest {
 
@@ -48,11 +52,9 @@ class AnimalQueryServiceTest {
       animals.add(animal(id, null, null));
       captures.add(capture(id));
     }
-    given(captureRepository.findByUserId(1L)).willReturn(captures);
-    given(
-            animalRepository.findByCaptureIdInAndIdLessThanOrderByIdDesc(
-                any(), eq(Long.MAX_VALUE), eq(PageRequest.of(0, 13))))
+    given(animalRepository.findOwnedAnimals(eq(1L), any(), eq(Long.MAX_VALUE), eq(Limit.of(13))))
         .willReturn(animals);
+    given(captureRepository.findAllById(any())).willReturn(captures);
 
     CursorPage<AnimalResponse> page = service.getMyAnimals(1L, null, null);
 
@@ -64,13 +66,11 @@ class AnimalQueryServiceTest {
 
   @Test
   void getMyAnimalsHasNoNextOnLastPage() {
-    Capture capture = capture(50L);
     Animal animal = animal(50L, null, null);
-    given(captureRepository.findByUserId(1L)).willReturn(List.of(capture));
-    given(
-            animalRepository.findByCaptureIdInAndIdLessThanOrderByIdDesc(
-                any(), eq(Long.MAX_VALUE), eq(PageRequest.of(0, 13))))
+    Capture capture = capture(50L);
+    given(animalRepository.findOwnedAnimals(eq(1L), any(), eq(Long.MAX_VALUE), eq(Limit.of(13))))
         .willReturn(List.of(animal));
+    given(captureRepository.findAllById(any())).willReturn(List.of(capture));
     given(fileStorage.buildUrl("card-50")).willReturn("https://cdn.test/card.png");
 
     CursorPage<AnimalResponse> page = service.getMyAnimals(1L, null, null);
@@ -83,14 +83,26 @@ class AnimalQueryServiceTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
+  void getMyAnimalsQueriesEveryCardTypeWhenTypeIsNotGiven() {
+    given(animalRepository.findOwnedAnimals(any(), any(), any(), any())).willReturn(List.of());
+
+    service.getMyAnimals(1L, null, null);
+
+    ArgumentCaptor<Collection<CardType>> captor = ArgumentCaptor.forClass(Collection.class);
+    verify(animalRepository).findOwnedAnimals(eq(1L), captor.capture(), eq(Long.MAX_VALUE), any());
+    assertEquals(Set.of(CardType.values()), Set.copyOf(captor.getValue()));
+  }
+
+  @Test
   void getMyAnimalsUsesCursorAndCardType() {
-    Capture capture = capture(30L);
     Animal animal = animal(30L, null, null);
-    given(captureRepository.findByUserIdAndCardType(1L, CardType.SEA)).willReturn(List.of(capture));
+    Capture capture = capture(30L);
     given(
-            animalRepository.findByCaptureIdInAndIdLessThanOrderByIdDesc(
-                any(), eq(50L), eq(PageRequest.of(0, 13))))
+            animalRepository.findOwnedAnimals(
+                eq(1L), eq(List.of(CardType.SEA)), eq(50L), eq(Limit.of(13))))
         .willReturn(List.of(animal));
+    given(captureRepository.findAllById(any())).willReturn(List.of(capture));
 
     CursorPage<AnimalResponse> page = service.getMyAnimals(1L, CardType.SEA, 50L);
 
@@ -101,15 +113,15 @@ class AnimalQueryServiceTest {
   }
 
   @Test
-  void getMyAnimalsReturnsEmptyWhenUserHasNoCaptures() {
-    given(captureRepository.findByUserId(1L)).willReturn(List.of());
+  void getMyAnimalsReturnsEmptyWhenUserHasNoAnimals() {
+    given(animalRepository.findOwnedAnimals(any(), any(), any(), any())).willReturn(List.of());
 
     CursorPage<AnimalResponse> page = service.getMyAnimals(1L, null, null);
 
     assertTrue(page.content().isEmpty());
     assertFalse(page.hasNext());
     assertNull(page.nextCursor());
-    verifyNoInteractions(animalRepository);
+    verifyNoInteractions(captureRepository);
   }
 
   @Test

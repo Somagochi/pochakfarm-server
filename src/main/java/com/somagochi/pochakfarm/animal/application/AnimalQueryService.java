@@ -12,12 +12,13 @@ import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.response.CursorPage;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,16 +42,22 @@ public class AnimalQueryService {
 
   @Transactional(readOnly = true)
   public CursorPage<AnimalResponse> getMyAnimals(Long userId, CardType type, Long cursor) {
-    List<Capture> captures = findCaptures(userId, type);
-    if (captures.isEmpty()) {
+    List<Animal> fetched =
+        animalRepository.findOwnedAnimals(
+            userId, cardTypesOf(type), effectiveCursor(cursor), Limit.of(PAGE_SIZE + 1));
+    if (fetched.isEmpty()) {
       return CursorPage.of(List.of(), null, false);
     }
-    Map<Long, Capture> captureById =
-        captures.stream().collect(Collectors.toMap(Capture::getId, capture -> capture));
-    List<Animal> fetched =
-        animalRepository.findByCaptureIdInAndIdLessThanOrderByIdDesc(
-            captureById.keySet(), effectiveCursor(cursor), PageRequest.of(0, PAGE_SIZE + 1));
-    return toCursorPage(fetched, captureById);
+    boolean hasNext = fetched.size() > PAGE_SIZE;
+    List<Animal> page = hasNext ? fetched.subList(0, PAGE_SIZE) : fetched;
+    Map<Long, Capture> captureById = findCapturesById(page);
+    List<AnimalResponse> items =
+        page.stream()
+            .filter(animal -> captureById.containsKey(animal.getCaptureId()))
+            .map(animal -> toResponse(animal, captureById.get(animal.getCaptureId())))
+            .toList();
+    Long nextCursor = hasNext ? page.get(page.size() - 1).getId() : null;
+    return CursorPage.of(items, nextCursor, hasNext);
   }
 
   @Transactional(readOnly = true)
@@ -91,10 +98,8 @@ public class AnimalQueryService {
     return byPosition;
   }
 
-  private List<Capture> findCaptures(Long userId, CardType type) {
-    return type == null
-        ? captureRepository.findByUserId(userId)
-        : captureRepository.findByUserIdAndCardType(userId, type);
+  private Collection<CardType> cardTypesOf(CardType type) {
+    return type == null ? List.of(CardType.values()) : List.of(type);
   }
 
   private Map<Long, Capture> findCapturesById(List<Animal> animals) {
@@ -105,18 +110,6 @@ public class AnimalQueryService {
 
   private long effectiveCursor(Long cursor) {
     return cursor == null ? Long.MAX_VALUE : cursor;
-  }
-
-  private CursorPage<AnimalResponse> toCursorPage(
-      List<Animal> fetched, Map<Long, Capture> captureById) {
-    boolean hasNext = fetched.size() > PAGE_SIZE;
-    List<Animal> page = hasNext ? fetched.subList(0, PAGE_SIZE) : fetched;
-    List<AnimalResponse> items =
-        page.stream()
-            .map(animal -> toResponse(animal, captureById.get(animal.getCaptureId())))
-            .toList();
-    Long nextCursor = hasNext ? page.get(page.size() - 1).getId() : null;
-    return CursorPage.of(items, nextCursor, hasNext);
   }
 
   private AnimalResponse toResponse(Animal animal, Capture capture) {
