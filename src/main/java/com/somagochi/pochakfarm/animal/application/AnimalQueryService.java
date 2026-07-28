@@ -1,10 +1,15 @@
 package com.somagochi.pochakfarm.animal.application;
 
 import com.somagochi.pochakfarm.animal.domain.Animal;
+import com.somagochi.pochakfarm.animal.dto.AnimalDetailResponse;
 import com.somagochi.pochakfarm.animal.dto.AnimalResponse;
 import com.somagochi.pochakfarm.animal.infrastructure.persistence.AnimalRepository;
 import com.somagochi.pochakfarm.capture.domain.Capture;
 import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureRepository;
+import com.somagochi.pochakfarm.characterization.domain.CardType;
+import com.somagochi.pochakfarm.common.exception.BusinessException;
+import com.somagochi.pochakfarm.common.exception.ErrorCode;
+import com.somagochi.pochakfarm.common.response.CursorPage;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
 import java.util.Collection;
 import java.util.HashMap;
@@ -12,11 +17,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AnimalQueryService {
+
+  private static final int PAGE_SIZE = 12;
 
   private final AnimalRepository animalRepository;
   private final CaptureRepository captureRepository;
@@ -29,6 +37,37 @@ public class AnimalQueryService {
     this.animalRepository = animalRepository;
     this.captureRepository = captureRepository;
     this.fileStorage = fileStorage;
+  }
+
+  @Transactional(readOnly = true)
+  public CursorPage<AnimalResponse> getMyAnimals(Long userId, CardType type, Long cursor) {
+    List<Capture> captures = findCaptures(userId, type);
+    if (captures.isEmpty()) {
+      return CursorPage.of(List.of(), null, false);
+    }
+    Map<Long, Capture> captureById =
+        captures.stream().collect(Collectors.toMap(Capture::getId, capture -> capture));
+    List<Animal> fetched =
+        animalRepository.findByCaptureIdInAndIdLessThanOrderByIdDesc(
+            captureById.keySet(), effectiveCursor(cursor), PageRequest.of(0, PAGE_SIZE + 1));
+    return toCursorPage(fetched, captureById);
+  }
+
+  @Transactional(readOnly = true)
+  public AnimalDetailResponse getAnimal(Long userId, Long animalId) {
+    Capture capture =
+        captureRepository
+            .findByUserIdAndAnimalId(userId, animalId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.ANIMAL_NOT_FOUND));
+    return new AnimalDetailResponse(
+        animalId,
+        capture.getAnimalName(),
+        capture.getCardType(),
+        capture.getTier(),
+        capture.getSkill1(),
+        capture.getSkill2(),
+        buildUrlOrNull(capture.getCardImage()),
+        buildUrlOrNull(capture.getAnimalImage()));
   }
 
   @Transactional(readOnly = true)
@@ -48,10 +87,32 @@ public class AnimalQueryService {
     return bySlotId;
   }
 
+  private List<Capture> findCaptures(Long userId, CardType type) {
+    return type == null
+        ? captureRepository.findByUserId(userId)
+        : captureRepository.findByUserIdAndCardType(userId, type);
+  }
+
   private Map<Long, Capture> findCapturesById(List<Animal> animals) {
     Set<Long> captureIds = animals.stream().map(Animal::getCaptureId).collect(Collectors.toSet());
     return captureRepository.findAllById(captureIds).stream()
         .collect(Collectors.toMap(Capture::getId, capture -> capture));
+  }
+
+  private long effectiveCursor(Long cursor) {
+    return cursor == null ? Long.MAX_VALUE : cursor;
+  }
+
+  private CursorPage<AnimalResponse> toCursorPage(
+      List<Animal> fetched, Map<Long, Capture> captureById) {
+    boolean hasNext = fetched.size() > PAGE_SIZE;
+    List<Animal> page = hasNext ? fetched.subList(0, PAGE_SIZE) : fetched;
+    List<AnimalResponse> items =
+        page.stream()
+            .map(animal -> toResponse(animal, captureById.get(animal.getCaptureId())))
+            .toList();
+    Long nextCursor = hasNext ? page.get(page.size() - 1).getId() : null;
+    return CursorPage.of(items, nextCursor, hasNext);
   }
 
   private AnimalResponse toResponse(Animal animal, Capture capture) {
