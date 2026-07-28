@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.somagochi.pochakfarm.animal.application.AnimalDeleteService;
 import com.somagochi.pochakfarm.animal.application.AnimalQueryService;
+import com.somagochi.pochakfarm.animal.application.AnimalSlotMoveService;
 import com.somagochi.pochakfarm.animal.dto.AnimalResponse;
 import com.somagochi.pochakfarm.capture.domain.Tier;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
@@ -52,6 +53,8 @@ class AnimalControllerTest {
   @MockitoBean private AnimalQueryService animalQueryService;
 
   @MockitoBean private AnimalDeleteService animalDeleteService;
+
+  @MockitoBean private AnimalSlotMoveService animalSlotMoveService;
 
   @Test
   void returnsMyAnimals() throws Exception {

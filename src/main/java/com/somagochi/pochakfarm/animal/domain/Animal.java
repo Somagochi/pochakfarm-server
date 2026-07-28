@@ -28,4 +28,8 @@ public class Animal extends BaseEntity {
 
   @Column(name = "slot_id")
   private Long slotId;
+
+  public void moveTo(Long slotId) {
+    this.slotId = slotId;
+  }
 }

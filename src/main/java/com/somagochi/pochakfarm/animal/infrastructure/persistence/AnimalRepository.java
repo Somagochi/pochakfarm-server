@@ -20,4 +20,6 @@ public interface AnimalRepository extends JpaRepository<Animal, Long> {
       "select a from Animal a, Capture c "
           + "where a.id = :animalId and a.captureId = c.id and c.userId = :userId")
   Optional<Animal> findOwnedAnimal(@Param("userId") Long userId, @Param("animalId") Long animalId);
+
+  Optional<Animal> findBySlotId(Long slotId);
 }
