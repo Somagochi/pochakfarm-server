@@ -13,6 +13,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.somagochi.pochakfarm.animal.domain.Animal;
 import com.somagochi.pochakfarm.animal.dto.AnimalDetailResponse;
+import com.somagochi.pochakfarm.animal.dto.AnimalPosition;
 import com.somagochi.pochakfarm.animal.dto.AnimalResponse;
 import com.somagochi.pochakfarm.animal.infrastructure.persistence.AnimalRepository;
 import com.somagochi.pochakfarm.capture.domain.Capture;
@@ -44,7 +45,7 @@ class AnimalQueryServiceTest {
     List<Capture> captures = new ArrayList<>();
     for (int i = 0; i < 13; i++) {
       long id = 100L - i;
-      animals.add(animal(id, null));
+      animals.add(animal(id, null, null));
       captures.add(capture(id));
     }
     given(captureRepository.findByUserId(1L)).willReturn(captures);
@@ -64,7 +65,7 @@ class AnimalQueryServiceTest {
   @Test
   void getMyAnimalsHasNoNextOnLastPage() {
     Capture capture = capture(50L);
-    Animal animal = animal(50L, null);
+    Animal animal = animal(50L, null, null);
     given(captureRepository.findByUserId(1L)).willReturn(List.of(capture));
     given(
             animalRepository.findByCaptureIdInAndIdLessThanOrderByIdDesc(
@@ -84,7 +85,7 @@ class AnimalQueryServiceTest {
   @Test
   void getMyAnimalsUsesCursorAndCardType() {
     Capture capture = capture(30L);
-    Animal animal = animal(30L, null);
+    Animal animal = animal(30L, null, null);
     given(captureRepository.findByUserIdAndCardType(1L, CardType.SEA)).willReturn(List.of(capture));
     given(
             animalRepository.findByCaptureIdInAndIdLessThanOrderByIdDesc(
@@ -112,22 +113,24 @@ class AnimalQueryServiceTest {
   }
 
   @Test
-  void getBySlotIdsReturnsEmptyWithoutQueryingWhenEmpty() {
-    assertTrue(service.getBySlotIds(List.of()).isEmpty());
-    verifyNoInteractions(animalRepository, captureRepository, fileStorage);
+  void getByFloorRangeReturnsEmptyWithoutLoadingCapturesWhenNoAnimals() {
+    given(animalRepository.findBySpaceIdAndFloorNumBetween(100L, 1, 4)).willReturn(List.of());
+
+    assertTrue(service.getByFloorRange(100L, 1, 4).isEmpty());
+    verifyNoInteractions(captureRepository, fileStorage);
   }
 
   @Test
-  void getBySlotIdsMapsSlotIdToAnimal() {
-    Animal animal = animal(7L, 100L);
+  void getByFloorRangeMapsPositionToAnimal() {
+    Animal animal = animal(7L, 2, 3);
     Capture capture = capture(7L);
-    given(animalRepository.findBySlotIdIn(List.of(100L))).willReturn(List.of(animal));
+    given(animalRepository.findBySpaceIdAndFloorNumBetween(100L, 1, 4)).willReturn(List.of(animal));
     given(captureRepository.findAllById(any())).willReturn(List.of(capture));
 
-    Map<Long, AnimalResponse> bySlotId = service.getBySlotIds(List.of(100L));
+    Map<AnimalPosition, AnimalResponse> byPosition = service.getByFloorRange(100L, 1, 4);
 
-    assertEquals(1, bySlotId.size());
-    assertEquals(7L, bySlotId.get(100L).animalId());
+    assertEquals(1, byPosition.size());
+    assertEquals(7L, byPosition.get(new AnimalPosition(2, 3)).animalId());
   }
 
   @Test
@@ -178,11 +181,12 @@ class AnimalQueryServiceTest {
     assertThrows(BusinessException.class, () -> service.getAnimal(1L, 10L));
   }
 
-  private Animal animal(long id, Long slotId) {
+  private Animal animal(long id, Integer floorNum, Integer slotNum) {
     Animal animal = mock(Animal.class);
     given(animal.getId()).willReturn(id);
     given(animal.getCaptureId()).willReturn(id);
-    given(animal.getSlotId()).willReturn(slotId);
+    given(animal.getFloorNum()).willReturn(floorNum);
+    given(animal.getSlotNum()).willReturn(slotNum);
     return animal;
   }
 

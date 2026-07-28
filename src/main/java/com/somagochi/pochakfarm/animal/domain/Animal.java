@@ -26,10 +26,17 @@ public class Animal extends BaseEntity {
   @Column(name = "capture_id")
   private Long captureId;
 
-  @Column(name = "slot_id")
-  private Long slotId;
+  @Column(name = "space_id")
+  private Long spaceId;
 
-  public void moveTo(Long slotId) {
-    this.slotId = slotId;
+  @Column(name = "floor_num")
+  private Integer floorNum = 0;
+
+  @Column(name = "slot_num")
+  private Integer slotNum = 0;
+
+  public void moveTo(int floorNum, int slotNum) {
+    this.floorNum = floorNum;
+    this.slotNum = slotNum;
   }
 }

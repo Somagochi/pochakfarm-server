@@ -2,6 +2,7 @@ package com.somagochi.pochakfarm.animal.application;
 
 import com.somagochi.pochakfarm.animal.domain.Animal;
 import com.somagochi.pochakfarm.animal.dto.AnimalDetailResponse;
+import com.somagochi.pochakfarm.animal.dto.AnimalPosition;
 import com.somagochi.pochakfarm.animal.dto.AnimalResponse;
 import com.somagochi.pochakfarm.animal.infrastructure.persistence.AnimalRepository;
 import com.somagochi.pochakfarm.capture.domain.Capture;
@@ -11,7 +12,6 @@ import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.response.CursorPage;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,20 +71,24 @@ public class AnimalQueryService {
   }
 
   @Transactional(readOnly = true)
-  public Map<Long, AnimalResponse> getBySlotIds(Collection<Long> slotIds) {
-    if (slotIds.isEmpty()) {
+  public Map<AnimalPosition, AnimalResponse> getByFloorRange(
+      Long spaceId, int firstFloorNum, int lastFloorNum) {
+    List<Animal> animals =
+        animalRepository.findBySpaceIdAndFloorNumBetween(spaceId, firstFloorNum, lastFloorNum);
+    if (animals.isEmpty()) {
       return Map.of();
     }
-    List<Animal> animals = animalRepository.findBySlotIdIn(slotIds);
     Map<Long, Capture> captureById = findCapturesById(animals);
-    Map<Long, AnimalResponse> bySlotId = new HashMap<>();
+    Map<AnimalPosition, AnimalResponse> byPosition = new HashMap<>();
     for (Animal animal : animals) {
       Capture capture = captureById.get(animal.getCaptureId());
       if (capture != null) {
-        bySlotId.put(animal.getSlotId(), toResponse(animal, capture));
+        byPosition.put(
+            new AnimalPosition(animal.getFloorNum(), animal.getSlotNum()),
+            toResponse(animal, capture));
       }
     }
-    return bySlotId;
+    return byPosition;
   }
 
   private List<Capture> findCaptures(Long userId, CardType type) {

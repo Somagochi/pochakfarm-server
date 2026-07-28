@@ -32,6 +32,8 @@ public class FarmSpace extends BaseEntity {
   public static final int FLOOR_COUNT_PER_PAGE = 4;
   public static final int TOTAL_PAGE_COUNT = TOTAL_FLOOR_COUNT / FLOOR_COUNT_PER_PAGE;
   public static final int FIRST_PAGE = 0;
+  public static final int FIRST_FLOOR = 1;
+  public static final int SLOT_COUNT_PER_FLOOR = 4;
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,6 +46,9 @@ public class FarmSpace extends BaseEntity {
   @Column(name = "user_id", nullable = false, updatable = false)
   private Long userId;
 
+  @Column(name = "floor", nullable = false)
+  private Integer floor = FIRST_FLOOR;
+
   private FarmSpace(Long userId, CardType type) {
     this.userId = userId;
     this.type = type;
@@ -51,5 +56,9 @@ public class FarmSpace extends BaseEntity {
 
   public static FarmSpace create(Long userId, CardType type) {
     return new FarmSpace(userId, type);
+  }
+
+  public boolean isUnlocked(int floorSequence) {
+    return floorSequence <= floor;
   }
 }

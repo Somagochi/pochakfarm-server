@@ -14,12 +14,11 @@ public interface AnimalRepository extends JpaRepository<Animal, Long> {
   List<Animal> findByCaptureIdInAndIdLessThanOrderByIdDesc(
       Collection<Long> captureIds, Long cursor, Pageable pageable);
 
-  List<Animal> findBySlotIdIn(Collection<Long> slotIds);
+  List<Animal> findBySpaceIdAndFloorNumBetween(
+      Long spaceId, Integer firstFloorNum, Integer lastFloorNum);
 
   @Query(
       "select a from Animal a, Capture c "
           + "where a.id = :animalId and a.captureId = c.id and c.userId = :userId")
   Optional<Animal> findOwnedAnimal(@Param("userId") Long userId, @Param("animalId") Long animalId);
-
-  Optional<Animal> findBySlotId(Long slotId);
 }
