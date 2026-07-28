@@ -5,9 +5,9 @@ import com.somagochi.pochakfarm.animal.application.AnimalQueryService;
 import com.somagochi.pochakfarm.animal.application.AnimalSlotMoveService;
 import com.somagochi.pochakfarm.animal.dto.AnimalDetailResponse;
 import com.somagochi.pochakfarm.animal.dto.AnimalResponse;
-import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.animal.dto.AnimalSlotMoveRequest;
 import com.somagochi.pochakfarm.animal.dto.AnimalSlotMoveResponse;
+import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.response.ApiResponse;
 import com.somagochi.pochakfarm.common.response.CursorPage;
 import com.somagochi.pochakfarm.common.security.UserPrincipal;
@@ -58,10 +58,10 @@ public class AnimalController implements AnimalApiSpec {
   @Override
   @PatchMapping("/{animalId}/slot")
   public ApiResponse<AnimalSlotMoveResponse> moveSlot(
-          @PathVariable Long animalId,
-          @RequestBody AnimalSlotMoveRequest request,
-          @AuthenticationPrincipal UserPrincipal principal) {
+      @PathVariable Long animalId,
+      @RequestBody AnimalSlotMoveRequest request,
+      @AuthenticationPrincipal UserPrincipal principal) {
     return ApiResponse.success(
-            animalSlotMoveService.moveToSlot(principal.id(), animalId, request.targetSlotId()));
+        animalSlotMoveService.moveToSlot(principal.id(), animalId, request.targetSlotId()));
   }
 }
