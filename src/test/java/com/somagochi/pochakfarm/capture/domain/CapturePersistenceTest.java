@@ -8,6 +8,7 @@ import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
 import com.somagochi.pochakfarm.user.domain.User;
 import jakarta.persistence.EntityManager;
+import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,12 +19,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 class CapturePersistenceTest {
 
+  private static final Instant GAME_RESULT_EXPIRES_AT = Instant.parse("2026-07-24T01:05:00Z");
+
   @Autowired private EntityManager entityManager;
 
   @Test
   void persistsRequiredUserAndStringStatusesWithNullableAsyncResults() {
     User user = persistUser();
-    Capture capture = Capture.start(user.getId(), CardType.GROUND, Tier.C);
+    Capture capture = capture(user.getId(), CardType.GROUND, Tier.C);
 
     entityManager.persist(capture);
     entityManager.flush();
@@ -33,7 +36,8 @@ class CapturePersistenceTest {
             entityManager
                 .createNativeQuery(
                     """
-                    SELECT generation_status, game_status, animal_name, skill_1, skill_2,
+                    SELECT generation_status, game_status, client_request_id, original_image_key,
+                           original_image_content_type, animal_name, skill_1, skill_2,
                            card_no, card_image, animal_image, elapsed_ms, failure_reason
                     FROM captures
                     WHERE id = :id
@@ -43,20 +47,38 @@ class CapturePersistenceTest {
 
     assertEquals(GenerationStatus.WAITING_UPLOAD.name(), row[0].toString());
     assertEquals(GameStatus.PENDING.name(), row[1].toString());
-    for (int index = 2; index < row.length; index++) {
+    assertEquals("550e8400-e29b-41d4-a716-446655440000", row[2]);
+    assertEquals("images/capture-original/1/original.jpg", row[3]);
+    assertEquals("image/jpeg", row[4]);
+    for (int index = 5; index < row.length; index++) {
       assertNull(row[index]);
     }
+
+    entityManager.clear();
+    assertEquals(
+        GAME_RESULT_EXPIRES_AT,
+        entityManager.find(Capture.class, capture.getId()).getGameResultExpiresAt());
   }
 
   @Test
   void requiresUser() {
-    assertThrows(NullPointerException.class, () -> Capture.start(null, CardType.GROUND, Tier.C));
+    assertThrows(
+        NullPointerException.class,
+        () ->
+            Capture.create(
+                null,
+                "550e8400-e29b-41d4-a716-446655440000",
+                CardType.GROUND,
+                Tier.C,
+                "images/capture-original/1/original.jpg",
+                "image/jpeg",
+                GAME_RESULT_EXPIRES_AT));
   }
 
   @Test
   void withdrawingUserDoesNotDeleteCapture() {
     User user = persistUser();
-    Capture capture = Capture.start(user.getId(), CardType.SKY, Tier.B);
+    Capture capture = capture(user.getId(), CardType.SKY, Tier.B);
     entityManager.persist(capture);
     entityManager.flush();
 
@@ -74,11 +96,37 @@ class CapturePersistenceTest {
     assertEquals(1L, count.longValue());
   }
 
+  @Test
+  void requiresUniqueClientRequestIdPerUser() {
+    User user = persistUser();
+    entityManager.persist(capture(user.getId(), CardType.GROUND, Tier.C));
+    entityManager.flush();
+
+    assertThrows(
+        RuntimeException.class,
+        () -> {
+          entityManager.persist(capture(user.getId(), CardType.SKY, Tier.B));
+          entityManager.flush();
+        });
+  }
+
   private User persistUser() {
     User user =
         User.register(
             SocialProvider.KAKAO, "capture-test-" + UUID.randomUUID(), "capture@test.com");
+    assertEquals(1, user.getLevel());
     entityManager.persist(user);
     return user;
+  }
+
+  private Capture capture(Long userId, CardType cardType, Tier tier) {
+    return Capture.create(
+        userId,
+        "550e8400-e29b-41d4-a716-446655440000",
+        cardType,
+        tier,
+        "images/capture-original/1/original.jpg",
+        "image/jpeg",
+        GAME_RESULT_EXPIRES_AT);
   }
 }
