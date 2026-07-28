@@ -1,0 +1,118 @@
+package com.somagochi.pochakfarm.capture.application;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+
+import com.somagochi.pochakfarm.capture.domain.Capture;
+import com.somagochi.pochakfarm.capture.domain.Tier;
+import com.somagochi.pochakfarm.capture.dto.CaptureStartRequest;
+import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureRepository;
+import com.somagochi.pochakfarm.characterization.domain.CardType;
+import com.somagochi.pochakfarm.common.exception.BusinessException;
+import com.somagochi.pochakfarm.common.exception.ErrorCode;
+import com.somagochi.pochakfarm.common.social.SocialProvider;
+import com.somagochi.pochakfarm.storage.domain.FileStorage;
+import com.somagochi.pochakfarm.storage.domain.PresignedUpload;
+import com.somagochi.pochakfarm.user.domain.User;
+import com.somagochi.pochakfarm.user.infrastructure.persistence.UserRepository;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+@SpringBootTest
+class CaptureStartConcurrencyTest {
+
+  @Autowired private CaptureStartService captureStartService;
+  @Autowired private CaptureRepository captureRepository;
+  @Autowired private UserRepository userRepository;
+
+  @MockitoBean private FileStorage fileStorage;
+
+  private final ExecutorService executor = Executors.newFixedThreadPool(2);
+  private Long userId;
+
+  @BeforeEach
+  void setUp() {
+    captureRepository.deleteAll();
+    userRepository.deleteAll();
+    User user =
+        userRepository.save(
+            User.register(
+                SocialProvider.KAKAO, "concurrency-" + UUID.randomUUID(), "concurrency@test.com"));
+    userId = user.getId();
+    for (int index = 0; index < 4; index++) {
+      captureRepository.save(
+          Capture.create(
+              userId,
+              UUID.randomUUID().toString(),
+              CardType.GROUND,
+              Tier.C,
+              "images/capture-original/%d/%s.jpg".formatted(userId, UUID.randomUUID()),
+              "image/jpeg",
+              Instant.now().plusSeconds(300)));
+    }
+    given(fileStorage.presignPut(any(), any(), any()))
+        .willAnswer(
+            invocation ->
+                new PresignedUpload(
+                    "https://upload.example/" + invocation.getArgument(0),
+                    Instant.now().plusSeconds(300)));
+  }
+
+  @AfterEach
+  void tearDown() {
+    executor.shutdownNow();
+  }
+
+  @Test
+  void allowsOnlyOneCaptureWhenOneDailyAttemptRemains() throws Exception {
+    CountDownLatch ready = new CountDownLatch(2);
+    CountDownLatch start = new CountDownLatch(1);
+    List<Callable<String>> requests = new ArrayList<>();
+    for (int index = 0; index < 2; index++) {
+      requests.add(
+          () -> {
+            ready.countDown();
+            start.await(5, TimeUnit.SECONDS);
+            try {
+              captureStartService.startCapture(
+                  userId, new CaptureStartRequest(UUID.randomUUID().toString(), "image/jpeg"));
+              return "SUCCESS";
+            } catch (BusinessException exception) {
+              return exception.getCode();
+            }
+          });
+    }
+
+    List<Future<String>> results = new ArrayList<>();
+    for (Callable<String> request : requests) {
+      results.add(executor.submit(request));
+    }
+    ready.await(5, TimeUnit.SECONDS);
+    start.countDown();
+
+    List<String> outcomes = new ArrayList<>();
+    for (Future<String> result : results) {
+      outcomes.add(result.get(10, TimeUnit.SECONDS));
+    }
+
+    assertEquals(1, outcomes.stream().filter("SUCCESS"::equals).count());
+    assertEquals(
+        1, outcomes.stream().filter(ErrorCode.CAPTURE_ATTEMPT_EXHAUSTED.getCode()::equals).count());
+    assertEquals(5, captureRepository.count());
+  }
+}
