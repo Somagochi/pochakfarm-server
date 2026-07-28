@@ -46,8 +46,8 @@ public class AnimalQueryService {
         capture.getAnimalName(),
         capture.getCardType(),
         capture.getTier(),
-        toCardSkill(capture.getSkill1()),
-        toCardSkill(capture.getSkill2()),
+        capture.getSkill1(),
+        capture.getSkill2(),
         buildUrlOrNull(capture.getCardImage()),
         buildUrlOrNull(capture.getAnimalImage()));
   }
