@@ -41,6 +41,11 @@ public class FarmQueryService {
     return FarmSpaceResponse.of(space.getType(), range, toFloors(space, range, animals));
   }
 
+  @Transactional(readOnly = true)
+  public FarmSpace getSpace(Long userId, CardType type) {
+    return findSpace(userId, type);
+  }
+
   private FarmSpace findSpace(Long userId, CardType type) {
     return farmSpaceRepository
         .findByUserIdAndType(userId, type)

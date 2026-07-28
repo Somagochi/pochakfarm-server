@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -35,7 +36,14 @@ public class Animal extends BaseEntity {
   @Column(name = "slot_num")
   private Integer slotNum = 0;
 
-  public void moveTo(int floorNum, int slotNum) {
+  public boolean isAt(Long spaceId, Integer floorNum, Integer slotNum) {
+    return Objects.equals(this.spaceId, spaceId)
+        && Objects.equals(this.floorNum, floorNum)
+        && Objects.equals(this.slotNum, slotNum);
+  }
+
+  public void moveTo(Long spaceId, Integer floorNum, Integer slotNum) {
+    this.spaceId = spaceId;
     this.floorNum = floorNum;
     this.slotNum = slotNum;
   }

@@ -33,6 +33,7 @@ public class FarmSpace extends BaseEntity {
   public static final int TOTAL_PAGE_COUNT = TOTAL_FLOOR_COUNT / FLOOR_COUNT_PER_PAGE;
   public static final int FIRST_PAGE = 0;
   public static final int FIRST_FLOOR = 1;
+  public static final int FIRST_SLOT = 1;
   public static final int SLOT_COUNT_PER_FLOOR = 4;
 
   @Id
@@ -60,5 +61,15 @@ public class FarmSpace extends BaseEntity {
 
   public boolean isUnlocked(int floorSequence) {
     return floorSequence <= floor;
+  }
+
+  public boolean canPlaceAt(Integer floorNum, Integer slotNum) {
+    if (floorNum == null || slotNum == null) {
+      return false;
+    }
+    return floorNum >= FIRST_FLOOR
+        && isUnlocked(floorNum)
+        && slotNum >= FIRST_SLOT
+        && slotNum <= SLOT_COUNT_PER_FLOOR;
   }
 }

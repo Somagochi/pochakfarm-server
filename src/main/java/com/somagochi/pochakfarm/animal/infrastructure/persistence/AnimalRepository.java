@@ -17,6 +17,9 @@ public interface AnimalRepository extends JpaRepository<Animal, Long> {
   List<Animal> findBySpaceIdAndFloorNumBetween(
       Long spaceId, Integer firstFloorNum, Integer lastFloorNum);
 
+  Optional<Animal> findBySpaceIdAndFloorNumAndSlotNum(
+      Long spaceId, Integer floorNum, Integer slotNum);
+
   @Query(
       "select a from Animal a, Capture c "
           + "where a.id = :animalId and a.captureId = c.id and c.userId = :userId")
