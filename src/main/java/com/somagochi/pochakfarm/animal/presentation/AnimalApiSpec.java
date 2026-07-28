@@ -68,7 +68,7 @@ public interface AnimalApiSpec {
   @Operation(
       summary = "동물 삭제",
       description =
-          "로그인한 사용자가 소유한 동물을 삭제한다. 실제 행을 지우지 않고 소프트 삭제(deleted_at 설정)하며, "
+          "로그인한 사용자가 소유한 동물을 삭제한다."
               + "삭제된 동물은 조회와 농장 슬롯 배치에서 자동으로 제외된다. "
               + "이미 삭제되었거나 다른 사용자의 동물이면 404(ANIMAL_NOT_FOUND)로 응답한다.")
   @SecurityRequirement(name = "bearerAuth")
