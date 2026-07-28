@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.somagochi.pochakfarm.animal.application.AnimalDeleteService;
 import com.somagochi.pochakfarm.animal.application.AnimalQueryService;
 import com.somagochi.pochakfarm.animal.dto.AnimalResponse;
 import com.somagochi.pochakfarm.capture.domain.Tier;
@@ -49,6 +50,8 @@ class AnimalControllerTest {
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private AnimalQueryService animalQueryService;
+
+  @MockitoBean private AnimalDeleteService animalDeleteService;
 
   @Test
   void returnsMyAnimals() throws Exception {
