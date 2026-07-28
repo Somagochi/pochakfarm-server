@@ -4,11 +4,15 @@ import com.somagochi.pochakfarm.animal.domain.Animal;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface AnimalRepository extends JpaRepository<Animal, Long> {
+
+  List<Animal> findByCaptureIdInAndIdLessThanOrderByIdDesc(
+      Collection<Long> captureIds, Long cursor, Pageable pageable);
 
   List<Animal> findBySlotIdIn(Collection<Long> slotIds);
 
