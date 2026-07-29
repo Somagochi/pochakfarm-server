@@ -106,11 +106,11 @@ class FarmQueryServiceTest {
 
     FarmFloorResponse firstFloor = response.floors().get(0);
     assertEquals(FarmSpace.SLOT_COUNT_PER_FLOOR, firstFloor.slots().size());
-    assertEquals(1, firstFloor.slots().get(0).sequence());
+    assertEquals(1, firstFloor.slots().get(0).slotNum());
     assertEquals("첫번째", firstFloor.slots().get(0).animal().animalName());
     assertEquals(
         "https://cdn.example.com/a.png", firstFloor.slots().get(0).animal().cardImageUrl());
-    assertEquals(2, firstFloor.slots().get(1).sequence());
+    assertEquals(2, firstFloor.slots().get(1).slotNum());
     assertEquals(22L, firstFloor.slots().get(1).animal().animalId());
     assertNull(firstFloor.slots().get(1).animal().cardImageUrl());
 

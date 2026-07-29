@@ -68,9 +68,9 @@ class FarmControllerTest {
         .andExpect(jsonPath("$.data.totalPages").value(FarmSpace.TOTAL_PAGE_COUNT))
         .andExpect(jsonPath("$.data.floors.length()").value(2))
         .andExpect(jsonPath("$.data.floors[0].unlocked").value(true))
-        .andExpect(jsonPath("$.data.floors[0].slots[0].sequence").value(1))
+        .andExpect(jsonPath("$.data.floors[0].slots[0].slotNum").value(1))
         .andExpect(jsonPath("$.data.floors[0].slots[0].animal.animalId").value(11))
-        .andExpect(jsonPath("$.data.floors[0].slots[1].sequence").value(2))
+        .andExpect(jsonPath("$.data.floors[0].slots[1].slotNum").value(2))
         .andExpect(jsonPath("$.data.floors[0].slots[1].animal").doesNotExist())
         .andExpect(jsonPath("$.data.floors[1].unlocked").value(false))
         .andExpect(jsonPath("$.data.floors[1].slots.length()").value(0));

@@ -5,15 +5,15 @@ import java.util.List;
 
 @Schema(description = "농장 층 정보")
 public record FarmFloorResponse(
-    @Schema(description = "층 순번(1부터 시작)", example = "1") Integer sequence,
+    @Schema(description = "층 번호(1부터 시작)", example = "1") Integer floorNum,
     @Schema(description = "개방 여부", example = "true") boolean unlocked,
     @Schema(description = "슬롯 목록. 미개방 층은 빈 배열") List<FarmSlotResponse> slots) {
 
-  public static FarmFloorResponse locked(Integer sequence) {
-    return new FarmFloorResponse(sequence, false, List.of());
+  public static FarmFloorResponse locked(Integer floorNum) {
+    return new FarmFloorResponse(floorNum, false, List.of());
   }
 
-  public static FarmFloorResponse unlocked(Integer sequence, List<FarmSlotResponse> slots) {
-    return new FarmFloorResponse(sequence, true, slots);
+  public static FarmFloorResponse unlocked(Integer floorNum, List<FarmSlotResponse> slots) {
+    return new FarmFloorResponse(floorNum, true, slots);
   }
 }
