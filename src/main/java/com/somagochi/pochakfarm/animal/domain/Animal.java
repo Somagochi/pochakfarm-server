@@ -36,6 +36,17 @@ public class Animal extends BaseEntity {
   @Column(name = "slot_num")
   private Integer slotNum = 0;
 
+  private Animal(Long captureId, Long spaceId, Integer floorNum, Integer slotNum) {
+    this.captureId = Objects.requireNonNull(captureId);
+    this.spaceId = Objects.requireNonNull(spaceId);
+    this.floorNum = Objects.requireNonNull(floorNum);
+    this.slotNum = Objects.requireNonNull(slotNum);
+  }
+
+  public static Animal create(Long captureId, Long spaceId, Integer floorNum, Integer slotNum) {
+    return new Animal(captureId, spaceId, floorNum, slotNum);
+  }
+
   public boolean isPlacedIn(Long spaceId) {
     return spaceId != null && Objects.equals(this.spaceId, spaceId);
   }
