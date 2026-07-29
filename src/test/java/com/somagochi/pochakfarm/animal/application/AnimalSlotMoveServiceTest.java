@@ -60,21 +60,6 @@ class AnimalSlotMoveServiceTest {
   }
 
   @Test
-  void placesUnplacedAnimalIntoEmptyTargetSlot() {
-    Animal animal = unplacedAnimal();
-    givenAnimalWithCapture(animal, capture(USER_ID, CardType.SEA));
-    givenSpace(TARGET_FLOOR);
-    givenOccupant(Optional.empty());
-
-    AnimalSlotMoveResponse response =
-        service.moveToSlot(USER_ID, ANIMAL_ID, TARGET_FLOOR, TARGET_SLOT);
-
-    verify(animal).moveTo(SPACE_ID, TARGET_FLOOR, TARGET_SLOT);
-    assertEquals(TARGET_FLOOR, response.floorNum());
-    assertEquals(TARGET_SLOT, response.slotNum());
-  }
-
-  @Test
   void swapsPositionsWhenTargetIsOccupied() {
     Animal animal = animal(SOURCE_FLOOR, SOURCE_SLOT);
     Animal occupant = mock(Animal.class);
@@ -99,6 +84,21 @@ class AnimalSlotMoveServiceTest {
 
     assertEquals(TARGET_FLOOR, response.floorNum());
     assertEquals(TARGET_SLOT, response.slotNum());
+    verify(animal, never()).moveTo(anyLong(), anyInt(), anyInt());
+  }
+
+  @Test
+  void rejectsWhenAnimalIsNotPlacedInFarm() {
+    Animal animal = unplacedAnimal();
+    givenAnimalWithCapture(animal, capture(USER_ID, CardType.SEA));
+    givenSpace(TARGET_FLOOR);
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () -> service.moveToSlot(USER_ID, ANIMAL_ID, TARGET_FLOOR, TARGET_SLOT));
+
+    assertEquals(ErrorCode.ANIMAL_NOT_PLACED.getCode(), exception.getCode());
     verify(animal, never()).moveTo(anyLong(), anyInt(), anyInt());
   }
 
@@ -219,6 +219,11 @@ class AnimalSlotMoveServiceTest {
     given(animal.getSpaceId()).willReturn(spaceId);
     given(animal.getFloorNum()).willReturn(floorNum);
     given(animal.getSlotNum()).willReturn(slotNum);
+    given(animal.isPlacedIn(any()))
+        .willAnswer(
+            invocation ->
+                invocation.getArgument(0) != null
+                    && Objects.equals(spaceId, invocation.getArgument(0)));
     given(animal.isAt(any(), any(), any()))
         .willAnswer(
             invocation ->

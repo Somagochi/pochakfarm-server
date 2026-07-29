@@ -38,6 +38,9 @@ public class AnimalSlotMoveService {
     Capture capture = findOwnedCapture(userId, animal.getCaptureId());
     FarmSpace space = farmQueryService.getSpace(userId, capture.getCardType());
     Long spaceId = space.getId();
+    if (!animal.isPlacedIn(spaceId)) {
+      throw new BusinessException(ErrorCode.ANIMAL_NOT_PLACED);
+    }
     if (!space.canPlaceAt(targetFloorNum, targetSlotNum)) {
       throw new BusinessException(ErrorCode.FARM_SLOT_NOT_FOUND);
     }
@@ -53,11 +56,10 @@ public class AnimalSlotMoveService {
 
   private void swap(
       Animal animal, Animal occupant, Long spaceId, Integer targetFloorNum, Integer targetSlotNum) {
-    Long sourceSpaceId = animal.getSpaceId();
     Integer sourceFloorNum = animal.getFloorNum();
     Integer sourceSlotNum = animal.getSlotNum();
     animal.moveTo(spaceId, targetFloorNum, targetSlotNum);
-    occupant.moveTo(sourceSpaceId, sourceFloorNum, sourceSlotNum);
+    occupant.moveTo(spaceId, sourceFloorNum, sourceSlotNum);
   }
 
   private Capture findOwnedCapture(Long userId, Long captureId) {

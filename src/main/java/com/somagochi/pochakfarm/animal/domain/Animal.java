@@ -36,6 +36,10 @@ public class Animal extends BaseEntity {
   @Column(name = "slot_num")
   private Integer slotNum = 0;
 
+  public boolean isPlacedIn(Long spaceId) {
+    return spaceId != null && Objects.equals(this.spaceId, spaceId);
+  }
+
   public boolean isAt(Long spaceId, Integer floorNum, Integer slotNum) {
     return Objects.equals(this.spaceId, spaceId)
         && Objects.equals(this.floorNum, floorNum)

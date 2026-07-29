@@ -94,7 +94,7 @@ public interface AnimalApiSpec {
   @Operation(
       summary = "동물 슬롯 위치 교체",
       description =
-          "로그인한 사용자의 동물을 같은 테마 농장의 대상 좌표(층 번호, 슬롯 번호)로 이동한다. 대상 슬롯이 비어 있으면 "
+          "이미 농장에 배치된 동물을 같은 테마 농장의 대상 좌표(층 번호, 슬롯 번호)로 이동한다. 대상 슬롯이 비어 있으면 "
               + "그대로 이동하고, 사용자의 다른 동물이 있으면 두 동물의 위치를 서로 교체한다. 농장은 동물의 카드 타입으로 "
               + "결정되므로 요청에 지정하지 않는다.")
   @SecurityRequirement(name = "bearerAuth")
@@ -110,6 +110,10 @@ public interface AnimalApiSpec {
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "404",
       description = "동물 없음, 농장 없음, 또는 미개방 층이거나 범위를 벗어난 좌표 (FARM_SLOT_NOT_FOUND)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "409",
+      description = "아직 농장에 배치되지 않은 동물 (ANIMAL_NOT_PLACED)",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   ApiResponse<AnimalSlotMoveResponse> moveSlot(
       @Parameter(description = "이동할 동물 ID", example = "1") Long animalId,
