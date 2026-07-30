@@ -11,13 +11,11 @@ import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "animals")
-@SQLRestriction("deleted_at is null")
 public class Animal extends BaseEntity {
 
   @Id
