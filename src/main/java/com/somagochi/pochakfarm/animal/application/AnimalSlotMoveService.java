@@ -36,7 +36,7 @@ public class AnimalSlotMoveService {
             .findById(animalId)
             .orElseThrow(() -> new BusinessException(ErrorCode.ANIMAL_NOT_FOUND));
     Capture capture = findOwnedCapture(userId, animal.getCaptureId());
-    FarmSpace space = farmQueryService.getSpace(userId, capture.getCardType());
+    FarmSpace space = farmQueryService.getSpaceForUpdate(userId, capture.getCardType());
     Long spaceId = space.getId();
     if (!animal.isPlacedIn(spaceId)) {
       throw new BusinessException(ErrorCode.ANIMAL_NOT_PLACED);
@@ -46,7 +46,7 @@ public class AnimalSlotMoveService {
     }
     if (!animal.isAt(spaceId, targetFloorNum, targetSlotNum)) {
       animalRepository
-          .findBySpaceIdAndFloorNumAndSlotNum(spaceId, targetFloorNum, targetSlotNum)
+          .findBySpaceIdAndFloorNumAndSlotNumForUpdate(spaceId, targetFloorNum, targetSlotNum)
           .ifPresentOrElse(
               occupant -> swap(animal, occupant, spaceId, targetFloorNum, targetSlotNum),
               () -> animal.moveTo(spaceId, targetFloorNum, targetSlotNum));

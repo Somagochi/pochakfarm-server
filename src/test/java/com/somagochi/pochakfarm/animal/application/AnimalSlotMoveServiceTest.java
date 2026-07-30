@@ -176,7 +176,7 @@ class AnimalSlotMoveServiceTest {
   void propagatesWhenSpaceOfTypeIsMissing() {
     Animal animal = animal(SOURCE_FLOOR, SOURCE_SLOT);
     givenAnimalWithCapture(animal, capture(USER_ID, CardType.SEA));
-    given(farmQueryService.getSpace(USER_ID, CardType.SEA))
+    given(farmQueryService.getSpaceForUpdate(USER_ID, CardType.SEA))
         .willThrow(new BusinessException(ErrorCode.FARM_SPACE_NOT_FOUND));
 
     BusinessException exception =
@@ -196,11 +196,13 @@ class AnimalSlotMoveServiceTest {
     FarmSpace space = FarmSpace.create(USER_ID, CardType.SEA);
     setField(space, "id", SPACE_ID);
     setField(space, "floor", unlockedFloor);
-    given(farmQueryService.getSpace(USER_ID, CardType.SEA)).willReturn(space);
+    given(farmQueryService.getSpaceForUpdate(USER_ID, CardType.SEA)).willReturn(space);
   }
 
   private void givenOccupant(Optional<Animal> occupant) {
-    given(animalRepository.findBySpaceIdAndFloorNumAndSlotNum(SPACE_ID, TARGET_FLOOR, TARGET_SLOT))
+    given(
+            animalRepository.findBySpaceIdAndFloorNumAndSlotNumForUpdate(
+                SPACE_ID, TARGET_FLOOR, TARGET_SLOT))
         .willReturn(occupant);
   }
 

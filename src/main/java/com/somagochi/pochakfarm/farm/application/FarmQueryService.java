@@ -46,6 +46,13 @@ public class FarmQueryService {
     return findSpace(userId, type);
   }
 
+  @Transactional
+  public FarmSpace getSpaceForUpdate(Long userId, CardType type) {
+    return farmSpaceRepository
+        .findByUserIdAndTypeForUpdate(userId, type)
+        .orElseThrow(() -> new BusinessException(ErrorCode.FARM_SPACE_NOT_FOUND));
+  }
+
   private FarmSpace findSpace(Long userId, CardType type) {
     return farmSpaceRepository
         .findByUserIdAndType(userId, type)

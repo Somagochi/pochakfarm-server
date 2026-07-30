@@ -2,11 +2,13 @@ package com.somagochi.pochakfarm.animal.infrastructure.persistence;
 
 import com.somagochi.pochakfarm.animal.domain.Animal;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
+import jakarta.persistence.LockModeType;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -28,6 +30,15 @@ public interface AnimalRepository extends JpaRepository<Animal, Long> {
 
   Optional<Animal> findBySpaceIdAndFloorNumAndSlotNum(
       Long spaceId, Integer floorNum, Integer slotNum);
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query(
+      "select a from Animal a "
+          + "where a.spaceId = :spaceId and a.floorNum = :floorNum and a.slotNum = :slotNum")
+  Optional<Animal> findBySpaceIdAndFloorNumAndSlotNumForUpdate(
+      @Param("spaceId") Long spaceId,
+      @Param("floorNum") Integer floorNum,
+      @Param("slotNum") Integer slotNum);
 
   @Query(
       "select a from Animal a, Capture c "
