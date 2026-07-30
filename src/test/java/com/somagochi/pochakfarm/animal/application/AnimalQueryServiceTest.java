@@ -150,8 +150,10 @@ class AnimalQueryServiceTest {
     assertEquals("바다냥", response.animalName());
     assertEquals(CardType.SEA, response.cardType());
     assertEquals(Tier.A, response.tier());
-    assertEquals(CardSkill.SEA_WAVE_DASH, response.skill1());
-    assertEquals(CardSkill.SEA_BUBBLE_GUARD, response.skill2());
+    assertEquals(CardSkill.SEA_WAVE_DASH.displayName(), response.skill1().name());
+    assertEquals(CardSkill.SEA_WAVE_DASH.description(), response.skill1().description());
+    assertEquals(CardSkill.SEA_BUBBLE_GUARD.displayName(), response.skill2().name());
+    assertEquals(CardSkill.SEA_BUBBLE_GUARD.description(), response.skill2().description());
     assertEquals("https://cdn/card", response.cardImageUrl());
     assertEquals("https://cdn/animal", response.animalImageUrl());
   }

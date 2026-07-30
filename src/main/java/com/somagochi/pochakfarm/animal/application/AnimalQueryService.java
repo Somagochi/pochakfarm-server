@@ -3,6 +3,7 @@ package com.somagochi.pochakfarm.animal.application;
 import com.somagochi.pochakfarm.animal.domain.Animal;
 import com.somagochi.pochakfarm.animal.dto.AnimalDetailResponse;
 import com.somagochi.pochakfarm.animal.dto.AnimalResponse;
+import com.somagochi.pochakfarm.animal.dto.AnimalSkillResponse;
 import com.somagochi.pochakfarm.animal.infrastructure.persistence.AnimalRepository;
 import com.somagochi.pochakfarm.capture.domain.Capture;
 import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureRepository;
@@ -64,8 +65,8 @@ public class AnimalQueryService {
         capture.getAnimalName(),
         capture.getCardType(),
         capture.getTier(),
-        capture.getSkill1(),
-        capture.getSkill2(),
+        AnimalSkillResponse.from(capture.getSkill1()),
+        AnimalSkillResponse.from(capture.getSkill2()),
         buildUrlOrNull(capture.getCardImage()),
         buildUrlOrNull(capture.getAnimalImage()));
   }
