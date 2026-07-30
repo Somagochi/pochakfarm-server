@@ -64,7 +64,7 @@ class CaptureControllerTest {
     Instant expiresAt = Instant.parse("2026-07-24T01:05:00Z");
     given(
             captureStartService.startCapture(
-                1L, new CaptureStartRequest(CLIENT_REQUEST_ID, "image/jpeg")))
+                1L, new CaptureStartRequest(CLIENT_REQUEST_ID, "image/jpeg", "두부")))
         .willReturn(
             new CaptureStartResponse(
                 123L,
@@ -87,7 +87,8 @@ class CaptureControllerTest {
                     """
                     {
                       "clientRequestId": "%s",
-                      "contentType": "image/jpeg"
+                      "contentType": "image/jpeg",
+                      "animalName": "두부"
                     }
                     """
                         .formatted(CLIENT_REQUEST_ID)))
@@ -107,7 +108,7 @@ class CaptureControllerTest {
         .andExpect(jsonPath("$.data.gameResultExpiresAt").value("2026-07-24T01:05:00Z"));
 
     verify(captureStartService)
-        .startCapture(1L, new CaptureStartRequest(CLIENT_REQUEST_ID, "image/jpeg"));
+        .startCapture(1L, new CaptureStartRequest(CLIENT_REQUEST_ID, "image/jpeg", "두부"));
   }
 
   @Test
@@ -120,7 +121,8 @@ class CaptureControllerTest {
                     """
                     {
                       "clientRequestId": "%s",
-                      "contentType": "image/jpeg"
+                      "contentType": "image/jpeg",
+                      "animalName": "두부"
                     }
                     """
                         .formatted(CLIENT_REQUEST_ID)))
@@ -133,7 +135,7 @@ class CaptureControllerTest {
   void returnsConflictWhenDailyAttemptsAreExhausted() throws Exception {
     given(
             captureStartService.startCapture(
-                1L, new CaptureStartRequest(CLIENT_REQUEST_ID, "image/jpeg")))
+                1L, new CaptureStartRequest(CLIENT_REQUEST_ID, "image/jpeg", "두부")))
         .willThrow(new BusinessException(ErrorCode.CAPTURE_ATTEMPT_EXHAUSTED));
 
     mockMvc
@@ -145,7 +147,8 @@ class CaptureControllerTest {
                     """
                     {
                       "clientRequestId": "%s",
-                      "contentType": "image/jpeg"
+                      "contentType": "image/jpeg",
+                      "animalName": "두부"
                     }
                     """
                         .formatted(CLIENT_REQUEST_ID)))
