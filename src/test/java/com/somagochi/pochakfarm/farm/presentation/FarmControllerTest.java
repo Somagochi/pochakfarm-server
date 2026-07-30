@@ -3,6 +3,7 @@ package com.somagochi.pochakfarm.farm.presentation;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -16,9 +17,11 @@ import com.somagochi.pochakfarm.common.security.JwtAuthenticationToken;
 import com.somagochi.pochakfarm.common.security.SecurityAccessDeniedHandler;
 import com.somagochi.pochakfarm.common.security.SecurityAuthenticationEntryPoint;
 import com.somagochi.pochakfarm.common.security.UserPrincipal;
+import com.somagochi.pochakfarm.farm.application.FarmFloorPurchaseService;
 import com.somagochi.pochakfarm.farm.application.FarmQueryService;
 import com.somagochi.pochakfarm.farm.domain.FarmSpace;
 import com.somagochi.pochakfarm.farm.dto.FarmAnimalResponse;
+import com.somagochi.pochakfarm.farm.dto.FarmFloorPurchaseResponse;
 import com.somagochi.pochakfarm.farm.dto.FarmFloorResponse;
 import com.somagochi.pochakfarm.farm.dto.FarmSlotResponse;
 import com.somagochi.pochakfarm.farm.dto.FarmSpaceResponse;
@@ -53,6 +56,8 @@ class FarmControllerTest {
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private FarmQueryService farmQueryService;
+
+  @MockitoBean private FarmFloorPurchaseService farmFloorPurchaseService;
 
   @Test
   void returnsFarmSpaceOfTheme() throws Exception {
@@ -123,6 +128,46 @@ class FarmControllerTest {
   @Test
   void returnsUnauthorizedWithoutAuthentication() throws Exception {
     mockMvc.perform(get("/api/farms/{theme}", "SEA")).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void purchasesNextFloor() throws Exception {
+    given(farmFloorPurchaseService.purchaseNextFloor(USER_ID, CardType.SEA))
+        .willReturn(new FarmFloorPurchaseResponse(CardType.SEA, 2, 500L));
+
+    mockMvc
+        .perform(post("/api/farms/{type}/floors", "SEA").with(authentication(userAuthentication())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.type").value("SEA"))
+        .andExpect(jsonPath("$.data.unlockedFloor").value(2))
+        .andExpect(jsonPath("$.data.remainingCoins").value(500));
+  }
+
+  @Test
+  void returnsConflictWhenCoinsInsufficient() throws Exception {
+    given(farmFloorPurchaseService.purchaseNextFloor(USER_ID, CardType.SEA))
+        .willThrow(new BusinessException(ErrorCode.INSUFFICIENT_COINS));
+
+    mockMvc
+        .perform(post("/api/farms/{type}/floors", "SEA").with(authentication(userAuthentication())))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("INSUFFICIENT_COINS"));
+  }
+
+  @Test
+  void returnsConflictWhenAllFloorsUnlocked() throws Exception {
+    given(farmFloorPurchaseService.purchaseNextFloor(USER_ID, CardType.SEA))
+        .willThrow(new BusinessException(ErrorCode.FARM_FLOOR_MAX_REACHED));
+
+    mockMvc
+        .perform(post("/api/farms/{type}/floors", "SEA").with(authentication(userAuthentication())))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("FARM_FLOOR_MAX_REACHED"));
+  }
+
+  @Test
+  void returnsUnauthorizedForPurchaseWithoutAuthentication() throws Exception {
+    mockMvc.perform(post("/api/farms/{type}/floors", "SEA")).andExpect(status().isUnauthorized());
   }
 
   private static Authentication userAuthentication() {

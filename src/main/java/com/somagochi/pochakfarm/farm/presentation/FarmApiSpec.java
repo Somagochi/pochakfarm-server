@@ -4,6 +4,7 @@ import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.exception.ErrorResponse;
 import com.somagochi.pochakfarm.common.response.ApiResponse;
 import com.somagochi.pochakfarm.common.security.UserPrincipal;
+import com.somagochi.pochakfarm.farm.dto.FarmFloorPurchaseResponse;
 import com.somagochi.pochakfarm.farm.dto.FarmSpaceResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -40,4 +41,31 @@ public interface FarmApiSpec {
       @Parameter(description = "페이지 번호(0부터 시작). 생략하면 0. 한 페이지 층 수는 4로 고정한다.", example = "0")
           int page,
       UserPrincipal principal);
+
+  @Operation(
+      summary = "농장 다음 층 구매",
+      description =
+          "로그인한 사용자의 해당 테마 농장에서 현재 개방된 층의 바로 다음 층을 코인으로 구매해 개방한다. "
+              + "층당 가격은 1,000코인으로 동일하며 순차 개방만 가능하다. "
+              + "성공 시 새로 개방된 층 번호와 남은 코인을 응답한다.")
+  @SecurityRequirement(name = "bearerAuth")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "구매 성공")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "400",
+      description = "지원하지 않는 테마 값",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "401",
+      description = "인증 실패 (토큰 만료/무효)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "404",
+      description = "해당 테마의 농장 없음",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "409",
+      description = "모든 층 개방 완료, 코인 부족 또는 동시 구매 충돌",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  ApiResponse<FarmFloorPurchaseResponse> purchaseNextFloor(
+      @Parameter(description = "농장 테마", example = "SEA") CardType type, UserPrincipal principal);
 }

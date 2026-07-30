@@ -47,6 +47,8 @@ public enum ErrorCode {
   FORBIDDEN_ANIMAL_ACCESS(403, "FORBIDDEN_ANIMAL_ACCESS", "Forbidden animal access"),
   FARM_SLOT_NOT_FOUND(404, "FARM_SLOT_NOT_FOUND", "Farm slot not found"),
   ANIMAL_NOT_PLACED(409, "ANIMAL_NOT_PLACED", "Animal is not placed in the farm"),
+  FARM_FLOOR_MAX_REACHED(409, "FARM_FLOOR_MAX_REACHED", "Farm floor already at maximum"),
+  INSUFFICIENT_COINS(409, "INSUFFICIENT_COINS", "Insufficient coins"),
   CONCURRENCY_CONFLICT(409, "CONCURRENCY_CONFLICT", "Concurrent modification conflict"),
   ;
 
