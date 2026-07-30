@@ -6,7 +6,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -15,7 +17,12 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "animals")
+@Table(
+    name = "animals",
+    indexes =
+        @Index(
+            name = "idx_animals_space_id_floor_num_slot_num",
+            columnList = "space_id, floor_num, slot_num"))
 public class Animal extends BaseEntity {
 
   @Id
@@ -33,6 +40,10 @@ public class Animal extends BaseEntity {
 
   @Column(name = "slot_num")
   private Integer slotNum = 0;
+
+  @Version
+  @Column(name = "version", nullable = false)
+  private Long version;
 
   private Animal(Long captureId, Long spaceId, Integer floorNum, Integer slotNum) {
     this.captureId = Objects.requireNonNull(captureId);

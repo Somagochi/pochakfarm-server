@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -85,6 +86,16 @@ public class GlobalExceptionHandler {
       NoResourceFoundException exception) {
     log.warn("Resource not found: {} {}", exception.getHttpMethod(), exception.getResourcePath());
     return buildResponse(HttpStatus.NOT_FOUND.value(), "NOT_FOUND", NOT_FOUND_MESSAGE);
+  }
+
+  @ExceptionHandler(OptimisticLockingFailureException.class)
+  public ResponseEntity<ErrorResponse> handleOptimisticLockingFailureException(
+      OptimisticLockingFailureException exception) {
+    logClientError(exception);
+    return buildResponse(
+        ErrorCode.CONCURRENCY_CONFLICT.getStatus(),
+        ErrorCode.CONCURRENCY_CONFLICT.getCode(),
+        ErrorCode.CONCURRENCY_CONFLICT.getMessage());
   }
 
   @ExceptionHandler(Exception.class)
