@@ -152,7 +152,35 @@ public class Capture extends BaseEntity {
     return animalName.value();
   }
 
+  public boolean isOwnedBy(Long userId) {
+    return Objects.equals(this.userId, userId);
+  }
+
+  public boolean isWaitingUpload() {
+    return generationStatus == GenerationStatus.WAITING_UPLOAD;
+  }
+
+  public void markProcessing() {
+    this.generationStatus = GenerationStatus.PROCESSING;
+    this.failureReason = null;
+  }
+
   public void cardNoAssigned(String cardNo) {
     this.cardNo = Objects.requireNonNull(cardNo);
+  }
+
+  public void succeed(String sceneImageKey, String cardImageKey, Integer elapsedMs) {
+    this.animalImage = Objects.requireNonNull(sceneImageKey);
+    this.cardImage = Objects.requireNonNull(cardImageKey);
+    this.elapsedMs = elapsedMs;
+    this.generationStatus = GenerationStatus.SUCCEEDED;
+    this.failureReason = null;
+  }
+
+  public void fail(String failureReason) {
+    this.animalImage = null;
+    this.cardImage = null;
+    this.generationStatus = GenerationStatus.FAILED;
+    this.failureReason = failureReason;
   }
 }

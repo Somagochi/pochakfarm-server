@@ -4,13 +4,20 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.somagochi.pochakfarm.capture.application.CaptureCompleteService;
+import com.somagochi.pochakfarm.capture.application.CaptureQueryService;
 import com.somagochi.pochakfarm.capture.application.CaptureStartService;
 import com.somagochi.pochakfarm.capture.domain.CaptureDifficulty;
+import com.somagochi.pochakfarm.capture.domain.GameStatus;
+import com.somagochi.pochakfarm.capture.domain.GenerationStatus;
 import com.somagochi.pochakfarm.capture.domain.Tier;
+import com.somagochi.pochakfarm.capture.dto.CaptureCompleteResponse;
+import com.somagochi.pochakfarm.capture.dto.CaptureResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartRequest;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartResponse.Attempts;
@@ -58,6 +65,8 @@ class CaptureControllerTest {
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private CaptureStartService captureStartService;
+  @MockitoBean private CaptureCompleteService captureCompleteService;
+  @MockitoBean private CaptureQueryService captureQueryService;
 
   @Test
   void startsCaptureWhenAuthenticated() throws Exception {
@@ -154,6 +163,47 @@ class CaptureControllerTest {
                         .formatted(CLIENT_REQUEST_ID)))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("CAPTURE_ATTEMPT_EXHAUSTED"));
+  }
+
+  @Test
+  void completesOriginalImageWithAcceptedStatus() throws Exception {
+    given(captureCompleteService.completeOriginalImage(1L, 123L))
+        .willReturn(new CaptureCompleteResponse(123L, GenerationStatus.PROCESSING));
+
+    mockMvc
+        .perform(
+            post("/api/captures/123/original-image/complete")
+                .with(authentication(authenticationFor(1L))))
+        .andExpect(status().isAccepted())
+        .andExpect(jsonPath("$.data.captureId").value(123))
+        .andExpect(jsonPath("$.data.generationStatus").value("PROCESSING"));
+  }
+
+  @Test
+  void returnsCaptureStatus() throws Exception {
+    given(captureQueryService.getCapture(1L, 123L))
+        .willReturn(
+            new CaptureResponse(
+                123L,
+                Tier.S,
+                CardType.GROUND,
+                GenerationStatus.SUCCEEDED,
+                GameStatus.PENDING,
+                "https://cdn.test/public/capture-scene/scene.png",
+                "https://cdn.test/public/capture-card/card.png",
+                18420,
+                null));
+
+    mockMvc
+        .perform(get("/api/captures/123").with(authentication(authenticationFor(1L))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.captureId").value(123))
+        .andExpect(jsonPath("$.data.generationStatus").value("SUCCEEDED"))
+        .andExpect(
+            jsonPath("$.data.sceneImageUrl")
+                .value("https://cdn.test/public/capture-scene/scene.png"))
+        .andExpect(
+            jsonPath("$.data.cardImageUrl").value("https://cdn.test/public/capture-card/card.png"));
   }
 
   private JwtAuthenticationToken authenticationFor(long userId) {

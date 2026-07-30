@@ -27,6 +27,7 @@ class ImageUploadServiceTest {
           null,
           null,
           Duration.ofMinutes(5),
+          Duration.ofMinutes(15),
           MAX_FILE_SIZE,
           List.of("image/jpeg", "image/png", "image/webp"));
   private final InMemoryFileStorage fileStorage = new InMemoryFileStorage();
@@ -128,6 +129,18 @@ class ImageUploadServiceTest {
         assertThrows(BusinessException.class, () -> service.confirm(42L, key));
 
     assertEquals(ErrorCode.UNSUPPORTED_CONTENT_TYPE.getCode(), exception.getCode());
+  }
+
+  @Test
+  void validateUploadedObjectRejectsEmptyObject() {
+    String key = "images/capture-original/42/photo.png";
+    fileStorage.put(key, 0, "image/png");
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class, () -> service.validateUploadedObject(42L, key, "image/png"));
+
+    assertEquals(ErrorCode.EMPTY_FILE.getCode(), exception.getCode());
   }
 
   @Test
