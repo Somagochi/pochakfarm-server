@@ -26,6 +26,11 @@ public class InMemoryFileStorage implements FileStorage {
   }
 
   @Override
+  public PresignedUpload presignGet(String key, Duration ttl) {
+    return new PresignedUpload("https://download.test/" + key, Instant.EPOCH.plus(ttl));
+  }
+
+  @Override
   public void upload(String key, String contentType, byte[] content) {
     objects.put(key, new StoredObject(key, content.length, contentType));
   }

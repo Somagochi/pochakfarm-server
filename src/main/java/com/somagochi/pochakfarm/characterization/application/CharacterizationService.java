@@ -1,5 +1,6 @@
 package com.somagochi.pochakfarm.characterization.application;
 
+import com.somagochi.pochakfarm.characterization.domain.AnimalName;
 import com.somagochi.pochakfarm.characterization.domain.CardMetadata;
 import com.somagochi.pochakfarm.characterization.domain.CardMetadataGenerator;
 import com.somagochi.pochakfarm.characterization.domain.Characterization;
@@ -22,7 +23,6 @@ public class CharacterizationService {
 
   private static final Set<String> ALLOWED_CONTENT_TYPES =
       Set.of("image/jpeg", "image/png", "image/webp");
-  private static final int MAX_ANIMAL_NAME_LENGTH = 6;
 
   private final CharacterizationRepository characterizationRepository;
   private final CardMetadataGenerator cardMetadataGenerator;
@@ -43,7 +43,7 @@ public class CharacterizationService {
   public CharacterizationStartResponse characterize(
       Long deviceId, MultipartFile image, String animalName) {
     validateImage(image);
-    String normalizedAnimalName = normalizeAnimalName(animalName);
+    AnimalName normalizedAnimalName = AnimalName.from(animalName);
     if (properties.deviceLimitEnabled()) {
       validateDeviceCanCharacterize(deviceId);
     }
@@ -60,7 +60,7 @@ public class CharacterizationService {
           characterization.getId(),
           sourceImage,
           image.getContentType(),
-          normalizedAnimalName,
+          normalizedAnimalName.value(),
           metadata);
     } catch (TaskRejectedException exception) {
       characterization.fail(ErrorCode.CHARACTERIZATION_BUSY.getCode());
@@ -113,16 +113,5 @@ public class CharacterizationService {
     if (!ALLOWED_CONTENT_TYPES.contains(image.getContentType())) {
       throw new BusinessException(ErrorCode.UNSUPPORTED_CONTENT_TYPE);
     }
-  }
-
-  private String normalizeAnimalName(String animalName) {
-    if (animalName == null || animalName.isBlank()) {
-      throw new BusinessException(ErrorCode.INVALID_ANIMAL_NAME);
-    }
-    String normalized = animalName.trim();
-    if (normalized.length() > MAX_ANIMAL_NAME_LENGTH) {
-      throw new BusinessException(ErrorCode.INVALID_ANIMAL_NAME);
-    }
-    return normalized;
   }
 }

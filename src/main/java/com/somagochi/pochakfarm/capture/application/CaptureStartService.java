@@ -9,6 +9,9 @@ import com.somagochi.pochakfarm.capture.domain.TierSelectionPolicy;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartRequest;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartResponse;
 import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureRepository;
+import com.somagochi.pochakfarm.characterization.domain.AnimalName;
+import com.somagochi.pochakfarm.characterization.domain.CardMetadata;
+import com.somagochi.pochakfarm.characterization.domain.CardMetadataGenerator;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
@@ -33,12 +36,14 @@ public class CaptureStartService {
   private static final Duration GAME_RESULT_SUBMISSION_WINDOW = Duration.ofMinutes(5);
   private static final ZoneId KOREA_ZONE = ZoneId.of("Asia/Seoul");
   private static final String ORIGINAL_IMAGE_PURPOSE = "capture-original";
+  private static final String TEMPORARY_CARD_NO = "001";
 
   private final CaptureRepository captureRepository;
   private final UserRepository userRepository;
   private final TierSelectionPolicy tierSelectionPolicy;
   private final CardTypeSelectionPolicy cardTypeSelectionPolicy;
   private final CaptureDifficultyPolicy captureDifficultyPolicy;
+  private final CardMetadataGenerator cardMetadataGenerator;
   private final ImageUploadService imageUploadService;
   private final Clock clock;
 
@@ -48,6 +53,7 @@ public class CaptureStartService {
       TierSelectionPolicy tierSelectionPolicy,
       CardTypeSelectionPolicy cardTypeSelectionPolicy,
       CaptureDifficultyPolicy captureDifficultyPolicy,
+      CardMetadataGenerator cardMetadataGenerator,
       ImageUploadService imageUploadService,
       Clock clock) {
     this.captureRepository = captureRepository;
@@ -55,6 +61,7 @@ public class CaptureStartService {
     this.tierSelectionPolicy = tierSelectionPolicy;
     this.cardTypeSelectionPolicy = cardTypeSelectionPolicy;
     this.captureDifficultyPolicy = captureDifficultyPolicy;
+    this.cardMetadataGenerator = cardMetadataGenerator;
     this.imageUploadService = imageUploadService;
     this.clock = clock;
   }
@@ -62,6 +69,7 @@ public class CaptureStartService {
   @Transactional
   public CaptureStartResponse startCapture(Long userId, CaptureStartRequest request) {
     String clientRequestId = normalizeClientRequestId(request.clientRequestId());
+    AnimalName animalName = AnimalName.from(request.animalName());
     User user =
         userRepository
             .findByIdForUpdate(userId)
@@ -70,7 +78,7 @@ public class CaptureStartService {
     Optional<Capture> existing =
         captureRepository.findByUserIdAndClientRequestId(userId, clientRequestId);
     if (existing.isPresent()) {
-      return existingResponse(existing.get(), request.contentType(), dailyRange);
+      return existingResponse(existing.get(), request.contentType(), animalName, dailyRange);
     }
 
     long used = countUsed(userId, dailyRange);
@@ -80,6 +88,7 @@ public class CaptureStartService {
 
     Tier tier = tierSelectionPolicy.select(user.getLevel());
     CardType cardType = cardTypeSelectionPolicy.select();
+    CardMetadata metadata = cardMetadataGenerator.generate(cardType);
     CaptureDifficulty difficulty = captureDifficultyPolicy.forTier(tier);
     PresignResponse presign =
         imageUploadService.createPresign(userId, ORIGINAL_IMAGE_PURPOSE, request.contentType());
@@ -90,16 +99,22 @@ public class CaptureStartService {
             clientRequestId,
             cardType,
             tier,
+            animalName,
+            metadata.skill1(),
+            metadata.skill2(),
+            TEMPORARY_CARD_NO,
             presign.key(),
             request.contentType(),
             gameResultExpiresAt);
     Capture saved = captureRepository.save(capture);
+    saved.cardNoAssigned(formatCardNo(saved.getId()));
     return CaptureStartResponse.from(saved, difficulty, presign, DAILY_LIMIT, used + 1);
   }
 
   private CaptureStartResponse existingResponse(
-      Capture capture, String requestedContentType, DailyRange dailyRange) {
-    if (!capture.getOriginalImageContentType().equals(requestedContentType)) {
+      Capture capture, String requestedContentType, AnimalName animalName, DailyRange dailyRange) {
+    if (!capture.getOriginalImageContentType().equals(requestedContentType)
+        || !capture.getAnimalName().equals(animalName.value())) {
       throw new BusinessException(ErrorCode.CAPTURE_REQUEST_CONFLICT);
     }
     PresignResponse presign =
@@ -134,6 +149,12 @@ public class CaptureStartService {
     } catch (IllegalArgumentException | NullPointerException exception) {
       throw new BusinessException(ErrorCode.INVALID_CLIENT_REQUEST_ID);
     }
+  }
+
+  private String formatCardNo(Long captureId) {
+    long source = captureId == null ? 1L : captureId;
+    long displayNumber = Math.max(source, 1L) % 1000L;
+    return "%03d".formatted(displayNumber);
   }
 
   private record DailyRange(Instant startInclusive, Instant endExclusive) {}

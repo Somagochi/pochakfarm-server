@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.somagochi.pochakfarm.characterization.domain.AnimalName;
+import com.somagochi.pochakfarm.characterization.domain.CardSkill;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
 import com.somagochi.pochakfarm.user.domain.User;
@@ -50,7 +52,11 @@ class CapturePersistenceTest {
     assertEquals("550e8400-e29b-41d4-a716-446655440000", row[2]);
     assertEquals("images/capture-original/1/original.jpg", row[3]);
     assertEquals("image/jpeg", row[4]);
-    for (int index = 5; index < row.length; index++) {
+    assertEquals("두부", row[5]);
+    assertEquals(CardSkill.GROUND_PAW_STRIKE.name(), row[6].toString());
+    assertEquals(CardSkill.GROUND_LEAF_GUARD.name(), row[7].toString());
+    assertEquals("001", row[8]);
+    for (int index = 9; index < row.length; index++) {
       assertNull(row[index]);
     }
 
@@ -70,6 +76,10 @@ class CapturePersistenceTest {
                 "550e8400-e29b-41d4-a716-446655440000",
                 CardType.GROUND,
                 Tier.C,
+                AnimalName.from("두부"),
+                CardSkill.GROUND_PAW_STRIKE,
+                CardSkill.GROUND_LEAF_GUARD,
+                "001",
                 "images/capture-original/1/original.jpg",
                 "image/jpeg",
                 GAME_RESULT_EXPIRES_AT));
@@ -125,6 +135,10 @@ class CapturePersistenceTest {
         "550e8400-e29b-41d4-a716-446655440000",
         cardType,
         tier,
+        AnimalName.from("두부"),
+        CardSkill.GROUND_PAW_STRIKE,
+        CardSkill.GROUND_LEAF_GUARD,
+        "001",
         "images/capture-original/1/original.jpg",
         "image/jpeg",
         GAME_RESULT_EXPIRES_AT);
