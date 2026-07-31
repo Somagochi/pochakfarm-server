@@ -1,5 +1,7 @@
 package com.somagochi.pochakfarm.develop.config;
 
+import com.somagochi.pochakfarm.common.security.JwtAuthenticationFilter;
+import com.somagochi.pochakfarm.common.security.SecurityAuthenticationEntryPoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -10,10 +12,23 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @Profile({"local", "dev"})
 public class DevelopSecurityConfig {
+
+  private static final String[] AUTHENTICATED_ENDPOINTS = {"/api/dev/animal"};
+
+  private final JwtAuthenticationFilter jwtAuthenticationFilter;
+  private final SecurityAuthenticationEntryPoint authenticationEntryPoint;
+
+  public DevelopSecurityConfig(
+      JwtAuthenticationFilter jwtAuthenticationFilter,
+      SecurityAuthenticationEntryPoint authenticationEntryPoint) {
+    this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    this.authenticationEntryPoint = authenticationEntryPoint;
+  }
 
   @Bean
   @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -24,7 +39,14 @@ public class DevelopSecurityConfig {
         .httpBasic(AbstractHttpConfigurer::disable)
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .cors(Customizer.withDefaults())
-        .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+        .authorizeHttpRequests(
+            auth ->
+                auth.requestMatchers(AUTHENTICATED_ENDPOINTS)
+                    .authenticated()
+                    .anyRequest()
+                    .permitAll())
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+        .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint));
     return http.build();
   }
 }

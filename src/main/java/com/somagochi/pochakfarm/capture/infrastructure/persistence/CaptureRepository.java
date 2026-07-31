@@ -1,10 +1,8 @@
 package com.somagochi.pochakfarm.capture.infrastructure.persistence;
 
 import com.somagochi.pochakfarm.capture.domain.Capture;
-import com.somagochi.pochakfarm.characterization.domain.CardType;
 import jakarta.persistence.LockModeType;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -21,10 +19,6 @@ public interface CaptureRepository extends JpaRepository<Capture, Long> {
 
   long countByUserIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
       Long userId, Instant startInclusive, Instant endExclusive);
-
-  List<Capture> findByUserId(Long userId);
-
-  List<Capture> findByUserIdAndCardType(Long userId, CardType cardType);
 
   @Query(
       "select c from Capture c, Animal a "

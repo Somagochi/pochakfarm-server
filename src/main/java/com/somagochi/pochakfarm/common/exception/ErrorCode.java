@@ -48,8 +48,8 @@ public enum ErrorCode {
   ANIMAL_NOT_FOUND(404, "ANIMAL_NOT_FOUND", "Animal not found"),
   FORBIDDEN_ANIMAL_ACCESS(403, "FORBIDDEN_ANIMAL_ACCESS", "Forbidden animal access"),
   FARM_SLOT_NOT_FOUND(404, "FARM_SLOT_NOT_FOUND", "Farm slot not found"),
-  FORBIDDEN_FARM_SLOT_ACCESS(403, "FORBIDDEN_FARM_SLOT_ACCESS", "Forbidden farm slot access"),
-  FARM_SLOT_TYPE_MISMATCH(400, "FARM_SLOT_TYPE_MISMATCH", "Farm slot type mismatch"),
+  ANIMAL_NOT_PLACED(409, "ANIMAL_NOT_PLACED", "Animal is not placed in the farm"),
+  CONCURRENCY_CONFLICT(409, "CONCURRENCY_CONFLICT", "Concurrent modification conflict"),
   ;
 
   private final int status;

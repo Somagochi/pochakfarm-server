@@ -62,6 +62,7 @@ public class AnimalController implements AnimalApiSpec {
       @RequestBody AnimalSlotMoveRequest request,
       @AuthenticationPrincipal UserPrincipal principal) {
     return ApiResponse.success(
-        animalSlotMoveService.moveToSlot(principal.id(), animalId, request.targetSlotId()));
+        animalSlotMoveService.moveToSlot(
+            principal.id(), animalId, request.targetFloorNum(), request.targetSlotNum()));
   }
 }

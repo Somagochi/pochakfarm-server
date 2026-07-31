@@ -9,7 +9,6 @@ import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.farm.application.FarmQueryService;
 import com.somagochi.pochakfarm.farm.domain.FarmSpace;
-import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,24 +29,37 @@ public class AnimalSlotMoveService {
   }
 
   @Transactional
-  public AnimalSlotMoveResponse moveToSlot(Long userId, Long animalId, Long targetSlotId) {
+  public AnimalSlotMoveResponse moveToSlot(
+      Long userId, Long animalId, Integer targetFloorNum, Integer targetSlotNum) {
     Animal animal =
         animalRepository
             .findById(animalId)
             .orElseThrow(() -> new BusinessException(ErrorCode.ANIMAL_NOT_FOUND));
     Capture capture = findOwnedCapture(userId, animal.getCaptureId());
-    if (targetSlotId.equals(animal.getSlotId())) {
-      return new AnimalSlotMoveResponse(animal.getId(), animal.getSlotId());
+    FarmSpace space = farmQueryService.getSpaceForUpdate(userId, capture.getCardType());
+    Long spaceId = space.getId();
+    if (!animal.isPlacedIn(spaceId)) {
+      throw new BusinessException(ErrorCode.ANIMAL_NOT_PLACED);
     }
-    FarmSpace targetSpace = findOwnedSpace(userId, targetSlotId);
-    if (targetSpace.getType() != capture.getCardType()) {
-      throw new BusinessException(ErrorCode.FARM_SLOT_TYPE_MISMATCH);
+    if (!space.canPlaceAt(targetFloorNum, targetSlotNum)) {
+      throw new BusinessException(ErrorCode.FARM_SLOT_NOT_FOUND);
     }
-    Long sourceSlotId = animal.getSlotId();
-    Optional<Animal> occupant = animalRepository.findBySlotId(targetSlotId);
-    occupant.ifPresent(other -> other.moveTo(sourceSlotId));
-    animal.moveTo(targetSlotId);
-    return new AnimalSlotMoveResponse(animal.getId(), targetSlotId);
+    if (!animal.isAt(spaceId, targetFloorNum, targetSlotNum)) {
+      animalRepository
+          .findBySpaceIdAndFloorNumAndSlotNumForUpdate(spaceId, targetFloorNum, targetSlotNum)
+          .ifPresentOrElse(
+              occupant -> swap(animal, occupant, spaceId, targetFloorNum, targetSlotNum),
+              () -> animal.moveTo(spaceId, targetFloorNum, targetSlotNum));
+    }
+    return new AnimalSlotMoveResponse(animal.getId(), targetFloorNum, targetSlotNum);
+  }
+
+  private void swap(
+      Animal animal, Animal occupant, Long spaceId, Integer targetFloorNum, Integer targetSlotNum) {
+    Integer sourceFloorNum = animal.getFloorNum();
+    Integer sourceSlotNum = animal.getSlotNum();
+    animal.moveTo(spaceId, targetFloorNum, targetSlotNum);
+    occupant.moveTo(spaceId, sourceFloorNum, sourceSlotNum);
   }
 
   private Capture findOwnedCapture(Long userId, Long captureId) {
@@ -59,16 +71,5 @@ public class AnimalSlotMoveService {
       throw new BusinessException(ErrorCode.FORBIDDEN_ANIMAL_ACCESS);
     }
     return capture;
-  }
-
-  private FarmSpace findOwnedSpace(Long userId, Long targetSlotId) {
-    FarmSpace space =
-        farmQueryService
-            .findSpaceBySlotId(targetSlotId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.FARM_SLOT_NOT_FOUND));
-    if (!space.getUserId().equals(userId)) {
-      throw new BusinessException(ErrorCode.FORBIDDEN_FARM_SLOT_ACCESS);
-    }
-    return space;
   }
 }

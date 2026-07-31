@@ -9,10 +9,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.somagochi.pochakfarm.animal.domain.Animal;
 import com.somagochi.pochakfarm.animal.dto.AnimalDetailResponse;
+import com.somagochi.pochakfarm.animal.dto.AnimalPosition;
 import com.somagochi.pochakfarm.animal.dto.AnimalResponse;
 import com.somagochi.pochakfarm.animal.infrastructure.persistence.AnimalRepository;
 import com.somagochi.pochakfarm.capture.domain.Capture;
@@ -24,11 +26,14 @@ import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.response.CursorPage;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
-import org.springframework.data.domain.PageRequest;
+import org.mockito.ArgumentCaptor;
+import org.springframework.data.domain.Limit;
 
 class AnimalQueryServiceTest {
 
@@ -44,14 +49,12 @@ class AnimalQueryServiceTest {
     List<Capture> captures = new ArrayList<>();
     for (int i = 0; i < 13; i++) {
       long id = 100L - i;
-      animals.add(animal(id, null));
+      animals.add(animal(id, null, null));
       captures.add(capture(id));
     }
-    given(captureRepository.findByUserId(1L)).willReturn(captures);
-    given(
-            animalRepository.findByCaptureIdInAndIdLessThanOrderByIdDesc(
-                any(), eq(Long.MAX_VALUE), eq(PageRequest.of(0, 13))))
+    given(animalRepository.findOwnedAnimals(eq(1L), any(), eq(Long.MAX_VALUE), eq(Limit.of(13))))
         .willReturn(animals);
+    given(captureRepository.findAllById(any())).willReturn(captures);
 
     CursorPage<AnimalResponse> page = service.getMyAnimals(1L, null, null);
 
@@ -63,13 +66,11 @@ class AnimalQueryServiceTest {
 
   @Test
   void getMyAnimalsHasNoNextOnLastPage() {
+    Animal animal = animal(50L, null, null);
     Capture capture = capture(50L);
-    Animal animal = animal(50L, null);
-    given(captureRepository.findByUserId(1L)).willReturn(List.of(capture));
-    given(
-            animalRepository.findByCaptureIdInAndIdLessThanOrderByIdDesc(
-                any(), eq(Long.MAX_VALUE), eq(PageRequest.of(0, 13))))
+    given(animalRepository.findOwnedAnimals(eq(1L), any(), eq(Long.MAX_VALUE), eq(Limit.of(13))))
         .willReturn(List.of(animal));
+    given(captureRepository.findAllById(any())).willReturn(List.of(capture));
     given(fileStorage.buildUrl("card-50")).willReturn("https://cdn.test/card.png");
 
     CursorPage<AnimalResponse> page = service.getMyAnimals(1L, null, null);
@@ -82,14 +83,26 @@ class AnimalQueryServiceTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
+  void getMyAnimalsQueriesEveryCardTypeWhenTypeIsNotGiven() {
+    given(animalRepository.findOwnedAnimals(any(), any(), any(), any())).willReturn(List.of());
+
+    service.getMyAnimals(1L, null, null);
+
+    ArgumentCaptor<Collection<CardType>> captor = ArgumentCaptor.forClass(Collection.class);
+    verify(animalRepository).findOwnedAnimals(eq(1L), captor.capture(), eq(Long.MAX_VALUE), any());
+    assertEquals(Set.of(CardType.values()), Set.copyOf(captor.getValue()));
+  }
+
+  @Test
   void getMyAnimalsUsesCursorAndCardType() {
+    Animal animal = animal(30L, null, null);
     Capture capture = capture(30L);
-    Animal animal = animal(30L, null);
-    given(captureRepository.findByUserIdAndCardType(1L, CardType.SEA)).willReturn(List.of(capture));
     given(
-            animalRepository.findByCaptureIdInAndIdLessThanOrderByIdDesc(
-                any(), eq(50L), eq(PageRequest.of(0, 13))))
+            animalRepository.findOwnedAnimals(
+                eq(1L), eq(List.of(CardType.SEA)), eq(50L), eq(Limit.of(13))))
         .willReturn(List.of(animal));
+    given(captureRepository.findAllById(any())).willReturn(List.of(capture));
 
     CursorPage<AnimalResponse> page = service.getMyAnimals(1L, CardType.SEA, 50L);
 
@@ -100,34 +113,36 @@ class AnimalQueryServiceTest {
   }
 
   @Test
-  void getMyAnimalsReturnsEmptyWhenUserHasNoCaptures() {
-    given(captureRepository.findByUserId(1L)).willReturn(List.of());
+  void getMyAnimalsReturnsEmptyWhenUserHasNoAnimals() {
+    given(animalRepository.findOwnedAnimals(any(), any(), any(), any())).willReturn(List.of());
 
     CursorPage<AnimalResponse> page = service.getMyAnimals(1L, null, null);
 
     assertTrue(page.content().isEmpty());
     assertFalse(page.hasNext());
     assertNull(page.nextCursor());
-    verifyNoInteractions(animalRepository);
+    verifyNoInteractions(captureRepository);
   }
 
   @Test
-  void getBySlotIdsReturnsEmptyWithoutQueryingWhenEmpty() {
-    assertTrue(service.getBySlotIds(List.of()).isEmpty());
-    verifyNoInteractions(animalRepository, captureRepository, fileStorage);
+  void getByFloorRangeReturnsEmptyWithoutLoadingCapturesWhenNoAnimals() {
+    given(animalRepository.findBySpaceIdAndFloorNumBetween(100L, 1, 4)).willReturn(List.of());
+
+    assertTrue(service.getByFloorRange(100L, 1, 4).isEmpty());
+    verifyNoInteractions(captureRepository, fileStorage);
   }
 
   @Test
-  void getBySlotIdsMapsSlotIdToAnimal() {
-    Animal animal = animal(7L, 100L);
+  void getByFloorRangeMapsPositionToAnimal() {
+    Animal animal = animal(7L, 2, 3);
     Capture capture = capture(7L);
-    given(animalRepository.findBySlotIdIn(List.of(100L))).willReturn(List.of(animal));
+    given(animalRepository.findBySpaceIdAndFloorNumBetween(100L, 1, 4)).willReturn(List.of(animal));
     given(captureRepository.findAllById(any())).willReturn(List.of(capture));
 
-    Map<Long, AnimalResponse> bySlotId = service.getBySlotIds(List.of(100L));
+    Map<AnimalPosition, AnimalResponse> byPosition = service.getByFloorRange(100L, 1, 4);
 
-    assertEquals(1, bySlotId.size());
-    assertEquals(7L, bySlotId.get(100L).animalId());
+    assertEquals(1, byPosition.size());
+    assertEquals(7L, byPosition.get(new AnimalPosition(2, 3)).animalId());
   }
 
   @Test
@@ -180,11 +195,12 @@ class AnimalQueryServiceTest {
     assertThrows(BusinessException.class, () -> service.getAnimal(1L, 10L));
   }
 
-  private Animal animal(long id, Long slotId) {
+  private Animal animal(long id, Integer floorNum, Integer slotNum) {
     Animal animal = mock(Animal.class);
     given(animal.getId()).willReturn(id);
     given(animal.getCaptureId()).willReturn(id);
-    given(animal.getSlotId()).willReturn(slotId);
+    given(animal.getFloorNum()).willReturn(floorNum);
+    given(animal.getSlotNum()).willReturn(slotNum);
     return animal;
   }
 

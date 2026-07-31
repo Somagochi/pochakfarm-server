@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,6 +40,20 @@ class GlobalExceptionHandlerTest {
     assertEquals(404, response.getBody().status());
     assertEquals("NOT_FOUND", response.getBody().code());
     assertEquals("Resource not found", response.getBody().message());
+  }
+
+  @Test
+  void handlesOptimisticLockingFailureException() {
+    OptimisticLockingFailureException exception =
+        new OptimisticLockingFailureException("version conflict");
+
+    ResponseEntity<ErrorResponse> response =
+        globalExceptionHandler.handleOptimisticLockingFailureException(exception);
+
+    assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+    assertEquals(409, response.getBody().status());
+    assertEquals("CONCURRENCY_CONFLICT", response.getBody().code());
+    assertEquals("Concurrent modification conflict", response.getBody().message());
   }
 
   @Test
