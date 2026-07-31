@@ -1,4 +1,4 @@
-package com.somagochi.pochakfarm.capture.infrastructure;
+package com.somagochi.pochakfarm.characterization.infrastructure;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -20,7 +20,7 @@ import java.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-class HttpCaptureCharacterizerClientTest {
+class HttpCharacterizerClientCaptureTest {
 
   private HttpServer server;
   private String requestBody;
@@ -45,8 +45,8 @@ class HttpCaptureCharacterizerClientTest {
           "elapsed_ms": 18420
         }
         """);
-    HttpCaptureCharacterizerClient client =
-        new HttpCaptureCharacterizerClient(baseUrl(), Duration.ofSeconds(1), Duration.ofSeconds(1));
+    HttpCharacterizerClient client =
+        new HttpCharacterizerClient(baseUrl(), Duration.ofSeconds(1), Duration.ofSeconds(1));
 
     CaptureCharacterizerResult result = client.characterize(request());
 
@@ -78,8 +78,8 @@ class HttpCaptureCharacterizerClientTest {
           "message": "Unsupported characterization image"
         }
         """);
-    HttpCaptureCharacterizerClient client =
-        new HttpCaptureCharacterizerClient(baseUrl(), Duration.ofSeconds(1), Duration.ofSeconds(1));
+    HttpCharacterizerClient client =
+        new HttpCharacterizerClient(baseUrl(), Duration.ofSeconds(1), Duration.ofSeconds(1));
 
     BusinessException exception =
         assertThrows(BusinessException.class, () -> client.characterize(request()));

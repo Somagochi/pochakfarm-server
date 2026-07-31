@@ -1,4 +1,4 @@
-package com.somagochi.pochakfarm.capture.infrastructure.dto;
+package com.somagochi.pochakfarm.characterization.infrastructure.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.somagochi.pochakfarm.capture.domain.CaptureCharacterizerResult;
