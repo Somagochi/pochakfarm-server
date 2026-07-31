@@ -12,7 +12,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.http.ResponseEntity;
 
 @Tag(name = "Capture", description = "앱 포착 API")
 public interface CaptureApiSpec {
@@ -62,7 +61,7 @@ public interface CaptureApiSpec {
       responseCode = "404",
       description = "Capture 없음(CAPTURE_NOT_FOUND)",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-  ResponseEntity<ApiResponse<CaptureCompleteResponse>> completeOriginalImage(
+  ApiResponse<CaptureCompleteResponse> completeOriginalImage(
       @Schema(hidden = true) UserPrincipal principal, Long captureId);
 
   @Operation(summary = "포착 상태 및 생성 결과 조회")

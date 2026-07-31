@@ -11,6 +11,5 @@ public record S3Properties(
     String accessKey,
     String secretKey,
     Duration presignExpiration,
-    Duration internalPresignExpiration,
     long maxFileSize,
     List<String> allowedContentTypes) {}

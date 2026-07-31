@@ -27,7 +27,6 @@ class ImageUploadServiceTest {
           null,
           null,
           Duration.ofMinutes(5),
-          Duration.ofMinutes(15),
           MAX_FILE_SIZE,
           List.of("image/jpeg", "image/png", "image/webp"));
   private final InMemoryFileStorage fileStorage = new InMemoryFileStorage();
