@@ -8,6 +8,8 @@ import com.somagochi.pochakfarm.capture.domain.Capture;
 import com.somagochi.pochakfarm.capture.domain.Tier;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartRequest;
 import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureRepository;
+import com.somagochi.pochakfarm.characterization.domain.AnimalName;
+import com.somagochi.pochakfarm.characterization.domain.CardSkill;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
@@ -61,6 +63,10 @@ class CaptureStartConcurrencyTest {
               UUID.randomUUID().toString(),
               CardType.GROUND,
               Tier.C,
+              AnimalName.from("두부"),
+              CardSkill.GROUND_PAW_STRIKE,
+              CardSkill.GROUND_LEAF_GUARD,
+              "001",
               "images/capture-original/%d/%s.jpg".formatted(userId, UUID.randomUUID()),
               "image/jpeg",
               Instant.now().plusSeconds(300)));
@@ -90,7 +96,8 @@ class CaptureStartConcurrencyTest {
             start.await(5, TimeUnit.SECONDS);
             try {
               captureStartService.startCapture(
-                  userId, new CaptureStartRequest(UUID.randomUUID().toString(), "image/jpeg"));
+                  userId,
+                  new CaptureStartRequest(UUID.randomUUID().toString(), "image/jpeg", "두부"));
               return "SUCCESS";
             } catch (BusinessException exception) {
               return exception.getCode();

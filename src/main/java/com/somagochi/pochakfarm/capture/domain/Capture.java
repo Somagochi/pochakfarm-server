@@ -1,9 +1,11 @@
 package com.somagochi.pochakfarm.capture.domain;
 
+import com.somagochi.pochakfarm.characterization.domain.AnimalName;
 import com.somagochi.pochakfarm.characterization.domain.CardSkill;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.entity.BaseEntity;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -49,8 +51,7 @@ public class Capture extends BaseEntity {
   @Column(name = "game_result_expires_at", nullable = false, updatable = false)
   private Instant gameResultExpiresAt;
 
-  @Column(name = "animal_name")
-  private String animalName;
+  @Embedded private AnimalName animalName;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "card_type", nullable = false, updatable = false)
@@ -61,14 +62,14 @@ public class Capture extends BaseEntity {
   private Tier tier;
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "skill_1")
+  @Column(name = "skill_1", nullable = false)
   private CardSkill skill1;
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "skill_2")
+  @Column(name = "skill_2", nullable = false)
   private CardSkill skill2;
 
-  @Column(name = "card_no")
+  @Column(name = "card_no", nullable = false)
   private String cardNo;
 
   @Column(name = "card_image")
@@ -99,6 +100,10 @@ public class Capture extends BaseEntity {
       String clientRequestId,
       CardType cardType,
       Tier tier,
+      AnimalName animalName,
+      CardSkill skill1,
+      CardSkill skill2,
+      String cardNo,
       String originalImageKey,
       String originalImageContentType,
       Instant gameResultExpiresAt) {
@@ -106,6 +111,10 @@ public class Capture extends BaseEntity {
     this.clientRequestId = Objects.requireNonNull(clientRequestId);
     this.cardType = Objects.requireNonNull(cardType);
     this.tier = Objects.requireNonNull(tier);
+    this.animalName = Objects.requireNonNull(animalName);
+    this.skill1 = Objects.requireNonNull(skill1);
+    this.skill2 = Objects.requireNonNull(skill2);
+    this.cardNo = Objects.requireNonNull(cardNo);
     this.originalImageKey = Objects.requireNonNull(originalImageKey);
     this.originalImageContentType = Objects.requireNonNull(originalImageContentType);
     this.gameResultExpiresAt = Objects.requireNonNull(gameResultExpiresAt);
@@ -118,6 +127,10 @@ public class Capture extends BaseEntity {
       String clientRequestId,
       CardType cardType,
       Tier tier,
+      AnimalName animalName,
+      CardSkill skill1,
+      CardSkill skill2,
+      String cardNo,
       String originalImageKey,
       String originalImageContentType,
       Instant gameResultExpiresAt) {
@@ -126,8 +139,48 @@ public class Capture extends BaseEntity {
         clientRequestId,
         cardType,
         tier,
+        animalName,
+        skill1,
+        skill2,
+        cardNo,
         originalImageKey,
         originalImageContentType,
         gameResultExpiresAt);
+  }
+
+  public String getAnimalName() {
+    return animalName.value();
+  }
+
+  public boolean isOwnedBy(Long userId) {
+    return Objects.equals(this.userId, userId);
+  }
+
+  public boolean isWaitingUpload() {
+    return generationStatus == GenerationStatus.WAITING_UPLOAD;
+  }
+
+  public void markProcessing() {
+    this.generationStatus = GenerationStatus.PROCESSING;
+    this.failureReason = null;
+  }
+
+  public void cardNoAssigned(String cardNo) {
+    this.cardNo = Objects.requireNonNull(cardNo);
+  }
+
+  public void succeed(String sceneImageKey, String cardImageKey, Integer elapsedMs) {
+    this.animalImage = Objects.requireNonNull(sceneImageKey);
+    this.cardImage = Objects.requireNonNull(cardImageKey);
+    this.elapsedMs = elapsedMs;
+    this.generationStatus = GenerationStatus.SUCCEEDED;
+    this.failureReason = null;
+  }
+
+  public void fail(String failureReason) {
+    this.animalImage = null;
+    this.cardImage = null;
+    this.generationStatus = GenerationStatus.FAILED;
+    this.failureReason = failureReason;
   }
 }

@@ -131,6 +131,18 @@ class ImageUploadServiceTest {
   }
 
   @Test
+  void validateUploadedObjectRejectsEmptyObject() {
+    String key = "images/capture-original/42/photo.png";
+    fileStorage.put(key, 0, "image/png");
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class, () -> service.validateUploadedObject(42L, key, "image/png"));
+
+    assertEquals(ErrorCode.EMPTY_FILE.getCode(), exception.getCode());
+  }
+
+  @Test
   void confirmRejectsOversizedObject() {
     String key = "images/profile/42/big.png";
     fileStorage.put(key, MAX_FILE_SIZE + 1, "image/png");
