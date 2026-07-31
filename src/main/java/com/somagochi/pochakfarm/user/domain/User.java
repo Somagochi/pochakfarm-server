@@ -32,6 +32,7 @@ public class User extends BaseEntity {
 
   private static final int MAX_NICKNAME_LENGTH = 20;
   private static final int INITIAL_LEVEL = 1;
+  private static final long INITIAL_COINS = 1000L;
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -54,6 +55,7 @@ public class User extends BaseEntity {
     this.socialAccount = socialAccount;
     this.email = email;
     this.level = INITIAL_LEVEL;
+    this.coins = INITIAL_COINS;
   }
 
   public static User register(SocialProvider provider, String providerId, String email) {

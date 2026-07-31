@@ -14,12 +14,12 @@ import org.junit.jupiter.api.Test;
 class UserTest {
 
   @Test
-  void registerStartsAtLevelOneWithNoExperienceOrCoins() {
+  void registerStartsAtLevelOneWithNoExperienceAndInitialCoins() {
     User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
 
     assertEquals(1, user.getLevel());
     assertEquals(0, user.getExperience());
-    assertEquals(0, user.getCoins());
+    assertEquals(1000, user.getCoins());
   }
 
   @Test
