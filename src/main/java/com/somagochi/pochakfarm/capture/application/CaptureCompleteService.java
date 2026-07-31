@@ -6,20 +6,15 @@ import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureReposi
 import com.somagochi.pochakfarm.common.config.AsyncConfig;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
+import com.somagochi.pochakfarm.common.transaction.AfterCommitExecutor;
 import com.somagochi.pochakfarm.storage.application.ImageUploadService;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskRejectedException;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
-@Slf4j
 public class CaptureCompleteService {
 
   private final CaptureRepository captureRepository;
@@ -54,45 +49,12 @@ public class CaptureCompleteService {
     capture.markProcessing();
     CaptureGenerationCommand command = commandFrom(capture);
     try {
-      submitAfterCommit(command);
+      AfterCommitExecutor.executeAsyncAfterCommit(
+          taskExecutor, () -> captureGenerationWorker.generate(command));
     } catch (TaskRejectedException exception) {
       throw new BusinessException(ErrorCode.CHARACTERIZATION_BUSY);
     }
     return CaptureCompleteResponse.from(capture);
-  }
-
-  private void submitAfterCommit(CaptureGenerationCommand command) {
-    if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-      taskExecutor.execute(() -> captureGenerationWorker.generate(command));
-      return;
-    }
-
-    CountDownLatch transactionCompleted = new CountDownLatch(1);
-    AtomicBoolean committed = new AtomicBoolean(false);
-    taskExecutor.execute(
-        () -> {
-          awaitTransactionCompletion(command.captureId(), transactionCompleted);
-          if (committed.get()) {
-            captureGenerationWorker.generate(command);
-          }
-        });
-    TransactionSynchronizationManager.registerSynchronization(
-        new TransactionSynchronization() {
-          @Override
-          public void afterCompletion(int status) {
-            committed.set(status == STATUS_COMMITTED);
-            transactionCompleted.countDown();
-          }
-        });
-  }
-
-  private void awaitTransactionCompletion(Long captureId, CountDownLatch transactionCompleted) {
-    try {
-      transactionCompleted.await();
-    } catch (InterruptedException exception) {
-      Thread.currentThread().interrupt();
-      log.warn("capture_generation_submission_interrupted captureId={}", captureId, exception);
-    }
   }
 
   private CaptureGenerationCommand commandFrom(Capture capture) {
