@@ -30,7 +30,7 @@ import org.hibernate.annotations.SQLRestriction;
 @SQLRestriction("deleted_at is null")
 public class User extends BaseEntity {
 
-  private static final int MAX_NICKNAME_LENGTH = 20;
+  private static final int MAX_NICKNAME_LENGTH = 6;
   private static final int INITIAL_LEVEL = 1;
   private static final long INITIAL_COINS = 1000L;
 
