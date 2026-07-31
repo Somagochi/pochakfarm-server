@@ -21,7 +21,10 @@ public class CardMetadataGenerator {
   }
 
   public CardMetadata generate() {
-    CardType cardType = pickCardType();
+    return generate(pickCardType());
+  }
+
+  public CardMetadata generate(CardType cardType) {
     List<CardSkill> skills = CardSkill.forType(cardType);
     int firstIndex = random.nextInt(skills.size());
     int secondIndex = random.nextInt(skills.size() - 1);

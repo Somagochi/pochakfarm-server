@@ -7,6 +7,9 @@ import com.somagochi.pochakfarm.animal.infrastructure.persistence.AnimalReposito
 import com.somagochi.pochakfarm.capture.domain.Capture;
 import com.somagochi.pochakfarm.capture.domain.Tier;
 import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureRepository;
+import com.somagochi.pochakfarm.characterization.domain.AnimalName;
+import com.somagochi.pochakfarm.characterization.domain.CardMetadata;
+import com.somagochi.pochakfarm.characterization.domain.CardMetadataGenerator;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.random.RandomProvider;
 import com.somagochi.pochakfarm.develop.dto.DevelopSampleAnimalResponse;
@@ -29,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class DevelopSampleAnimalService {
 
+  private static final String SAMPLE_ANIMAL_NAME = "샘플동물";
   private static final String SAMPLE_ORIGINAL_IMAGE_KEY = "develop/sample-original-image";
   private static final String SAMPLE_ORIGINAL_IMAGE_CONTENT_TYPE = "image/png";
   private static final Duration SAMPLE_GAME_RESULT_TTL = Duration.ofDays(365);
@@ -37,6 +41,7 @@ public class DevelopSampleAnimalService {
   private final AnimalQueryService animalQueryService;
   private final AnimalRepository animalRepository;
   private final CaptureRepository captureRepository;
+  private final CardMetadataGenerator cardMetadataGenerator;
   private final RandomProvider randomProvider;
 
   @Transactional
@@ -84,11 +89,16 @@ public class DevelopSampleAnimalService {
   }
 
   private Capture sampleCapture(Long userId, CardType cardType) {
+    CardMetadata metadata = cardMetadataGenerator.generate(cardType);
     return Capture.create(
         userId,
         UUID.randomUUID().toString(),
         cardType,
         randomTier(),
+        AnimalName.from(SAMPLE_ANIMAL_NAME),
+        metadata.skill1(),
+        metadata.skill2(),
+        metadata.cardNo(),
         SAMPLE_ORIGINAL_IMAGE_KEY,
         SAMPLE_ORIGINAL_IMAGE_CONTENT_TYPE,
         Instant.now().plus(SAMPLE_GAME_RESULT_TTL));

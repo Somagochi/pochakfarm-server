@@ -16,6 +16,10 @@ import com.somagochi.pochakfarm.capture.domain.TierSelectionPolicy;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartRequest;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartResponse;
 import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureRepository;
+import com.somagochi.pochakfarm.characterization.domain.AnimalName;
+import com.somagochi.pochakfarm.characterization.domain.CardMetadata;
+import com.somagochi.pochakfarm.characterization.domain.CardMetadataGenerator;
+import com.somagochi.pochakfarm.characterization.domain.CardSkill;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
@@ -49,6 +53,7 @@ class CaptureStartServiceTest {
   @Mock private TierSelectionPolicy tierSelectionPolicy;
   @Mock private CardTypeSelectionPolicy cardTypeSelectionPolicy;
   @Mock private CaptureDifficultyPolicy captureDifficultyPolicy;
+  @Mock private CardMetadataGenerator cardMetadataGenerator;
   @Mock private ImageUploadService imageUploadService;
 
   private CaptureStartService service;
@@ -62,6 +67,7 @@ class CaptureStartServiceTest {
             tierSelectionPolicy,
             cardTypeSelectionPolicy,
             captureDifficultyPolicy,
+            cardMetadataGenerator,
             imageUploadService,
             Clock.fixed(NOW, ZoneOffset.UTC));
   }
@@ -84,6 +90,7 @@ class CaptureStartServiceTest {
         .willReturn(0L);
     given(tierSelectionPolicy.select(1)).willReturn(Tier.B);
     given(cardTypeSelectionPolicy.select()).willReturn(CardType.GROUND);
+    given(cardMetadataGenerator.generate(CardType.GROUND)).willReturn(metadata());
     given(captureDifficultyPolicy.forTier(Tier.B)).willReturn(difficulty);
     given(imageUploadService.createPresign(USER_ID, "capture-original", CONTENT_TYPE))
         .willReturn(presign);
@@ -96,7 +103,8 @@ class CaptureStartServiceTest {
             });
 
     CaptureStartResponse response =
-        service.startCapture(USER_ID, new CaptureStartRequest(CLIENT_REQUEST_ID, CONTENT_TYPE));
+        service.startCapture(
+            USER_ID, new CaptureStartRequest(CLIENT_REQUEST_ID, CONTENT_TYPE, "두부"));
 
     assertEquals(123L, response.captureId());
     assertEquals(Tier.B, response.tier());
@@ -121,6 +129,10 @@ class CaptureStartServiceTest {
             CLIENT_REQUEST_ID,
             CardType.SKY,
             Tier.A,
+            AnimalName.from("두부"),
+            CardSkill.SKY_CLOUD_JUMP,
+            CardSkill.SKY_WIND_DASH,
+            "055",
             ORIGINAL_IMAGE,
             CONTENT_TYPE,
             NOW.plusSeconds(300));
@@ -141,7 +153,8 @@ class CaptureStartServiceTest {
         .willReturn(presign);
 
     CaptureStartResponse response =
-        service.startCapture(USER_ID, new CaptureStartRequest(CLIENT_REQUEST_ID, CONTENT_TYPE));
+        service.startCapture(
+            USER_ID, new CaptureStartRequest(CLIENT_REQUEST_ID, CONTENT_TYPE, "두부"));
 
     assertEquals(55L, response.captureId());
     assertEquals(Tier.A, response.tier());
@@ -162,6 +175,10 @@ class CaptureStartServiceTest {
             CLIENT_REQUEST_ID,
             CardType.SKY,
             Tier.A,
+            AnimalName.from("두부"),
+            CardSkill.SKY_CLOUD_JUMP,
+            CardSkill.SKY_WIND_DASH,
+            "055",
             ORIGINAL_IMAGE,
             CONTENT_TYPE,
             NOW.plusSeconds(300));
@@ -174,7 +191,7 @@ class CaptureStartServiceTest {
             BusinessException.class,
             () ->
                 service.startCapture(
-                    USER_ID, new CaptureStartRequest(CLIENT_REQUEST_ID, "image/png")));
+                    USER_ID, new CaptureStartRequest(CLIENT_REQUEST_ID, "image/png", "두부")));
 
     assertEquals(ErrorCode.CAPTURE_REQUEST_CONFLICT.getCode(), exception.getCode());
     verify(imageUploadService, never()).refreshPresign(any(), any(), any());
@@ -195,7 +212,7 @@ class CaptureStartServiceTest {
             BusinessException.class,
             () ->
                 service.startCapture(
-                    USER_ID, new CaptureStartRequest(CLIENT_REQUEST_ID, CONTENT_TYPE)));
+                    USER_ID, new CaptureStartRequest(CLIENT_REQUEST_ID, CONTENT_TYPE, "두부")));
 
     assertEquals(ErrorCode.CAPTURE_ATTEMPT_EXHAUSTED.getCode(), exception.getCode());
     verify(captureRepository, never()).save(any());
@@ -211,7 +228,7 @@ class CaptureStartServiceTest {
             BusinessException.class,
             () ->
                 service.startCapture(
-                    USER_ID, new CaptureStartRequest(CLIENT_REQUEST_ID, CONTENT_TYPE)));
+                    USER_ID, new CaptureStartRequest(CLIENT_REQUEST_ID, CONTENT_TYPE, "두부")));
 
     assertEquals(ErrorCode.USER_NOT_FOUND.getCode(), exception.getCode());
   }
@@ -222,7 +239,8 @@ class CaptureStartServiceTest {
         assertThrows(
             BusinessException.class,
             () ->
-                service.startCapture(USER_ID, new CaptureStartRequest("not-a-uuid", CONTENT_TYPE)));
+                service.startCapture(
+                    USER_ID, new CaptureStartRequest("not-a-uuid", CONTENT_TYPE, "두부")));
 
     assertEquals(ErrorCode.INVALID_CLIENT_REQUEST_ID.getCode(), exception.getCode());
     verify(userRepository, never()).findByIdForUpdate(any());
@@ -234,7 +252,8 @@ class CaptureStartServiceTest {
         assertThrows(
             BusinessException.class,
             () ->
-                service.startCapture(USER_ID, new CaptureStartRequest("1-1-1-1-1", CONTENT_TYPE)));
+                service.startCapture(
+                    USER_ID, new CaptureStartRequest("1-1-1-1-1", CONTENT_TYPE, "두부")));
 
     assertEquals(ErrorCode.INVALID_CLIENT_REQUEST_ID.getCode(), exception.getCode());
     verify(userRepository, never()).findByIdForUpdate(any());
@@ -242,5 +261,10 @@ class CaptureStartServiceTest {
 
   private User user() {
     return User.register(SocialProvider.KAKAO, "provider-id", "user@example.com");
+  }
+
+  private CardMetadata metadata() {
+    return new CardMetadata(
+        CardType.GROUND, 82, CardSkill.GROUND_PAW_STRIKE, CardSkill.GROUND_LEAF_GUARD, "001");
   }
 }

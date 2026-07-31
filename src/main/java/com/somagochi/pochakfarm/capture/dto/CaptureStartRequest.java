@@ -11,4 +11,5 @@ public record CaptureStartRequest(
             description = "업로드할 원본 이미지 MIME 타입",
             example = "image/jpeg",
             allowableValues = {"image/jpeg", "image/png", "image/webp"})
-        String contentType) {}
+        String contentType,
+    @Schema(description = "카드 이미지에 고정할 동물 이름. 1~6글자", example = "두부") String animalName) {}

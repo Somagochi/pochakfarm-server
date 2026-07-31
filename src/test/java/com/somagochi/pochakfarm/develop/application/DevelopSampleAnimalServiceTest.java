@@ -21,6 +21,7 @@ import com.somagochi.pochakfarm.animal.dto.AnimalResponse;
 import com.somagochi.pochakfarm.animal.infrastructure.persistence.AnimalRepository;
 import com.somagochi.pochakfarm.capture.domain.Capture;
 import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureRepository;
+import com.somagochi.pochakfarm.characterization.domain.CardMetadataGenerator;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
@@ -55,6 +56,7 @@ class DevelopSampleAnimalServiceTest {
           animalQueryService,
           animalRepository,
           captureRepository,
+          new CardMetadataGenerator(),
           randomProvider);
 
   private final Map<Long, CardType> cardTypeBySpaceId = new HashMap<>();
@@ -174,6 +176,9 @@ class DevelopSampleAnimalServiceTest {
       assertEquals(cardTypeBySpaceId.get(animal.getSpaceId()), capture.getCardType());
       assertEquals(capture.getId(), animal.getCaptureId());
       assertEquals(USER_ID, capture.getUserId());
+      assertEquals(capture.getCardType(), capture.getSkill1().cardType());
+      assertEquals(capture.getCardType(), capture.getSkill2().cardType());
+      assertFalse(capture.getSkill1() == capture.getSkill2());
     }
   }
 
