@@ -15,6 +15,7 @@ import com.somagochi.pochakfarm.farm.domain.FarmSpace;
 import com.somagochi.pochakfarm.farm.dto.FarmFloorPurchaseResponse;
 import com.somagochi.pochakfarm.farm.infrastructure.persistence.FarmSpaceRepository;
 import com.somagochi.pochakfarm.user.application.UserCoinService;
+import com.somagochi.pochakfarm.user.domain.Coin;
 import com.somagochi.pochakfarm.user.domain.CoinTransactionReason;
 import com.somagochi.pochakfarm.user.domain.User;
 import java.util.Optional;
@@ -104,7 +105,7 @@ class FarmFloorPurchaseServiceTest {
   private User userWithCoins(long coins) {
     User user = User.register(SocialProvider.KAKAO, "provider-id", "user@example.com");
     setField(user, "id", USER_ID);
-    setField(user, "coins", coins);
+    setField(user, "coins", Coin.of(coins));
     return user;
   }
 }

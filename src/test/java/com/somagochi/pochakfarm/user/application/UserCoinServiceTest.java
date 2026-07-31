@@ -12,6 +12,7 @@ import static org.springframework.test.util.ReflectionTestUtils.setField;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
+import com.somagochi.pochakfarm.user.domain.Coin;
 import com.somagochi.pochakfarm.user.domain.CoinHistory;
 import com.somagochi.pochakfarm.user.domain.CoinTransactionReason;
 import com.somagochi.pochakfarm.user.domain.CoinTransactionType;
@@ -112,7 +113,7 @@ class UserCoinServiceTest {
   private User givenUser(long coins) {
     User user = User.register(SocialProvider.KAKAO, "provider-id", "user@example.com");
     setField(user, "id", USER_ID);
-    setField(user, "coins", coins);
+    setField(user, "coins", Coin.of(coins));
     given(userRepository.findByIdForUpdate(USER_ID)).willReturn(Optional.of(user));
     return user;
   }

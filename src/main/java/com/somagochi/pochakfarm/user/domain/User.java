@@ -49,13 +49,13 @@ public class User extends BaseEntity {
 
   private long experience;
 
-  private long coins;
+  @Embedded private Coin coins;
 
   private User(SocialAccount socialAccount, String email) {
     this.socialAccount = socialAccount;
     this.email = email;
     this.level = INITIAL_LEVEL;
-    this.coins = INITIAL_COINS;
+    this.coins = Coin.of(INITIAL_COINS);
   }
 
   public static User register(SocialProvider provider, String providerId, String email) {
@@ -73,14 +73,12 @@ public class User extends BaseEntity {
     this.nickname = trimmed;
   }
 
+  public long getCoins() {
+    return coins.value();
+  }
+
   public void spendCoins(long amount) {
-    if (amount <= 0) {
-      throw new BusinessException(ErrorCode.INVALID_PARAMETER);
-    }
-    if (coins < amount) {
-      throw new BusinessException(ErrorCode.INSUFFICIENT_COINS);
-    }
-    this.coins -= amount;
+    this.coins = coins.spend(amount);
   }
 
   public void withdraw() {
