@@ -73,6 +73,20 @@ public class User extends BaseEntity {
     this.nickname = trimmed;
   }
 
+  public void addCoins(long amount) {
+    if (amount <= 0) {
+      throw new BusinessException(ErrorCode.INVALID_PARAMETER);
+    }
+    this.coins += amount;
+  }
+
+  public void addExperience(long amount) {
+    if (amount <= 0) {
+      throw new BusinessException(ErrorCode.INVALID_PARAMETER);
+    }
+    this.experience += amount;
+  }
+
   public void withdraw() {
     if (isDeleted()) {
       return;
