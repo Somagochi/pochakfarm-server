@@ -25,8 +25,8 @@ import org.hibernate.annotations.SQLRestriction;
     name = "users",
     uniqueConstraints =
         @UniqueConstraint(
-            name = "uk_users_provider_provider_id",
-            columnNames = {"provider", "provider_id"}))
+            name = "uk_users_provider_email",
+            columnNames = {"provider", "email"}))
 @SQLRestriction("deleted_at is null")
 public class User extends BaseEntity {
 

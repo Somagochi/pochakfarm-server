@@ -32,8 +32,8 @@ public class UserRegistrationService {
   }
 
   private Optional<User> findBySocialAccount(SocialUserInfo userInfo) {
-    return userRepository.findBySocialAccountProviderAndSocialAccountProviderId(
-        userInfo.provider(), userInfo.providerId());
+    return userRepository.findBySocialAccountProviderAndEmail(
+        userInfo.provider(), userInfo.email());
   }
 
   private User register(SocialUserInfo userInfo) {
