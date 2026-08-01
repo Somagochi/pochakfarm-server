@@ -16,10 +16,12 @@ import com.somagochi.pochakfarm.user.domain.User;
 import com.somagochi.pochakfarm.user.infrastructure.persistence.UserRepository;
 import java.time.Clock;
 import java.time.Instant;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class CaptureGameResultService {
 
   private final CaptureRepository captureRepository;
@@ -28,21 +30,6 @@ public class CaptureGameResultService {
   private final CaptureExperiencePolicy experiencePolicy;
   private final LevelRewardPolicy levelRewardPolicy;
   private final Clock clock;
-
-  public CaptureGameResultService(
-      CaptureRepository captureRepository,
-      UserRepository userRepository,
-      CaptureGameResultPolicy gameResultPolicy,
-      CaptureExperiencePolicy experiencePolicy,
-      LevelRewardPolicy levelRewardPolicy,
-      Clock clock) {
-    this.captureRepository = captureRepository;
-    this.userRepository = userRepository;
-    this.gameResultPolicy = gameResultPolicy;
-    this.experiencePolicy = experiencePolicy;
-    this.levelRewardPolicy = levelRewardPolicy;
-    this.clock = clock;
-  }
 
   @Transactional
   public CaptureGameResultResponse submit(

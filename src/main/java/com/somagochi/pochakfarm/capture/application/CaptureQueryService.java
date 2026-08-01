@@ -9,22 +9,17 @@ import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
 import java.time.Clock;
 import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class CaptureQueryService {
 
   private final CaptureRepository captureRepository;
   private final FileStorage fileStorage;
   private final Clock clock;
-
-  public CaptureQueryService(
-      CaptureRepository captureRepository, FileStorage fileStorage, Clock clock) {
-    this.captureRepository = captureRepository;
-    this.fileStorage = fileStorage;
-    this.clock = clock;
-  }
 
   @Transactional(readOnly = true)
   public CaptureResponse getCapture(Long userId, Long captureId) {
