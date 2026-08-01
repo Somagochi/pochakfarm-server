@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.somagochi.pochakfarm.capture.domain.Capture;
+import com.somagochi.pochakfarm.capture.domain.GameStatus;
 import com.somagochi.pochakfarm.capture.domain.Tier;
 import com.somagochi.pochakfarm.capture.dto.CaptureResponse;
 import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureRepository;
@@ -13,7 +14,9 @@ import com.somagochi.pochakfarm.characterization.domain.AnimalName;
 import com.somagochi.pochakfarm.characterization.domain.CardSkill;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -24,7 +27,10 @@ class CaptureQueryServiceTest {
   private final CaptureRepository captureRepository = mock(CaptureRepository.class);
   private final FileStorage fileStorage = mock(FileStorage.class);
   private final CaptureQueryService service =
-      new CaptureQueryService(captureRepository, fileStorage);
+      new CaptureQueryService(
+          captureRepository,
+          fileStorage,
+          Clock.fixed(Instant.parse("2026-07-24T01:00:00Z"), ZoneOffset.UTC));
 
   @Test
   void returnsNullImageUrlsBeforeGenerationSucceeds() {
@@ -51,6 +57,22 @@ class CaptureQueryServiceTest {
 
     assertEquals("https://cdn.test/scene.png", response.sceneImageUrl());
     assertEquals("https://cdn.test/card.png", response.cardImageUrl());
+  }
+
+  @Test
+  void showsEffectiveExpiredStatusWithoutChangingCapture() {
+    Capture capture = capture();
+    CaptureQueryService expiredService =
+        new CaptureQueryService(
+            captureRepository,
+            fileStorage,
+            Clock.fixed(Instant.parse("2026-07-24T01:05:00Z"), ZoneOffset.UTC));
+    when(captureRepository.findById(123L)).thenReturn(Optional.of(capture));
+
+    CaptureResponse response = expiredService.getCapture(1L, 123L);
+
+    assertEquals(GameStatus.EXPIRED, response.gameStatus());
+    assertEquals(GameStatus.PENDING, capture.getGameStatus());
   }
 
   private Capture capture() {

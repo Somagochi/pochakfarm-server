@@ -35,6 +35,7 @@ public enum ErrorCode {
   CAPTURE_REQUEST_CONFLICT(409, "CAPTURE_REQUEST_CONFLICT", "Capture request conflict"),
   CAPTURE_NOT_FOUND(404, "CAPTURE_NOT_FOUND", "Capture not found"),
   FORBIDDEN_CAPTURE_ACCESS(403, "FORBIDDEN_CAPTURE_ACCESS", "Forbidden capture access"),
+  INVALID_GAME_RESULT(400, "INVALID_GAME_RESULT", "Invalid game result"),
   DEVICE_NOT_FOUND(404, "DEVICE_NOT_FOUND", "Device not found"),
   INVALID_PHONE_NUMBER(400, "INVALID_PHONE_NUMBER", "Invalid phone number"),
   INVALID_CHARACTERIZATION_ID(400, "INVALID_CHARACTERIZATION_ID", "Invalid characterization id"),

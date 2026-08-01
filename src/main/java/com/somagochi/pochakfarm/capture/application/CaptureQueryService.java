@@ -7,6 +7,7 @@ import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureReposi
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
+import java.time.Clock;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,10 +17,13 @@ public class CaptureQueryService {
 
   private final CaptureRepository captureRepository;
   private final FileStorage fileStorage;
+  private final Clock clock;
 
-  public CaptureQueryService(CaptureRepository captureRepository, FileStorage fileStorage) {
+  public CaptureQueryService(
+      CaptureRepository captureRepository, FileStorage fileStorage, Clock clock) {
     this.captureRepository = captureRepository;
     this.fileStorage = fileStorage;
+    this.clock = clock;
   }
 
   @Transactional(readOnly = true)
@@ -33,6 +37,7 @@ public class CaptureQueryService {
     }
     return CaptureResponse.from(
         capture,
+        capture.gameStatusAt(clock.instant()),
         buildUrlWhenSucceeded(capture, capture.getAnimalImage()),
         buildUrlWhenSucceeded(capture, capture.getCardImage()));
   }
