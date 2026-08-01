@@ -51,6 +51,12 @@ public enum ErrorCode {
   FARM_SLOT_NOT_FOUND(404, "FARM_SLOT_NOT_FOUND", "Farm slot not found"),
   ANIMAL_NOT_PLACED(409, "ANIMAL_NOT_PLACED", "Animal is not placed in the farm"),
   CONCURRENCY_CONFLICT(409, "CONCURRENCY_CONFLICT", "Concurrent modification conflict"),
+  COUPON_NOT_FOUND(404, "COUPON_NOT_FOUND", "Coupon not found"),
+  COUPON_EXPIRED(400, "COUPON_EXPIRED", "Coupon has expired"),
+  COUPON_ALREADY_USED(409, "COUPON_ALREADY_USED", "Coupon already used"),
+  COUPON_ALREADY_REDEEMED(409, "COUPON_ALREADY_REDEEMED", "User already redeemed a coupon"),
+  COUPON_REDEEM_NOT_STARTED(409, "COUPON_REDEEM_NOT_STARTED", "Coupon redeem not started"),
+  FORBIDDEN_COUPON_ACCESS(403, "FORBIDDEN_COUPON_ACCESS", "Forbidden coupon access"),
   ;
 
   private final int status;

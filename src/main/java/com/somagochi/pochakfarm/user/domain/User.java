@@ -73,6 +73,10 @@ public class User extends BaseEntity {
     this.nickname = trimmed;
   }
 
+  public void addCoins(long amount) {
+    this.coins += amount;
+  }
+
   public void withdraw() {
     if (isDeleted()) {
       return;

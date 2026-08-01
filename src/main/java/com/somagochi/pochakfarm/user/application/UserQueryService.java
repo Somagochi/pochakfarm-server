@@ -28,6 +28,12 @@ public class UserQueryService {
     return UserProfileResponse.from(findUser(userId));
   }
 
+  public User getByIdForUpdate(Long userId) {
+    return userRepository
+        .findByIdForUpdate(userId)
+        .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+  }
+
   private User findUser(Long userId) {
     return userRepository
         .findById(userId)

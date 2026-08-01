@@ -21,12 +21,15 @@ public class CharacterizationReadService {
     this.fileStorage = fileStorage;
   }
 
+  public Characterization getById(Long characterizationId) {
+    return characterizationRepository
+        .findById(characterizationId)
+        .orElseThrow(() -> new BusinessException(ErrorCode.CHARACTERIZATION_NOT_FOUND));
+  }
+
   @Transactional(readOnly = true)
   public CharacterizationResponse getCharacterization(Long characterizationId) {
-    Characterization characterization =
-        characterizationRepository
-            .findById(characterizationId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.CHARACTERIZATION_NOT_FOUND));
+    Characterization characterization = getById(characterizationId);
     String resultImageUrl = buildUrlOrNull(characterization.getResultImageKey());
     return new CharacterizationResponse(
         characterization.getId(),

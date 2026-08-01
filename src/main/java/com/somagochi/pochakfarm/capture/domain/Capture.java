@@ -17,6 +17,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -146,6 +147,42 @@ public class Capture extends BaseEntity {
         originalImageKey,
         originalImageContentType,
         gameResultExpiresAt);
+  }
+
+  public static Capture granted(
+      Long userId,
+      CardType cardType,
+      Tier tier,
+      AnimalName animalName,
+      CardSkill skill1,
+      CardSkill skill2,
+      String cardNo,
+      String cardImageKey,
+      String cardImageContentType,
+      Instant grantedAt) {
+    Capture capture =
+        new Capture(
+            userId,
+            UUID.randomUUID().toString(),
+            cardType,
+            tier,
+            animalName,
+            skill1,
+            skill2,
+            cardNo,
+            cardImageKey,
+            cardImageContentType,
+            grantedAt);
+    capture.cardImage = Objects.requireNonNull(cardImageKey);
+    capture.generationStatus = GenerationStatus.PROCESSING;
+    return capture;
+  }
+
+  public void completeGrant(String animalImageKey) {
+    this.animalImage = Objects.requireNonNull(animalImageKey);
+    this.generationStatus = GenerationStatus.SUCCEEDED;
+    this.gameStatus = GameStatus.SUCCEEDED;
+    this.failureReason = null;
   }
 
   public String getAnimalName() {
