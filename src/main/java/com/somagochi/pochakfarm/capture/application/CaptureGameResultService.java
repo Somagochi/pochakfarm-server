@@ -42,13 +42,17 @@ public class CaptureGameResultService {
     if (!capture.isOwnedBy(userId)) {
       throw new BusinessException(ErrorCode.FORBIDDEN_CAPTURE_ACCESS);
     }
+    if (!capture.isGamePending()) {
+      User user =
+          userRepository
+              .findById(userId)
+              .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+      return response(capture, null, progressionState(user));
+    }
     User user =
         userRepository
             .findByIdForUpdate(userId)
             .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-    if (!capture.isGamePending()) {
-      return response(capture, null, progressionState(user));
-    }
     if (capture.isGameResultExpired(receivedAt)) {
       capture.expireGame();
       return response(capture, null, progressionState(user));

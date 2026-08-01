@@ -3,7 +3,6 @@ package com.somagochi.pochakfarm.capture.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -84,6 +83,7 @@ class CaptureGameResultServiceTest {
     assertEquals(40, response.progression().after().requiredExperienceForNextLevel());
     assertEquals(10, user.getExperience());
     assertEquals(GenerationStatus.FAILED, capture.getGenerationStatus());
+    verify(userRepository).findByIdForUpdate(USER_ID);
   }
 
   @Test
@@ -196,6 +196,7 @@ class CaptureGameResultServiceTest {
     User user = user();
     when(captureRepository.findByIdForUpdate(CAPTURE_ID)).thenReturn(Optional.of(capture));
     when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
 
     CaptureGameResultResponse first =
         service.submit(USER_ID, CAPTURE_ID, request(new ThrowResult(1, true)));
@@ -214,7 +215,8 @@ class CaptureGameResultServiceTest {
     assertEquals(2, retry.progression().after().level());
     assertEquals(5, retry.progression().after().experience());
     assertEquals(50, retry.progression().after().requiredExperienceForNextLevel());
-    verify(userRepository, times(2)).findByIdForUpdate(USER_ID);
+    verify(userRepository).findByIdForUpdate(USER_ID);
+    verify(userRepository).findById(USER_ID);
   }
 
   @Test
@@ -223,7 +225,7 @@ class CaptureGameResultServiceTest {
     capture.completeGame(GameStatus.SUCCEEDED, 10);
     User user = user();
     when(captureRepository.findByIdForUpdate(CAPTURE_ID)).thenReturn(Optional.of(capture));
-    when(userRepository.findByIdForUpdate(USER_ID)).thenReturn(Optional.of(user));
+    when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
 
     CaptureGameResultResponse response =
         service.submit(USER_ID, CAPTURE_ID, request(new ThrowResult(1, true)));
@@ -232,7 +234,7 @@ class CaptureGameResultServiceTest {
     assertEquals(10, response.reward().experienceReward());
     assertNull(response.progression().before());
     assertEquals(1, response.progression().after().level());
-    verify(userRepository).findByIdForUpdate(USER_ID);
+    verify(userRepository).findById(USER_ID);
   }
 
   @Test
