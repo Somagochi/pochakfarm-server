@@ -35,8 +35,8 @@ class UserRegistrationServiceTest {
         new SocialUserInfo(SocialProvider.KAKAO, "kakao-123", "user@kakao.com");
     User user = User.register(SocialProvider.KAKAO, "kakao-123", "user@kakao.com");
     given(
-            userRepository.findBySocialAccountProviderAndSocialAccountProviderId(
-                SocialProvider.KAKAO, "kakao-123"))
+            userRepository.findBySocialAccountProviderAndEmail(
+                SocialProvider.KAKAO, "user@kakao.com"))
         .willReturn(Optional.of(user));
 
     UserRegistration registration = userRegistrationService.getOrRegister(userInfo);
@@ -51,8 +51,8 @@ class UserRegistrationServiceTest {
         new SocialUserInfo(SocialProvider.KAKAO, "kakao-123", "user@kakao.com");
     User user = User.register(SocialProvider.KAKAO, "kakao-123", "user@kakao.com");
     given(
-            userRepository.findBySocialAccountProviderAndSocialAccountProviderId(
-                SocialProvider.KAKAO, "kakao-123"))
+            userRepository.findBySocialAccountProviderAndEmail(
+                SocialProvider.KAKAO, "user@kakao.com"))
         .willReturn(Optional.empty());
     given(userRepository.save(any(User.class))).willReturn(user);
 
@@ -68,8 +68,8 @@ class UserRegistrationServiceTest {
     SocialUserInfo userInfo =
         new SocialUserInfo(SocialProvider.KAKAO, "kakao-123", "user@kakao.com");
     given(
-            userRepository.findBySocialAccountProviderAndSocialAccountProviderId(
-                SocialProvider.KAKAO, "kakao-123"))
+            userRepository.findBySocialAccountProviderAndEmail(
+                SocialProvider.KAKAO, "user@kakao.com"))
         .willReturn(Optional.empty());
     given(userRepository.save(any(User.class)))
         .willThrow(new DataIntegrityViolationException("duplicate"));
