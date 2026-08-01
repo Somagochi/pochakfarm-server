@@ -57,9 +57,7 @@ public class CaptureGameResultService {
     GameStatus result = gameResultPolicy.resolve(request == null ? null : request.toDomain());
     long experience = experiencePolicy.experienceFor(capture.getTier(), result);
     ProgressionState before = progressionState(user);
-    LevelReward levelReward =
-        levelRewardPolicy.calculate(user.getLevel(), user.getExperience(), experience);
-    user.applyLevelReward(levelReward);
+    LevelReward levelReward = user.gainExperience(experience, levelRewardPolicy);
     capture.completeGame(result, levelReward.experienceReward());
     return response(capture, before, progressionState(user));
   }

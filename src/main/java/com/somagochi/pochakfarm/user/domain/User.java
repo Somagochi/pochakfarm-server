@@ -73,13 +73,12 @@ public class User extends BaseEntity {
     this.nickname = trimmed;
   }
 
-  public void applyLevelReward(LevelReward reward) {
-    if (level != reward.levelBefore()) {
-      throw new IllegalArgumentException("Reward level does not match current user level");
-    }
+  public LevelReward gainExperience(long experienceReward, LevelRewardPolicy levelRewardPolicy) {
+    LevelReward reward = levelRewardPolicy.calculate(level, experience, experienceReward);
     this.level = reward.levelAfter();
     this.experience = reward.experienceAfter();
     this.coins = Math.addExact(coins, reward.coinReward());
+    return reward;
   }
 
   public void withdraw() {
