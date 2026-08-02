@@ -1,26 +1,30 @@
 package com.somagochi.pochakfarm.capture.application;
 
 import com.somagochi.pochakfarm.capture.domain.Capture;
+import com.somagochi.pochakfarm.capture.domain.GameStatus;
 import com.somagochi.pochakfarm.capture.domain.GenerationStatus;
+import com.somagochi.pochakfarm.capture.dto.CaptureCount;
 import com.somagochi.pochakfarm.capture.dto.CaptureResponse;
 import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureRepository;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
+import java.time.Clock;
+import java.util.List;
 import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class CaptureQueryService {
+
+  private static final GameStatus CAPTURED = GameStatus.SUCCEEDED;
 
   private final CaptureRepository captureRepository;
   private final FileStorage fileStorage;
-
-  public CaptureQueryService(CaptureRepository captureRepository, FileStorage fileStorage) {
-    this.captureRepository = captureRepository;
-    this.fileStorage = fileStorage;
-  }
+  private final Clock clock;
 
   @Transactional(readOnly = true)
   public CaptureResponse getCapture(Long userId, Long captureId) {
@@ -33,6 +37,7 @@ public class CaptureQueryService {
     }
     return CaptureResponse.from(
         capture,
+        capture.gameStatusAt(clock.instant()),
         buildUrlWhenSucceeded(capture, capture.getAnimalImage()),
         buildUrlWhenSucceeded(capture, capture.getCardImage()));
   }
@@ -40,6 +45,11 @@ public class CaptureQueryService {
   @Transactional(readOnly = true)
   public Optional<Capture> findById(Long captureId) {
     return captureRepository.findById(captureId);
+  }
+
+  @Transactional(readOnly = true)
+  public List<CaptureCount> countCapturedByCardTypeAndTier(Long userId) {
+    return captureRepository.countByCardTypeAndTier(userId, CAPTURED);
   }
 
   private String buildUrlWhenSucceeded(Capture capture, String key) {

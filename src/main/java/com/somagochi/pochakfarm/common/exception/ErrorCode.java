@@ -9,6 +9,7 @@ public enum ErrorCode {
   UNSUPPORTED_SOCIAL_PROVIDER(400, "UNSUPPORTED_SOCIAL_PROVIDER", "Unsupported social provider"),
   INVALID_SOCIAL_TOKEN(401, "INVALID_SOCIAL_TOKEN", "Invalid social token"),
   SOCIAL_USER_INFO_FAILED(502, "SOCIAL_USER_INFO_FAILED", "Failed to fetch social user info"),
+  EMAIL_NOT_FOUND(400, "EMAIL_NOT_FOUND", "Email not found"),
   USER_NOT_FOUND(404, "USER_NOT_FOUND", "User not found"),
   USER_ALREADY_REGISTERED(409, "USER_ALREADY_REGISTERED", "User already registered"),
   INVALID_NICKNAME(400, "INVALID_NICKNAME", "Invalid nickname"),
@@ -31,10 +32,12 @@ public enum ErrorCode {
   CHARACTERIZATION_BUSY(503, "CHARACTERIZATION_BUSY", "Characterization service is busy"),
   CHARACTERIZATION_TIMED_OUT(504, "CHARACTERIZATION_TIMED_OUT", "Characterization timed out"),
   INVALID_CLIENT_REQUEST_ID(400, "INVALID_CLIENT_REQUEST_ID", "Invalid client request id"),
-  CAPTURE_ATTEMPT_EXHAUSTED(409, "CAPTURE_ATTEMPT_EXHAUSTED", "Capture attempt exhausted"),
+  COIN_PAYMENT_REQUIRED(402, "COIN_PAYMENT_REQUIRED", "Coin payment is required"),
+  INSUFFICIENT_COINS(402, "INSUFFICIENT_COINS", "Insufficient coins"),
   CAPTURE_REQUEST_CONFLICT(409, "CAPTURE_REQUEST_CONFLICT", "Capture request conflict"),
   CAPTURE_NOT_FOUND(404, "CAPTURE_NOT_FOUND", "Capture not found"),
   FORBIDDEN_CAPTURE_ACCESS(403, "FORBIDDEN_CAPTURE_ACCESS", "Forbidden capture access"),
+  INVALID_GAME_RESULT(400, "INVALID_GAME_RESULT", "Invalid game result"),
   DEVICE_NOT_FOUND(404, "DEVICE_NOT_FOUND", "Device not found"),
   INVALID_PHONE_NUMBER(400, "INVALID_PHONE_NUMBER", "Invalid phone number"),
   INVALID_CHARACTERIZATION_ID(400, "INVALID_CHARACTERIZATION_ID", "Invalid characterization id"),
@@ -52,6 +55,13 @@ public enum ErrorCode {
   FARM_FLOOR_MAX_REACHED(409, "FARM_FLOOR_MAX_REACHED", "Farm floor already at maximum"),
   INSUFFICIENT_COINS(409, "INSUFFICIENT_COINS", "Insufficient coins"),
   CONCURRENCY_CONFLICT(409, "CONCURRENCY_CONFLICT", "Concurrent modification conflict"),
+  FORBIDDEN_FARM_SLOT_ACCESS(403, "FORBIDDEN_FARM_SLOT_ACCESS", "Forbidden farm slot access"),
+  FARM_SLOT_TYPE_MISMATCH(400, "FARM_SLOT_TYPE_MISMATCH", "Farm slot type mismatch"),
+  ACHIEVEMENT_NOT_FOUND(404, "ACHIEVEMENT_NOT_FOUND", "Achievement not found"),
+  ACHIEVEMENT_NOT_ACHIEVED(400, "ACHIEVEMENT_NOT_ACHIEVED", "Achievement is not achieved yet"),
+  ACHIEVEMENT_REWARD_ALREADY_CLAIMED(
+      409, "ACHIEVEMENT_REWARD_ALREADY_CLAIMED", "Achievement reward already claimed"),
+  BADGE_NOT_FOUND(404, "BADGE_NOT_FOUND", "Badge not found"),
   ;
 
   private final int status;

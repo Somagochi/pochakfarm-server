@@ -1,9 +1,14 @@
 package com.somagochi.pochakfarm.capture.presentation;
 
+import com.somagochi.pochakfarm.capture.application.CaptureAvailabilityService;
 import com.somagochi.pochakfarm.capture.application.CaptureCompleteService;
+import com.somagochi.pochakfarm.capture.application.CaptureGameResultService;
 import com.somagochi.pochakfarm.capture.application.CaptureQueryService;
 import com.somagochi.pochakfarm.capture.application.CaptureStartService;
+import com.somagochi.pochakfarm.capture.dto.CaptureAvailabilityResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureCompleteResponse;
+import com.somagochi.pochakfarm.capture.dto.CaptureGameResultRequest;
+import com.somagochi.pochakfarm.capture.dto.CaptureGameResultResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartRequest;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartResponse;
@@ -26,7 +31,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class CaptureController implements CaptureApiSpec {
 
   private final CaptureStartService captureStartService;
+  private final CaptureAvailabilityService captureAvailabilityService;
   private final CaptureCompleteService captureCompleteService;
+  private final CaptureGameResultService captureGameResultService;
   private final CaptureQueryService captureQueryService;
 
   @Override
@@ -37,12 +44,28 @@ public class CaptureController implements CaptureApiSpec {
   }
 
   @Override
+  @GetMapping("/availability")
+  public ApiResponse<CaptureAvailabilityResponse> getAvailability(
+      @AuthenticationPrincipal UserPrincipal principal) {
+    return ApiResponse.success(captureAvailabilityService.getAvailability(principal.id()));
+  }
+
+  @Override
   @PostMapping("/{captureId}/original-image/complete")
   @ResponseStatus(HttpStatus.ACCEPTED)
   public ApiResponse<CaptureCompleteResponse> completeOriginalImage(
       @AuthenticationPrincipal UserPrincipal principal, @PathVariable Long captureId) {
     return ApiResponse.success(
         captureCompleteService.completeOriginalImage(principal.id(), captureId));
+  }
+
+  @Override
+  @PostMapping("/{captureId}/game-result")
+  public ApiResponse<CaptureGameResultResponse> submitGameResult(
+      @AuthenticationPrincipal UserPrincipal principal,
+      @PathVariable Long captureId,
+      @RequestBody CaptureGameResultRequest request) {
+    return ApiResponse.success(captureGameResultService.submit(principal.id(), captureId, request));
   }
 
   @Override
