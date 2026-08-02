@@ -25,8 +25,8 @@ import org.hibernate.annotations.SQLRestriction;
     name = "users",
     uniqueConstraints =
         @UniqueConstraint(
-            name = "uk_users_provider_provider_id",
-            columnNames = {"provider", "provider_id"}))
+            name = "uk_users_provider_email",
+            columnNames = {"provider", "email"}))
 @SQLRestriction("deleted_at is null")
 public class User extends BaseEntity {
 
@@ -79,6 +79,20 @@ public class User extends BaseEntity {
     this.experience = reward.experienceAfter();
     this.coins = Math.addExact(coins, reward.coinReward());
     return reward;
+  }
+
+  public void addCoins(long amount) {
+    if (amount <= 0) {
+      throw new BusinessException(ErrorCode.INVALID_PARAMETER);
+    }
+    this.coins += amount;
+  }
+
+  public void addExperience(long amount) {
+    if (amount <= 0) {
+      throw new BusinessException(ErrorCode.INVALID_PARAMETER);
+    }
+    this.experience += amount;
   }
 
   public void withdraw() {

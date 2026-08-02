@@ -1,6 +1,8 @@
 package com.somagochi.pochakfarm.common.social.oauth2.naver;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.somagochi.pochakfarm.common.exception.BusinessException;
+import com.somagochi.pochakfarm.common.exception.ErrorCode;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record NaverUserResponse(String resultcode, String message, NaverAccount response) {
@@ -10,7 +12,10 @@ public record NaverUserResponse(String resultcode, String message, NaverAccount 
   }
 
   public String email() {
-    return response == null ? null : response.email();
+    if (response.email == null) {
+      throw new BusinessException(ErrorCode.EMAIL_NOT_FOUND);
+    }
+    return response.email();
   }
 
   public String nickname() {
