@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.somagochi.pochakfarm.animal.domain.Animal;
+import com.somagochi.pochakfarm.animal.infrastructure.persistence.AnimalRepository;
 import com.somagochi.pochakfarm.capture.domain.Capture;
 import com.somagochi.pochakfarm.capture.domain.GameStatus;
 import com.somagochi.pochakfarm.capture.domain.GenerationStatus;
@@ -27,6 +29,9 @@ import com.somagochi.pochakfarm.coupon.dto.CouponCompleteResponse;
 import com.somagochi.pochakfarm.coupon.dto.CouponRedeemResponse;
 import com.somagochi.pochakfarm.coupon.infrastructure.persistence.CouponRepository;
 import com.somagochi.pochakfarm.coupon.infrastructure.persistence.PreRegistrationCouponRecipientRepository;
+import com.somagochi.pochakfarm.farm.application.FarmInitializationService;
+import com.somagochi.pochakfarm.farm.domain.FarmSpace;
+import com.somagochi.pochakfarm.farm.infrastructure.persistence.FarmSpaceRepository;
 import com.somagochi.pochakfarm.preregistration.domain.PreRegistration;
 import com.somagochi.pochakfarm.preregistration.infrastructure.persistence.PreRegistrationRepository;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
@@ -35,6 +40,7 @@ import com.somagochi.pochakfarm.user.domain.User;
 import com.somagochi.pochakfarm.user.infrastructure.persistence.UserRepository;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,6 +74,9 @@ class CouponRedeemServiceIntegrationTest {
   @Autowired private PreRegistrationRepository preRegistrationRepository;
   @Autowired private CharacterizationRepository characterizationRepository;
   @Autowired private CaptureRepository captureRepository;
+  @Autowired private AnimalRepository animalRepository;
+  @Autowired private FarmSpaceRepository farmSpaceRepository;
+  @Autowired private FarmInitializationService farmInitializationService;
   @Autowired private UserRepository userRepository;
   @Autowired private FileStorage fileStorage;
   @Autowired private JdbcTemplate jdbcTemplate;
@@ -209,6 +218,48 @@ class CouponRedeemServiceIntegrationTest {
         CouponStatus.USED, couponRepository.findById(coupon.getId()).orElseThrow().getStatus());
     assertNotNull(
         recipientRepository.findByCouponId(coupon.getId()).orElseThrow().getConvertedAt());
+
+    FarmSpace space =
+        farmSpaceRepository.findByUserIdAndType(userId, CardType.GROUND).orElseThrow();
+    List<Animal> animals =
+        animalRepository.findBySpaceIdAndFloorNumBetween(
+            space.getId(), FarmSpace.FIRST_FLOOR, space.getFloor());
+    assertEquals(1, animals.size());
+    assertEquals(redeemed.captureId(), animals.get(0).getCaptureId());
+    assertEquals(FarmSpace.FIRST_FLOOR, animals.get(0).getFloorNum());
+    assertEquals(FarmSpace.FIRST_SLOT, animals.get(0).getSlotNum());
+  }
+
+  @Test
+  void rejectsRedeemWhenFarmSpaceIsFull() {
+    persistCouponWithRecipient("TEST-FARM-FULL", Instant.now().plus(Duration.ofDays(1)));
+    fillGroundFarm(userId);
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class, () -> couponRedeemService.redeem(userId, "TEST-FARM-FULL"));
+
+    assertEquals(ErrorCode.FARM_SPACE_FULL.getCode(), exception.getCode());
+  }
+
+  @Test
+  void rejectsCompleteWhenFarmSpaceBecameFull() {
+    Coupon coupon =
+        persistCouponWithRecipient("TEST-FULL-LATE", Instant.now().plus(Duration.ofDays(1)));
+    CouponRedeemResponse redeemed = couponRedeemService.redeem(userId, "TEST-FULL-LATE");
+    String animalImageKey = redeemed.animalImageUpload().key();
+    simulateUpload(animalImageKey);
+    fillGroundFarm(userId);
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () -> couponCompleteService.complete(userId, "TEST-FULL-LATE", animalImageKey));
+
+    assertEquals(ErrorCode.FARM_SPACE_FULL.getCode(), exception.getCode());
+    assertEquals(initialCoins, userRepository.findById(userId).orElseThrow().getCoins());
+    assertEquals(
+        CouponStatus.ACTIVE, couponRepository.findById(coupon.getId()).orElseThrow().getStatus());
   }
 
   @Test
@@ -273,9 +324,39 @@ class CouponRedeemServiceIntegrationTest {
   }
 
   private User persistUser() {
-    return userRepository.save(
-        User.register(
-            SocialProvider.KAKAO, UUID.randomUUID().toString(), UUID.randomUUID() + "@t"));
+    User user =
+        userRepository.save(
+            User.register(
+                SocialProvider.KAKAO, UUID.randomUUID().toString(), UUID.randomUUID() + "@t"));
+    farmInitializationService.initialize(user.getId());
+    return user;
+  }
+
+  private void fillGroundFarm(Long userId) {
+    FarmSpace space =
+        farmSpaceRepository.findByUserIdAndType(userId, CardType.GROUND).orElseThrow();
+    for (int floorNum = FarmSpace.FIRST_FLOOR; floorNum <= space.getFloor(); floorNum++) {
+      for (int slotNum = FarmSpace.FIRST_SLOT;
+          slotNum <= FarmSpace.SLOT_COUNT_PER_FLOOR;
+          slotNum++) {
+        Capture capture = captureRepository.save(occupyingCapture(userId));
+        animalRepository.save(Animal.create(capture.getId(), space.getId(), floorNum, slotNum));
+      }
+    }
+  }
+
+  private Capture occupyingCapture(Long userId) {
+    return Capture.granted(
+        userId,
+        CardType.GROUND,
+        Tier.S,
+        AnimalName.from("점유"),
+        CardSkill.GROUND_PAW_STRIKE,
+        CardSkill.GROUND_LEAF_GUARD,
+        "999",
+        "captures/card.png",
+        "image/png",
+        Instant.now());
   }
 
   private void simulateUpload(String key) {

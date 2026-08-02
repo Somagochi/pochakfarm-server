@@ -1,6 +1,8 @@
 package com.somagochi.pochakfarm.coupon.application;
 
+import com.somagochi.pochakfarm.animal.application.AnimalPlacementService;
 import com.somagochi.pochakfarm.capture.application.CaptureGrantService;
+import com.somagochi.pochakfarm.capture.domain.Capture;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.coupon.domain.Coupon;
@@ -27,6 +29,7 @@ public class CouponCompleteService {
   private final PreRegistrationCouponRecipientRepository recipientRepository;
   private final UserQueryService userQueryService;
   private final CaptureGrantService captureGrantService;
+  private final AnimalPlacementService animalPlacementService;
   private final ImageUploadService imageUploadService;
 
   @Transactional
@@ -36,7 +39,9 @@ public class CouponCompleteService {
     validateCompletable(coupon, recipient, userId);
 
     imageUploadService.validateUploadedObject(userId, animalImageKey, ANIMAL_IMAGE_CONTENT_TYPE);
-    captureGrantService.completeGrant(userId, recipient.getCaptureId(), animalImageKey);
+    Capture capture =
+        captureGrantService.completeGrant(userId, recipient.getCaptureId(), animalImageKey);
+    animalPlacementService.place(userId, capture.getCardType(), capture.getId());
 
     User user = userQueryService.getForUpdate(userId);
     user.addCoins(REWARD_COINS);

@@ -1,5 +1,6 @@
 package com.somagochi.pochakfarm.coupon.application;
 
+import com.somagochi.pochakfarm.animal.application.AnimalPlacementService;
 import com.somagochi.pochakfarm.capture.application.CaptureGrantService;
 import com.somagochi.pochakfarm.capture.domain.Capture;
 import com.somagochi.pochakfarm.capture.domain.Tier;
@@ -36,6 +37,7 @@ public class CouponRedeemService {
   private final PreRegistrationQueryService preRegistrationQueryService;
   private final CharacterizationReadService characterizationReadService;
   private final CaptureGrantService captureGrantService;
+  private final AnimalPlacementService animalPlacementService;
   private final FileStorage fileStorage;
   private final ImageUploadService imageUploadService;
 
@@ -52,7 +54,9 @@ public class CouponRedeemService {
     }
     validateAssignable(recipient, coupon, userId, now);
 
-    Capture capture = grantCapture(userId, recipient, now);
+    Characterization characterization = findCharacterization(recipient);
+    animalPlacementService.validateHasEmptySlot(userId, characterization.getCardType());
+    Capture capture = captureGrantService.grant(userId, characterization, REWARD_TIER, now);
     recipient.assign(userId, capture.getId());
     return toResponse(userId, capture);
   }
@@ -83,7 +87,7 @@ public class CouponRedeemService {
     }
   }
 
-  private Capture grantCapture(Long userId, PreRegistrationCouponRecipient recipient, Instant now) {
+  private Characterization findCharacterization(PreRegistrationCouponRecipient recipient) {
     PreRegistration preRegistration =
         preRegistrationQueryService.getById(recipient.getPreRegistrationId());
     Characterization characterization =
@@ -91,7 +95,7 @@ public class CouponRedeemService {
     if (characterization.getResultImageKey() == null) {
       throw new BusinessException(ErrorCode.CHARACTERIZATION_NOT_FOUND);
     }
-    return captureGrantService.grant(userId, characterization, REWARD_TIER, now);
+    return characterization;
   }
 
   private CouponRedeemResponse toResponse(Long userId, Capture capture) {
