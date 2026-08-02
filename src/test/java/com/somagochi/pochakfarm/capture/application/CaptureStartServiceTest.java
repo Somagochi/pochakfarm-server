@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import com.somagochi.pochakfarm.capture.domain.Capture;
 import com.somagochi.pochakfarm.capture.domain.CaptureDifficulty;
 import com.somagochi.pochakfarm.capture.domain.CaptureDifficultyPolicy;
+import com.somagochi.pochakfarm.capture.domain.CapturePaymentType;
 import com.somagochi.pochakfarm.capture.domain.CardTypeSelectionPolicy;
 import com.somagochi.pochakfarm.capture.domain.Tier;
 import com.somagochi.pochakfarm.capture.domain.TierSelectionPolicy;
@@ -83,7 +84,7 @@ class CaptureStartServiceTest {
     given(captureRepository.findByUserIdAndClientRequestId(USER_ID, CLIENT_REQUEST_ID))
         .willReturn(Optional.empty());
     given(
-            captureRepository.countByUserIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+            captureRepository.countFreeAttemptsByUserIdBetween(
                 USER_ID,
                 Instant.parse("2026-07-23T15:00:00Z"),
                 Instant.parse("2026-07-24T15:00:00Z")))
@@ -115,6 +116,9 @@ class CaptureStartServiceTest {
     assertEquals(5, response.attempts().dailyLimit());
     assertEquals(1, response.attempts().used());
     assertEquals(4, response.attempts().remaining());
+    assertEquals(CapturePaymentType.FREE, response.payment().type());
+    assertEquals(0, response.payment().chargedCoins());
+    assertEquals(1000, response.payment().currentCoins());
     assertEquals(NOW.plusSeconds(300), response.gameResultExpiresAt());
 
     verify(captureRepository).save(any(Capture.class));
@@ -144,10 +148,7 @@ class CaptureStartServiceTest {
     given(userRepository.findByIdForUpdate(USER_ID)).willReturn(Optional.of(user));
     given(captureRepository.findByUserIdAndClientRequestId(USER_ID, CLIENT_REQUEST_ID))
         .willReturn(Optional.of(existing));
-    given(
-            captureRepository.countByUserIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
-                any(), any(), any()))
-        .willReturn(5L);
+    given(captureRepository.countFreeAttemptsByUserIdBetween(any(), any(), any())).willReturn(5L);
     given(captureDifficultyPolicy.forTier(Tier.A)).willReturn(difficulty);
     given(imageUploadService.refreshPresign(USER_ID, ORIGINAL_IMAGE, CONTENT_TYPE))
         .willReturn(presign);
@@ -161,6 +162,9 @@ class CaptureStartServiceTest {
     assertEquals("https://upload.example/refreshed", response.upload().url());
     assertEquals(5, response.attempts().used());
     assertEquals(0, response.attempts().remaining());
+    assertEquals(CapturePaymentType.FREE, response.payment().type());
+    assertEquals(0, response.payment().chargedCoins());
+    assertEquals(1000, response.payment().currentCoins());
     verify(tierSelectionPolicy, never()).select(any(Integer.class));
     verify(cardTypeSelectionPolicy, never()).select();
     verify(captureRepository, never()).save(any());
@@ -198,14 +202,11 @@ class CaptureStartServiceTest {
   }
 
   @Test
-  void rejectsCaptureWhenFiveDailyAttemptsAreUsed() {
+  void requiresCoinPaymentWhenFreeAttemptsAreUsedWithoutConsent() {
     given(userRepository.findByIdForUpdate(USER_ID)).willReturn(Optional.of(user()));
     given(captureRepository.findByUserIdAndClientRequestId(USER_ID, CLIENT_REQUEST_ID))
         .willReturn(Optional.empty());
-    given(
-            captureRepository.countByUserIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
-                any(), any(), any()))
-        .willReturn(5L);
+    given(captureRepository.countFreeAttemptsByUserIdBetween(any(), any(), any())).willReturn(5L);
 
     BusinessException exception =
         assertThrows(
@@ -214,7 +215,65 @@ class CaptureStartServiceTest {
                 service.startCapture(
                     USER_ID, new CaptureStartRequest(CLIENT_REQUEST_ID, CONTENT_TYPE, "두부")));
 
-    assertEquals(ErrorCode.CAPTURE_ATTEMPT_EXHAUSTED.getCode(), exception.getCode());
+    assertEquals(ErrorCode.COIN_PAYMENT_REQUIRED.getCode(), exception.getCode());
+    verify(captureRepository, never()).save(any());
+    verify(imageUploadService, never()).createPresign(any(), any(), any());
+  }
+
+  @Test
+  void chargesCoinsWhenFreeAttemptsAreUsedWithConsent() {
+    User user = user();
+    CaptureDifficulty difficulty = new CaptureDifficulty(2_800);
+    PresignResponse presign =
+        new PresignResponse(
+            "https://upload.example/original", ORIGINAL_IMAGE, NOW.plusSeconds(300));
+    given(userRepository.findByIdForUpdate(USER_ID)).willReturn(Optional.of(user));
+    given(captureRepository.findByUserIdAndClientRequestId(USER_ID, CLIENT_REQUEST_ID))
+        .willReturn(Optional.empty());
+    given(captureRepository.countFreeAttemptsByUserIdBetween(any(), any(), any())).willReturn(5L);
+    given(tierSelectionPolicy.select(1)).willReturn(Tier.B);
+    given(cardTypeSelectionPolicy.select()).willReturn(CardType.GROUND);
+    given(cardMetadataGenerator.generate(CardType.GROUND)).willReturn(metadata());
+    given(captureDifficultyPolicy.forTier(Tier.B)).willReturn(difficulty);
+    given(imageUploadService.createPresign(USER_ID, "capture-original", CONTENT_TYPE))
+        .willReturn(presign);
+    given(captureRepository.save(any(Capture.class)))
+        .willAnswer(
+            invocation -> {
+              Capture capture = invocation.getArgument(0);
+              ReflectionTestUtils.setField(capture, "id", 123L);
+              return capture;
+            });
+
+    CaptureStartResponse response =
+        service.startCapture(
+            USER_ID, new CaptureStartRequest(CLIENT_REQUEST_ID, CONTENT_TYPE, "두부", true));
+
+    assertEquals(5, response.attempts().used());
+    assertEquals(0, response.attempts().remaining());
+    assertEquals(CapturePaymentType.COIN, response.payment().type());
+    assertEquals(200, response.payment().chargedCoins());
+    assertEquals(800, response.payment().currentCoins());
+    assertEquals(800, user.getCoins());
+  }
+
+  @Test
+  void rejectsCoinPaymentWhenCoinsAreInsufficient() {
+    User user = user();
+    ReflectionTestUtils.setField(user, "coins", 100L);
+    given(userRepository.findByIdForUpdate(USER_ID)).willReturn(Optional.of(user));
+    given(captureRepository.findByUserIdAndClientRequestId(USER_ID, CLIENT_REQUEST_ID))
+        .willReturn(Optional.empty());
+    given(captureRepository.countFreeAttemptsByUserIdBetween(any(), any(), any())).willReturn(5L);
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () ->
+                service.startCapture(
+                    USER_ID, new CaptureStartRequest(CLIENT_REQUEST_ID, CONTENT_TYPE, "두부", true)));
+
+    assertEquals(ErrorCode.INSUFFICIENT_COINS.getCode(), exception.getCode());
     verify(captureRepository, never()).save(any());
     verify(imageUploadService, never()).createPresign(any(), any(), any());
   }

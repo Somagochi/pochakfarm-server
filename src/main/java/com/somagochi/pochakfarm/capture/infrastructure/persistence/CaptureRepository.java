@@ -17,8 +17,17 @@ public interface CaptureRepository extends JpaRepository<Capture, Long> {
 
   Optional<Capture> findByUserIdAndClientRequestId(Long userId, String clientRequestId);
 
-  long countByUserIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
-      Long userId, Instant startInclusive, Instant endExclusive);
+  @Query(
+      "select count(c) from Capture c "
+          + "where c.userId = :userId "
+          + "and (c.paymentType = com.somagochi.pochakfarm.capture.domain.CapturePaymentType.FREE "
+          + "or c.paymentType is null) "
+          + "and c.createdAt >= :startInclusive "
+          + "and c.createdAt < :endExclusive")
+  long countFreeAttemptsByUserIdBetween(
+      @Param("userId") Long userId,
+      @Param("startInclusive") Instant startInclusive,
+      @Param("endExclusive") Instant endExclusive);
 
   @Query(
       "select c from Capture c, Animal a "

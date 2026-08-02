@@ -95,6 +95,10 @@ public class Capture extends BaseEntity {
   @Column(name = "granted_experience")
   private Long grantedExperience;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "payment_type", updatable = false)
+  private CapturePaymentType paymentType;
+
   @Column(name = "user_id", nullable = false, updatable = false)
   private Long userId;
 
@@ -109,7 +113,8 @@ public class Capture extends BaseEntity {
       String cardNo,
       String originalImageKey,
       String originalImageContentType,
-      Instant gameResultExpiresAt) {
+      Instant gameResultExpiresAt,
+      CapturePaymentType paymentType) {
     this.userId = Objects.requireNonNull(userId);
     this.clientRequestId = Objects.requireNonNull(clientRequestId);
     this.cardType = Objects.requireNonNull(cardType);
@@ -121,6 +126,7 @@ public class Capture extends BaseEntity {
     this.originalImageKey = Objects.requireNonNull(originalImageKey);
     this.originalImageContentType = Objects.requireNonNull(originalImageContentType);
     this.gameResultExpiresAt = Objects.requireNonNull(gameResultExpiresAt);
+    this.paymentType = Objects.requireNonNull(paymentType);
     this.generationStatus = GenerationStatus.WAITING_UPLOAD;
     this.gameStatus = GameStatus.PENDING;
   }
@@ -137,6 +143,34 @@ public class Capture extends BaseEntity {
       String originalImageKey,
       String originalImageContentType,
       Instant gameResultExpiresAt) {
+    return create(
+        userId,
+        clientRequestId,
+        cardType,
+        tier,
+        animalName,
+        skill1,
+        skill2,
+        cardNo,
+        originalImageKey,
+        originalImageContentType,
+        gameResultExpiresAt,
+        CapturePaymentType.FREE);
+  }
+
+  public static Capture create(
+      Long userId,
+      String clientRequestId,
+      CardType cardType,
+      Tier tier,
+      AnimalName animalName,
+      CardSkill skill1,
+      CardSkill skill2,
+      String cardNo,
+      String originalImageKey,
+      String originalImageContentType,
+      Instant gameResultExpiresAt,
+      CapturePaymentType paymentType) {
     return new Capture(
         userId,
         clientRequestId,
@@ -148,11 +182,16 @@ public class Capture extends BaseEntity {
         cardNo,
         originalImageKey,
         originalImageContentType,
-        gameResultExpiresAt);
+        gameResultExpiresAt,
+        paymentType);
   }
 
   public String getAnimalName() {
     return animalName.value();
+  }
+
+  public CapturePaymentType getPaymentType() {
+    return paymentType == null ? CapturePaymentType.FREE : paymentType;
   }
 
   public boolean isOwnedBy(Long userId) {

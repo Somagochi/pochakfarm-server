@@ -12,4 +12,15 @@ public record CaptureStartRequest(
             example = "image/jpeg",
             allowableValues = {"image/jpeg", "image/png", "image/webp"})
         String contentType,
-    @Schema(description = "카드 이미지에 고정할 동물 이름. 1~6글자", example = "두부") String animalName) {}
+    @Schema(description = "카드 이미지에 고정할 동물 이름. 1~6글자", example = "두부") String animalName,
+    @Schema(description = "무료 횟수 소진 시 200코인 결제 동의 여부", example = "false")
+        Boolean allowCoinPayment) {
+
+  public CaptureStartRequest {
+    allowCoinPayment = Boolean.TRUE.equals(allowCoinPayment);
+  }
+
+  public CaptureStartRequest(String clientRequestId, String contentType, String animalName) {
+    this(clientRequestId, contentType, animalName, false);
+  }
+}

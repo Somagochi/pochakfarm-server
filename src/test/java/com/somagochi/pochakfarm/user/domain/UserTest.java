@@ -74,6 +74,26 @@ class UserTest {
   }
 
   @Test
+  void spendsCoins() {
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+
+    user.spendCoins(200);
+
+    assertEquals(800, user.getCoins());
+  }
+
+  @Test
+  void rejectsSpendingCoinsWhenInsufficient() {
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+
+    BusinessException exception =
+        assertThrows(BusinessException.class, () -> user.spendCoins(1200));
+
+    assertEquals(ErrorCode.INSUFFICIENT_COINS.getCode(), exception.getCode());
+    assertEquals(1000, user.getCoins());
+  }
+
+  @Test
   void withdrawMarksDeletedAndAnonymizesUniqueIdentifiers() {
     User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
 

@@ -3,6 +3,7 @@ package com.somagochi.pochakfarm.capture.application;
 import com.somagochi.pochakfarm.capture.domain.Capture;
 import com.somagochi.pochakfarm.capture.domain.CaptureDifficulty;
 import com.somagochi.pochakfarm.capture.domain.CaptureDifficultyPolicy;
+import com.somagochi.pochakfarm.capture.domain.CapturePaymentType;
 import com.somagochi.pochakfarm.capture.domain.CardTypeSelectionPolicy;
 import com.somagochi.pochakfarm.capture.domain.Tier;
 import com.somagochi.pochakfarm.capture.domain.TierSelectionPolicy;
@@ -33,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CaptureStartService {
 
   private static final int DAILY_LIMIT = 5;
+  private static final long EXTRA_CAPTURE_COST = 200L;
   private static final Duration GAME_RESULT_SUBMISSION_WINDOW = Duration.ofMinutes(5);
   private static final ZoneId KOREA_ZONE = ZoneId.of("Asia/Seoul");
   private static final String ORIGINAL_IMAGE_PURPOSE = "capture-original";
@@ -78,13 +80,13 @@ public class CaptureStartService {
     Optional<Capture> existing =
         captureRepository.findByUserIdAndClientRequestId(userId, clientRequestId);
     if (existing.isPresent()) {
-      return existingResponse(existing.get(), request.contentType(), animalName, dailyRange);
+      validateExistingRequest(existing.get(), request.contentType(), animalName);
+      long used = countUsed(userId, dailyRange);
+      return existingResponse(existing.get(), used, user.getCoins());
     }
 
     long used = countUsed(userId, dailyRange);
-    if (used >= DAILY_LIMIT) {
-      throw new BusinessException(ErrorCode.CAPTURE_ATTEMPT_EXHAUSTED);
-    }
+    CapturePaymentType paymentType = decidePayment(user, used, request.allowCoinPayment());
 
     Tier tier = tierSelectionPolicy.select(user.getLevel());
     CardType cardType = cardTypeSelectionPolicy.select();
@@ -92,6 +94,9 @@ public class CaptureStartService {
     CaptureDifficulty difficulty = captureDifficultyPolicy.forTier(tier);
     PresignResponse presign =
         imageUploadService.createPresign(userId, ORIGINAL_IMAGE_PURPOSE, request.contentType());
+    if (paymentType == CapturePaymentType.COIN) {
+      user.spendCoins(EXTRA_CAPTURE_COST);
+    }
     Instant gameResultExpiresAt = clock.instant().plus(GAME_RESULT_SUBMISSION_WINDOW);
     Capture capture =
         Capture.create(
@@ -105,30 +110,66 @@ public class CaptureStartService {
             TEMPORARY_CARD_NO,
             presign.key(),
             request.contentType(),
-            gameResultExpiresAt);
+            gameResultExpiresAt,
+            paymentType);
     Capture saved = captureRepository.save(capture);
     saved.cardNoAssigned(formatCardNo(saved.getId()));
-    return CaptureStartResponse.from(saved, difficulty, presign, DAILY_LIMIT, used + 1);
+    long responseUsed = paymentType == CapturePaymentType.FREE ? used + 1 : used;
+    return CaptureStartResponse.from(
+        saved,
+        difficulty,
+        presign,
+        DAILY_LIMIT,
+        responseUsed,
+        paymentType,
+        chargedCoins(paymentType),
+        user.getCoins());
   }
 
-  private CaptureStartResponse existingResponse(
-      Capture capture, String requestedContentType, AnimalName animalName, DailyRange dailyRange) {
-    if (!capture.getOriginalImageContentType().equals(requestedContentType)
-        || !capture.getAnimalName().equals(animalName.value())) {
-      throw new BusinessException(ErrorCode.CAPTURE_REQUEST_CONFLICT);
-    }
+  private CaptureStartResponse existingResponse(Capture capture, long used, long currentCoins) {
     PresignResponse presign =
         imageUploadService.refreshPresign(
             capture.getUserId(),
             capture.getOriginalImageKey(),
             capture.getOriginalImageContentType());
-    long used = countUsed(capture.getUserId(), dailyRange);
     return CaptureStartResponse.from(
-        capture, captureDifficultyPolicy.forTier(capture.getTier()), presign, DAILY_LIMIT, used);
+        capture,
+        captureDifficultyPolicy.forTier(capture.getTier()),
+        presign,
+        DAILY_LIMIT,
+        used,
+        capture.getPaymentType(),
+        chargedCoins(capture.getPaymentType()),
+        currentCoins);
+  }
+
+  private void validateExistingRequest(
+      Capture capture, String requestedContentType, AnimalName animalName) {
+    if (!capture.getOriginalImageContentType().equals(requestedContentType)
+        || !capture.getAnimalName().equals(animalName.value())) {
+      throw new BusinessException(ErrorCode.CAPTURE_REQUEST_CONFLICT);
+    }
+  }
+
+  private CapturePaymentType decidePayment(User user, long used, boolean allowCoinPayment) {
+    if (used < DAILY_LIMIT) {
+      return CapturePaymentType.FREE;
+    }
+    if (!allowCoinPayment) {
+      throw new BusinessException(ErrorCode.COIN_PAYMENT_REQUIRED);
+    }
+    if (user.getCoins() < EXTRA_CAPTURE_COST) {
+      throw new BusinessException(ErrorCode.INSUFFICIENT_COINS);
+    }
+    return CapturePaymentType.COIN;
+  }
+
+  private long chargedCoins(CapturePaymentType paymentType) {
+    return paymentType == CapturePaymentType.COIN ? EXTRA_CAPTURE_COST : 0;
   }
 
   private long countUsed(Long userId, DailyRange range) {
-    return captureRepository.countByUserIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+    return captureRepository.countFreeAttemptsByUserIdBetween(
         userId, range.startInclusive(), range.endExclusive());
   }
 
