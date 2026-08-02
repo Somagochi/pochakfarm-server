@@ -77,7 +77,7 @@ public class CouponRedeemService {
     if (coupon.isExpired(now)) {
       throw new BusinessException(ErrorCode.COUPON_EXPIRED);
     }
-    userQueryService.getByIdForUpdate(userId);
+    userQueryService.getForUpdate(userId);
     if (recipientRepository.existsByUserId(userId)) {
       throw new BusinessException(ErrorCode.COUPON_ALREADY_REDEEMED);
     }

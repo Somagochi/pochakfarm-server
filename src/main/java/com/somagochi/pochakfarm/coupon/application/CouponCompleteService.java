@@ -38,7 +38,7 @@ public class CouponCompleteService {
     imageUploadService.validateUploadedObject(userId, animalImageKey, ANIMAL_IMAGE_CONTENT_TYPE);
     captureGrantService.completeGrant(userId, recipient.getCaptureId(), animalImageKey);
 
-    User user = userQueryService.getByIdForUpdate(userId);
+    User user = userQueryService.getForUpdate(userId);
     user.addCoins(REWARD_COINS);
     coupon.use();
     recipient.convert(Instant.now());

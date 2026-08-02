@@ -210,7 +210,8 @@ public class Capture extends BaseEntity {
             cardNo,
             cardImageKey,
             cardImageContentType,
-            grantedAt);
+            grantedAt,
+            CapturePaymentType.COUPON);
     capture.cardImage = Objects.requireNonNull(cardImageKey);
     capture.generationStatus = GenerationStatus.PROCESSING;
     return capture;
