@@ -10,4 +10,6 @@ public interface PreRegistrationCouponRecipientRepository
   Optional<PreRegistrationCouponRecipient> findByCouponId(Long couponId);
 
   boolean existsByUserId(Long userId);
+
+  boolean existsByPreRegistrationId(Long preRegistrationId);
 }

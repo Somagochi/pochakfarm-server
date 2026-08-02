@@ -134,6 +134,9 @@ app:
       enabled: ${secret.characterization.reaper.enabled:true}
       interval: ${secret.characterization.reaper.interval:PT1M}
       stale-threshold: ${secret.characterization.reaper.stale-threshold:PT15M}
+  coupon:
+    pre-registration:
+      enabled: ${secret.coupon.pre-registration.enabled:true}
   promotion:
     base-url: ${secret.promotion.base-url}
   characterizer:
