@@ -92,6 +92,9 @@ public class Capture extends BaseEntity {
   @Column(name = "game_status", nullable = false)
   private GameStatus gameStatus;
 
+  @Column(name = "granted_experience")
+  private Long grantedExperience;
+
   @Column(name = "user_id", nullable = false, updatable = false)
   private Long userId;
 
@@ -158,6 +161,32 @@ public class Capture extends BaseEntity {
 
   public boolean isWaitingUpload() {
     return generationStatus == GenerationStatus.WAITING_UPLOAD;
+  }
+
+  public boolean isGamePending() {
+    return gameStatus == GameStatus.PENDING;
+  }
+
+  public boolean isGameResultExpired(Instant now) {
+    return isGamePending() && !now.isBefore(gameResultExpiresAt);
+  }
+
+  public GameStatus gameStatusAt(Instant now) {
+    return isGameResultExpired(now) ? GameStatus.EXPIRED : gameStatus;
+  }
+
+  public void expireGame() {
+    if (isGamePending()) {
+      this.gameStatus = GameStatus.EXPIRED;
+    }
+  }
+
+  public void completeGame(GameStatus result, long grantedExperience) {
+    if (!isGamePending() || (result != GameStatus.SUCCEEDED && result != GameStatus.FAILED)) {
+      throw new IllegalStateException("Game result cannot be completed");
+    }
+    this.gameStatus = result;
+    this.grantedExperience = grantedExperience;
   }
 
   public void markProcessing() {

@@ -73,6 +73,14 @@ public class User extends BaseEntity {
     this.nickname = trimmed;
   }
 
+  public LevelReward gainExperience(long experienceReward, LevelRewardPolicy levelRewardPolicy) {
+    LevelReward reward = levelRewardPolicy.calculate(level, experience, experienceReward);
+    this.level = reward.levelAfter();
+    this.experience = reward.experienceAfter();
+    this.coins = Math.addExact(coins, reward.coinReward());
+    return reward;
+  }
+
   public void addCoins(long amount) {
     if (amount <= 0) {
       throw new BusinessException(ErrorCode.INVALID_PARAMETER);

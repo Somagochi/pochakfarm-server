@@ -9,23 +9,22 @@ import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureReposi
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
+import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class CaptureQueryService {
 
   private static final GameStatus CAPTURED = GameStatus.SUCCEEDED;
 
   private final CaptureRepository captureRepository;
   private final FileStorage fileStorage;
-
-  public CaptureQueryService(CaptureRepository captureRepository, FileStorage fileStorage) {
-    this.captureRepository = captureRepository;
-    this.fileStorage = fileStorage;
-  }
+  private final Clock clock;
 
   @Transactional(readOnly = true)
   public CaptureResponse getCapture(Long userId, Long captureId) {
@@ -38,6 +37,7 @@ public class CaptureQueryService {
     }
     return CaptureResponse.from(
         capture,
+        capture.gameStatusAt(clock.instant()),
         buildUrlWhenSucceeded(capture, capture.getAnimalImage()),
         buildUrlWhenSucceeded(capture, capture.getCardImage()));
   }

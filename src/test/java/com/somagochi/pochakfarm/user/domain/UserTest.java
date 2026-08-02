@@ -62,6 +62,18 @@ class UserTest {
   }
 
   @Test
+  void gainsExperienceAndAppliesLevelReward() {
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+
+    LevelReward reward = user.gainExperience(40, new LevelRewardPolicy());
+
+    assertEquals(40, reward.experienceReward());
+    assertEquals(2, user.getLevel());
+    assertEquals(0, user.getExperience());
+    assertEquals(1500, user.getCoins());
+  }
+
+  @Test
   void withdrawMarksDeletedAndAnonymizesUniqueIdentifiers() {
     User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
 

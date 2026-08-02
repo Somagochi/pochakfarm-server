@@ -75,7 +75,7 @@ class CaptureStartServiceTest {
   @Test
   void startsCaptureAndConsumesOneDailyAttempt() {
     User user = user();
-    CaptureDifficulty difficulty = new CaptureDifficulty(10_000, 3, 2_800, 280);
+    CaptureDifficulty difficulty = new CaptureDifficulty(2_800);
     PresignResponse presign =
         new PresignResponse(
             "https://upload.example/original", ORIGINAL_IMAGE, NOW.plusSeconds(300));
@@ -137,7 +137,7 @@ class CaptureStartServiceTest {
             CONTENT_TYPE,
             NOW.plusSeconds(300));
     ReflectionTestUtils.setField(existing, "id", 55L);
-    CaptureDifficulty difficulty = new CaptureDifficulty(10_000, 3, 2_400, 240);
+    CaptureDifficulty difficulty = new CaptureDifficulty(2_400);
     PresignResponse presign =
         new PresignResponse(
             "https://upload.example/refreshed", ORIGINAL_IMAGE, NOW.plusSeconds(300));

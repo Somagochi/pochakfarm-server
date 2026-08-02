@@ -13,22 +13,19 @@ class CaptureDifficultyPolicyTest {
 
   @ParameterizedTest
   @MethodSource("difficultyCases")
-  void returnsInitialDifficultyForTier(Tier tier, int ringShrinkDurationMs, int successWindowMs) {
+  void returnsRingShrinkDurationForTier(Tier tier, int ringShrinkDurationMs) {
     CaptureDifficulty difficulty = policy.forTier(tier);
 
-    assertEquals(10_000, difficulty.roundDurationMs());
-    assertEquals(3, difficulty.maxThrows());
     assertEquals(ringShrinkDurationMs, difficulty.ringShrinkDurationMs());
-    assertEquals(successWindowMs, difficulty.successWindowMs());
   }
 
   private static Stream<Arguments> difficultyCases() {
     return Stream.of(
-        Arguments.of(Tier.C, 3_200, 320),
-        Arguments.of(Tier.B, 2_800, 280),
-        Arguments.of(Tier.A, 2_400, 240),
-        Arguments.of(Tier.S, 2_000, 200),
-        Arguments.of(Tier.SS, 1_700, 170),
-        Arguments.of(Tier.SSS, 1_400, 140));
+        Arguments.of(Tier.C, 3_200),
+        Arguments.of(Tier.B, 2_800),
+        Arguments.of(Tier.A, 2_400),
+        Arguments.of(Tier.S, 2_000),
+        Arguments.of(Tier.SS, 1_700),
+        Arguments.of(Tier.SSS, 1_400));
   }
 }
