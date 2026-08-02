@@ -51,6 +51,13 @@ public enum ErrorCode {
   FARM_SLOT_NOT_FOUND(404, "FARM_SLOT_NOT_FOUND", "Farm slot not found"),
   ANIMAL_NOT_PLACED(409, "ANIMAL_NOT_PLACED", "Animal is not placed in the farm"),
   CONCURRENCY_CONFLICT(409, "CONCURRENCY_CONFLICT", "Concurrent modification conflict"),
+  FORBIDDEN_FARM_SLOT_ACCESS(403, "FORBIDDEN_FARM_SLOT_ACCESS", "Forbidden farm slot access"),
+  FARM_SLOT_TYPE_MISMATCH(400, "FARM_SLOT_TYPE_MISMATCH", "Farm slot type mismatch"),
+  ACHIEVEMENT_NOT_FOUND(404, "ACHIEVEMENT_NOT_FOUND", "Achievement not found"),
+  ACHIEVEMENT_NOT_ACHIEVED(400, "ACHIEVEMENT_NOT_ACHIEVED", "Achievement is not achieved yet"),
+  ACHIEVEMENT_REWARD_ALREADY_CLAIMED(
+      409, "ACHIEVEMENT_REWARD_ALREADY_CLAIMED", "Achievement reward already claimed"),
+  BADGE_NOT_FOUND(404, "BADGE_NOT_FOUND", "Badge not found"),
   ;
 
   private final int status;
