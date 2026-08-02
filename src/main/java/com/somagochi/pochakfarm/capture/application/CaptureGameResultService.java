@@ -47,7 +47,7 @@ public class CaptureGameResultService {
           userRepository
               .findById(userId)
               .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-      return response(capture, null, progressionState(user));
+      return response(capture, null, progressionState(user), null);
     }
     User user =
         userRepository
@@ -55,7 +55,7 @@ public class CaptureGameResultService {
             .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     if (capture.isGameResultExpired(receivedAt)) {
       capture.expireGame();
-      return response(capture, null, progressionState(user));
+      return response(capture, null, progressionState(user), null);
     }
 
     GameStatus result = gameResultPolicy.resolve(request == null ? null : request.toDomain());
@@ -63,12 +63,12 @@ public class CaptureGameResultService {
     ProgressionState before = progressionState(user);
     LevelReward levelReward = user.gainExperience(experience, levelRewardPolicy);
     capture.completeGame(result, levelReward.experienceReward());
-    return response(capture, before, progressionState(user));
+    return response(capture, before, progressionState(user), levelReward.coinReward());
   }
 
   private CaptureGameResultResponse response(
-      Capture capture, ProgressionState before, ProgressionState after) {
-    return CaptureGameResultResponse.from(capture, before, after);
+      Capture capture, ProgressionState before, ProgressionState after, Long levelUpCoinReward) {
+    return CaptureGameResultResponse.from(capture, before, after, levelUpCoinReward);
   }
 
   private ProgressionState progressionState(User user) {

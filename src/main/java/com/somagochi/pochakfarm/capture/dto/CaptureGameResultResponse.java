@@ -11,16 +11,16 @@ public record CaptureGameResultResponse(
     Progression progression) {
 
   public static CaptureGameResultResponse from(
-      Capture capture, ProgressionState before, ProgressionState after) {
+      Capture capture, ProgressionState before, ProgressionState after, Long levelUpCoinReward) {
     Long grantedExperience = capture.getGrantedExperience();
     return new CaptureGameResultResponse(
         capture.getId(),
         capture.getGameStatus(),
-        grantedExperience == null ? null : new Reward(grantedExperience),
+        grantedExperience == null ? null : new Reward(grantedExperience, levelUpCoinReward),
         new Progression(before, after));
   }
 
-  public record Reward(long experienceReward) {}
+  public record Reward(long experienceReward, @Schema(nullable = true) Long levelUpCoinReward) {}
 
   public record Progression(
       @Schema(nullable = true) ProgressionState before, ProgressionState after) {}

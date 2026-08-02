@@ -225,7 +225,7 @@ class CaptureControllerTest {
             new CaptureGameResultResponse(
                 123L,
                 GameStatus.SUCCEEDED,
-                new Reward(15),
+                new Reward(15, 500L),
                 new Progression(new ProgressionState(2, 45, 50), new ProgressionState(3, 10, 60))));
 
     mockMvc
@@ -246,6 +246,7 @@ class CaptureControllerTest {
         .andExpect(jsonPath("$.data.captureId").value(123))
         .andExpect(jsonPath("$.data.gameStatus").value("SUCCEEDED"))
         .andExpect(jsonPath("$.data.reward.experienceReward").value(15))
+        .andExpect(jsonPath("$.data.reward.levelUpCoinReward").value(500))
         .andExpect(jsonPath("$.data.progression.before.level").value(2))
         .andExpect(jsonPath("$.data.progression.before.experience").value(45))
         .andExpect(jsonPath("$.data.progression.after.level").value(3))

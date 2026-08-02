@@ -84,6 +84,7 @@ class CaptureGameResultServiceTest {
     assertEquals(10, user.getExperience());
     assertEquals(GenerationStatus.FAILED, capture.getGenerationStatus());
     verify(userRepository).findByIdForUpdate(USER_ID);
+    assertEquals(0, response.reward().levelUpCoinReward());
   }
 
   @Test
@@ -120,6 +121,7 @@ class CaptureGameResultServiceTest {
     assertEquals(9, user.getExperience());
     assertEquals(1_500, user.getCoins());
     assertEquals(10, response.reward().experienceReward());
+    assertEquals(500, response.reward().levelUpCoinReward());
     assertEquals(1, response.progression().before().level());
     assertEquals(39, response.progression().before().experience());
     assertEquals(2, response.progression().after().level());
@@ -210,7 +212,9 @@ class CaptureGameResultServiceTest {
             request(
                 new ThrowResult(1, false), new ThrowResult(2, false), new ThrowResult(3, false)));
 
-    assertEquals(first.reward(), retry.reward());
+    assertEquals(first.reward().experienceReward(), retry.reward().experienceReward());
+    assertEquals(0, first.reward().levelUpCoinReward());
+    assertNull(retry.reward().levelUpCoinReward());
     assertNull(retry.progression().before());
     assertEquals(2, retry.progression().after().level());
     assertEquals(5, retry.progression().after().experience());
