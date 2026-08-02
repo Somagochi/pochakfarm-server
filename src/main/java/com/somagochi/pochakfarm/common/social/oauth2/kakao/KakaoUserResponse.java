@@ -2,12 +2,17 @@ package com.somagochi.pochakfarm.common.social.oauth2.kakao;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.somagochi.pochakfarm.common.exception.BusinessException;
+import com.somagochi.pochakfarm.common.exception.ErrorCode;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record KakaoUserResponse(Long id, @JsonProperty("kakao_account") KakaoAccount kakaoAccount) {
 
   public String email() {
-    return kakaoAccount == null ? null : kakaoAccount.email();
+    if (kakaoAccount.email == null) {
+      throw new BusinessException(ErrorCode.EMAIL_NOT_FOUND);
+    }
+    return kakaoAccount.email();
   }
 
   public String nickname() {
