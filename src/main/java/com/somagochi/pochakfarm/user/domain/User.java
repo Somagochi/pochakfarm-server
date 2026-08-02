@@ -81,6 +81,16 @@ public class User extends BaseEntity {
     return reward;
   }
 
+  public void spendCoins(long amount) {
+    if (amount < 0) {
+      throw new IllegalArgumentException("amount must not be negative");
+    }
+    if (coins < amount) {
+      throw new BusinessException(ErrorCode.INSUFFICIENT_COINS);
+    }
+    this.coins -= amount;
+  }
+
   public void addCoins(long amount) {
     if (amount <= 0) {
       throw new BusinessException(ErrorCode.INVALID_PARAMETER);

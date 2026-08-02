@@ -85,7 +85,7 @@ class CaptureStartConcurrencyTest {
   }
 
   @Test
-  void allowsOnlyOneCaptureWhenOneDailyAttemptRemains() throws Exception {
+  void requiresCoinPaymentForConcurrentRequestAfterLastFreeAttemptIsUsed() throws Exception {
     CountDownLatch ready = new CountDownLatch(2);
     CountDownLatch start = new CountDownLatch(1);
     List<Callable<String>> requests = new ArrayList<>();
@@ -119,7 +119,46 @@ class CaptureStartConcurrencyTest {
 
     assertEquals(1, outcomes.stream().filter("SUCCESS"::equals).count());
     assertEquals(
-        1, outcomes.stream().filter(ErrorCode.CAPTURE_ATTEMPT_EXHAUSTED.getCode()::equals).count());
+        1, outcomes.stream().filter(ErrorCode.COIN_PAYMENT_REQUIRED.getCode()::equals).count());
     assertEquals(5, captureRepository.count());
+  }
+
+  @Test
+  void chargesCoinForConcurrentRequestAfterLastFreeAttemptIsUsedWhenAllowed() throws Exception {
+    CountDownLatch ready = new CountDownLatch(2);
+    CountDownLatch start = new CountDownLatch(1);
+    List<Callable<String>> requests = new ArrayList<>();
+    for (int index = 0; index < 2; index++) {
+      requests.add(
+          () -> {
+            ready.countDown();
+            start.await(5, TimeUnit.SECONDS);
+            try {
+              captureStartService.startCapture(
+                  userId,
+                  new CaptureStartRequest(UUID.randomUUID().toString(), "image/jpeg", "두부", true));
+              return "SUCCESS";
+            } catch (BusinessException exception) {
+              return exception.getCode();
+            }
+          });
+    }
+
+    List<Future<String>> results = new ArrayList<>();
+    for (Callable<String> request : requests) {
+      results.add(executor.submit(request));
+    }
+    ready.await(5, TimeUnit.SECONDS);
+    start.countDown();
+
+    List<String> outcomes = new ArrayList<>();
+    for (Future<String> result : results) {
+      outcomes.add(result.get(10, TimeUnit.SECONDS));
+    }
+
+    User user = userRepository.findById(userId).orElseThrow();
+    assertEquals(2, outcomes.stream().filter("SUCCESS"::equals).count());
+    assertEquals(6, captureRepository.count());
+    assertEquals(800, user.getCoins());
   }
 }
