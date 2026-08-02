@@ -7,6 +7,7 @@ import com.somagochi.pochakfarm.user.dto.UserProfileResponse;
 import com.somagochi.pochakfarm.user.dto.UserResponse;
 import com.somagochi.pochakfarm.user.infrastructure.persistence.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -28,7 +29,13 @@ public class UserQueryService {
     return UserProfileResponse.from(findUser(userId));
   }
 
-  public User getByIdForUpdate(Long userId) {
+  @Transactional(readOnly = true)
+  public int getLevel(Long userId) {
+    return findUser(userId).getLevel();
+  }
+
+  @Transactional(propagation = Propagation.MANDATORY)
+  public User getForUpdate(Long userId) {
     return userRepository
         .findByIdForUpdate(userId)
         .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));

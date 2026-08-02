@@ -120,6 +120,21 @@ class CapturePersistenceTest {
         });
   }
 
+  @Test
+  void persistsFinalGameResultAndGrantedExperience() {
+    User user = persistUser();
+    Capture capture = capture(user.getId(), CardType.GROUND, Tier.C);
+    capture.completeGame(GameStatus.SUCCEEDED, 10);
+
+    entityManager.persist(capture);
+    entityManager.flush();
+    entityManager.clear();
+
+    Capture saved = entityManager.find(Capture.class, capture.getId());
+    assertEquals(GameStatus.SUCCEEDED, saved.getGameStatus());
+    assertEquals(10, saved.getGrantedExperience());
+  }
+
   private User persistUser() {
     User user =
         User.register(

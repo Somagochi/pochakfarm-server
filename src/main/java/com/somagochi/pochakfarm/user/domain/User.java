@@ -73,8 +73,36 @@ public class User extends BaseEntity {
     this.nickname = trimmed;
   }
 
+  public LevelReward gainExperience(long experienceReward, LevelRewardPolicy levelRewardPolicy) {
+    LevelReward reward = levelRewardPolicy.calculate(level, experience, experienceReward);
+    this.level = reward.levelAfter();
+    this.experience = reward.experienceAfter();
+    this.coins = Math.addExact(coins, reward.coinReward());
+    return reward;
+  }
+
+  public void spendCoins(long amount) {
+    if (amount < 0) {
+      throw new IllegalArgumentException("amount must not be negative");
+    }
+    if (coins < amount) {
+      throw new BusinessException(ErrorCode.INSUFFICIENT_COINS);
+    }
+    this.coins -= amount;
+  }
+
   public void addCoins(long amount) {
+    if (amount <= 0) {
+      throw new BusinessException(ErrorCode.INVALID_PARAMETER);
+    }
     this.coins += amount;
+  }
+
+  public void addExperience(long amount) {
+    if (amount <= 0) {
+      throw new BusinessException(ErrorCode.INVALID_PARAMETER);
+    }
+    this.experience += amount;
   }
 
   public void withdraw() {

@@ -18,12 +18,17 @@ public record CaptureResponse(
     String failureReason) {
 
   public static CaptureResponse from(Capture capture, String sceneImageUrl, String cardImageUrl) {
+    return from(capture, capture.getGameStatus(), sceneImageUrl, cardImageUrl);
+  }
+
+  public static CaptureResponse from(
+      Capture capture, GameStatus gameStatus, String sceneImageUrl, String cardImageUrl) {
     return new CaptureResponse(
         capture.getId(),
         capture.getTier(),
         capture.getCardType(),
         capture.getGenerationStatus(),
-        capture.getGameStatus(),
+        gameStatus,
         sceneImageUrl,
         cardImageUrl,
         capture.getElapsedMs(),
