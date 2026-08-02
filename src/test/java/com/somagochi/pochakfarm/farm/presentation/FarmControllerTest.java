@@ -150,7 +150,7 @@ class FarmControllerTest {
 
     mockMvc
         .perform(post("/api/farms/{type}/floors", "SEA").with(authentication(userAuthentication())))
-        .andExpect(status().isConflict())
+        .andExpect(status().isPaymentRequired())
         .andExpect(jsonPath("$.code").value("INSUFFICIENT_COINS"));
   }
 

@@ -26,6 +26,11 @@ public class Coin {
     return new Coin(value);
   }
 
+  public Coin add(long amount) {
+    validatePositive(amount);
+    return new Coin(Math.addExact(value, amount));
+  }
+
   public Coin spend(long amount) {
     validatePositive(amount);
     if (!canAfford(amount)) {

@@ -81,11 +81,17 @@ public class User extends BaseEntity {
     this.coins = coins.spend(amount);
   }
 
+  public void addCoins(long amount) {
+    this.coins = coins.add(amount);
+  }
+
   public LevelReward gainExperience(long experienceReward, LevelRewardPolicy levelRewardPolicy) {
     LevelReward reward = levelRewardPolicy.calculate(level, experience, experienceReward);
     this.level = reward.levelAfter();
     this.experience = reward.experienceAfter();
-    this.coins = Math.addExact(coins, reward.coinReward());
+    if (reward.coinReward() > 0) {
+      this.coins = coins.add(reward.coinReward());
+    }
     return reward;
   }
 
