@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.somagochi.pochakfarm.capture.domain.Tier;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -13,48 +12,50 @@ class AchievementMetricTest {
 
   private final AchievementStats stats =
       new AchievementStats(
-          7, Map.of(CardType.SEA, 3L, CardType.SKY, 11L), Map.of(Tier.S, 5L, Tier.SSS, 1L));
+          true, 3, Map.of(CardType.GROUND, 7L, CardType.SKY, 2L, CardType.SEA, 0L), false);
 
   @Test
-  void extractsEachMetricFromSingleSnapshot() {
-    assertEquals(7L, AchievementMetric.USER_LEVEL.extract(stats, null));
-    assertEquals(11L, AchievementMetric.CAPTURE_COUNT_BY_CARD_TYPE.extract(stats, "SKY"));
-    assertEquals(5L, AchievementMetric.CAPTURE_COUNT_BY_TIER.extract(stats, "S"));
+  void supportsOnlyNullMetricParam() {
+    for (AchievementMetric metric : AchievementMetric.values()) {
+      assertTrue(metric.supports(null));
+      assertFalse(metric.supports("GROUND"));
+    }
   }
 
   @Test
-  void extractsZeroForAbsentKey() {
-    assertEquals(0L, AchievementMetric.CAPTURE_COUNT_BY_CARD_TYPE.extract(stats, "SPACE"));
-    assertEquals(0L, AchievementMetric.CAPTURE_COUNT_BY_TIER.extract(stats, "SS"));
+  void extractsPreRegistrationConversionAsBinaryProgress() {
+    assertEquals(1L, AchievementMetric.PRE_REGISTRATION_CONVERTED.extract(stats, null));
+    assertEquals(
+        0L,
+        AchievementMetric.PRE_REGISTRATION_CONVERTED.extract(
+            new AchievementStats(false, 0, Map.of(), false), null));
   }
 
   @Test
-  void supportsOnlyMatchingMetricParam() {
-    assertTrue(AchievementMetric.USER_LEVEL.supports(null));
-    assertFalse(AchievementMetric.USER_LEVEL.supports("SEA"));
-
-    assertTrue(AchievementMetric.CAPTURE_COUNT_BY_CARD_TYPE.supports("SEA"));
-    assertFalse(AchievementMetric.CAPTURE_COUNT_BY_CARD_TYPE.supports("S"));
-    assertFalse(AchievementMetric.CAPTURE_COUNT_BY_CARD_TYPE.supports("sea"));
-    assertFalse(AchievementMetric.CAPTURE_COUNT_BY_CARD_TYPE.supports(null));
-
-    assertTrue(AchievementMetric.CAPTURE_COUNT_BY_TIER.supports("SSS"));
-    assertFalse(AchievementMetric.CAPTURE_COUNT_BY_TIER.supports("SEA"));
-    assertFalse(AchievementMetric.CAPTURE_COUNT_BY_TIER.supports(null));
+  void extractsPlacedAnimalCount() {
+    assertEquals(3L, AchievementMetric.PLACED_ANIMAL_COUNT.extract(stats, null));
   }
 
   @Test
-  void rejectsInvalidDefinitionBeforeExtraction() {
-    Achievement broken =
-        Achievement.create(
-            "BROKEN",
-            "잘못된 정의",
-            null,
-            AchievementCategory.CARD_TYPE,
-            AchievementMetric.CAPTURE_COUNT_BY_CARD_TYPE,
-            "OCEAN",
-            10);
+  void extractsMaxOwnedCountAmongTypes() {
+    assertEquals(7L, AchievementMetric.MAX_OWNED_COUNT_PER_TYPE.extract(stats, null));
+    assertEquals(
+        0L,
+        AchievementMetric.MAX_OWNED_COUNT_PER_TYPE.extract(
+            new AchievementStats(false, 0, Map.of(), false), null));
+  }
 
-    assertFalse(broken.isDefinitionValid());
+  @Test
+  void countsOnlyTypesWithAtLeastOneAnimal() {
+    assertEquals(2L, AchievementMetric.OWNED_TYPE_COUNT.extract(stats, null));
+  }
+
+  @Test
+  void extractsStartEndPlacementAsBinaryProgress() {
+    assertEquals(0L, AchievementMetric.ONLY_START_END_PLACED.extract(stats, null));
+    assertEquals(
+        1L,
+        AchievementMetric.ONLY_START_END_PLACED.extract(
+            new AchievementStats(false, 2, Map.of(), true), null));
   }
 }

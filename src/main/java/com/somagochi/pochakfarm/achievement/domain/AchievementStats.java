@@ -1,22 +1,23 @@
 package com.somagochi.pochakfarm.achievement.domain;
 
-import com.somagochi.pochakfarm.capture.domain.Tier;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import java.util.Map;
 
 public record AchievementStats(
-    int userLevel, Map<CardType, Long> captureCountByCardType, Map<Tier, Long> captureCountByTier) {
+    boolean preRegistrationConverted,
+    long placedAnimalCount,
+    Map<CardType, Long> ownedCountByType,
+    boolean onlyStartEndPlaced) {
 
   public AchievementStats {
-    captureCountByCardType = Map.copyOf(captureCountByCardType);
-    captureCountByTier = Map.copyOf(captureCountByTier);
+    ownedCountByType = Map.copyOf(ownedCountByType);
   }
 
-  public long captureCountOf(CardType cardType) {
-    return captureCountByCardType.getOrDefault(cardType, 0L);
+  public long maxOwnedCountPerType() {
+    return ownedCountByType.values().stream().mapToLong(Long::longValue).max().orElse(0L);
   }
 
-  public long captureCountOf(Tier tier) {
-    return captureCountByTier.getOrDefault(tier, 0L);
+  public long ownedTypeCount() {
+    return ownedCountByType.values().stream().filter(count -> count > 0).count();
   }
 }

@@ -139,6 +139,10 @@ app:
       enabled: ${secret.coupon.pre-registration.enabled:true}
   promotion:
     base-url: ${secret.promotion.base-url}
+  develop:
+    admin:
+      username: ${secret.develop.admin.username:}
+      password: ${secret.develop.admin.password:}
   characterizer:
     base-url: ${secret.characterizer.base-url:http://localhost:8000}
     connect-timeout: ${secret.characterizer.connect-timeout:PT5S}

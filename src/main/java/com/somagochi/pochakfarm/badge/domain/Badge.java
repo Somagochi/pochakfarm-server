@@ -52,4 +52,8 @@ public class Badge extends BaseEntity {
   public static Badge create(String code, String name, String description, String imageKey) {
     return new Badge(code, name, description, imageKey);
   }
+
+  public void changeImageKey(String imageKey) {
+    this.imageKey = imageKey;
+  }
 }

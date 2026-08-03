@@ -1,6 +1,7 @@
 package com.somagochi.pochakfarm.animal.infrastructure.persistence;
 
 import com.somagochi.pochakfarm.animal.domain.Animal;
+import com.somagochi.pochakfarm.animal.dto.AnimalTypeCount;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import jakarta.persistence.LockModeType;
 import java.util.Collection;
@@ -46,4 +47,16 @@ public interface AnimalRepository extends JpaRepository<Animal, Long> {
       "select a from Animal a, Capture c "
           + "where a.id = :animalId and a.captureId = c.id and c.userId = :userId")
   Optional<Animal> findOwnedAnimal(@Param("userId") Long userId, @Param("animalId") Long animalId);
+
+  @Query(
+      "select new com.somagochi.pochakfarm.animal.dto.AnimalTypeCount(s.type, count(a)) "
+          + "from Animal a, FarmSpace s "
+          + "where a.spaceId = s.id and s.userId = :userId "
+          + "group by s.type")
+  List<AnimalTypeCount> countOwnedByCardType(@Param("userId") Long userId);
+
+  @Query(
+      "select a from Animal a, FarmSpace s "
+          + "where a.spaceId = s.id and s.userId = :userId and a.floorNum >= 1")
+  List<Animal> findPlacedAnimals(@Param("userId") Long userId);
 }

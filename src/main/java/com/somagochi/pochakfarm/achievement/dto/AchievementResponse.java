@@ -1,38 +1,97 @@
 package com.somagochi.pochakfarm.achievement.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.somagochi.pochakfarm.achievement.domain.Achievement;
 import com.somagochi.pochakfarm.achievement.domain.AchievementCategory;
 import com.somagochi.pochakfarm.achievement.domain.UserAchievement;
 import java.time.Instant;
 import java.util.List;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record AchievementResponse(
+    Long id,
     String code,
     String title,
     String description,
     AchievementCategory category,
-    long current,
-    long target,
+    boolean hidden,
+    String imageUrl,
+    Progress progress,
     boolean achieved,
-    Instant achievedAt,
-    boolean rewardClaimed,
+    AchievedInfo achievedInfo,
     List<AchievementRewardResponse> rewards) {
 
   public static AchievementResponse of(
       Achievement achievement,
       long current,
       UserAchievement record,
-      List<AchievementRewardResponse> rewards) {
+      List<AchievementRewardResponse> rewards,
+      String unachievedImageUrl,
+      String achievedImageUrl) {
+    if (record == null) {
+      return unachievedResponse(achievement, current, rewards, unachievedImageUrl);
+    }
+    return achievedResponse(achievement, current, record, rewards, achievedImageUrl);
+  }
+
+  private static AchievementResponse achievedResponse(
+      Achievement achievement,
+      long current,
+      UserAchievement record,
+      List<AchievementRewardResponse> rewards,
+      String achievedImageUrl) {
     return new AchievementResponse(
+        achievement.getId(),
         achievement.getCode(),
         achievement.getTitle(),
         achievement.getDescription(),
         achievement.getCategory(),
-        current,
-        achievement.getTargetValue(),
-        record != null,
-        record == null ? null : record.getAchievedAt(),
-        record != null && record.isRewardClaimed(),
+        achievement.isHidden(),
+        achievedImageUrl,
+        new Progress(current, achievement.getTargetValue()),
+        true,
+        new AchievedInfo(record.getAchievedAt(), record.isRewardClaimed()),
         rewards);
   }
+
+  private static AchievementResponse unachievedResponse(
+      Achievement achievement,
+      long current,
+      List<AchievementRewardResponse> rewards,
+      String unachievedImageUrl) {
+    if (achievement.isHidden()) {
+      return lockedResponse(achievement);
+    }
+    return new AchievementResponse(
+        achievement.getId(),
+        achievement.getCode(),
+        achievement.getTitle(),
+        achievement.getDescription(),
+        achievement.getCategory(),
+        false,
+        unachievedImageUrl,
+        new Progress(current, achievement.getTargetValue()),
+        false,
+        null,
+        rewards);
+  }
+
+  private static AchievementResponse lockedResponse(Achievement achievement) {
+    return new AchievementResponse(
+        achievement.getId(),
+        achievement.getCode(),
+        null,
+        null,
+        achievement.getCategory(),
+        true,
+        null,
+        null,
+        false,
+        null,
+        null);
+  }
+
+  public record Progress(long current, long target) {}
+
+  public record AchievedInfo(Instant achievedAt, boolean rewardClaimed) {}
 }

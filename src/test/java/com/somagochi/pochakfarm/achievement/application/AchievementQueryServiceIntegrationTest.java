@@ -64,37 +64,155 @@ class AchievementQueryServiceIntegrationTest {
 
   @Test
   void recordsAchievementWhenTargetIsReachedAndReportsProgressOtherwise() {
-    persistAchievement("TEST_LEVEL_1", 1);
-    persistAchievement("TEST_LEVEL_5", 5);
+    convertPreRegistrationCoupon(userId);
+    persistAchievement("TEST_SQUAD", AchievementMetric.PRE_REGISTRATION_CONVERTED, 1);
+    persistAchievement("TEST_ONE_TYPE", AchievementMetric.MAX_OWNED_COUNT_PER_TYPE, 10);
 
     CursorPage<AchievementResponse> response =
         achievementQueryService.getAchievements(userId, null, null);
 
-    AchievementResponse reached = find(response, "TEST_LEVEL_1");
+    AchievementResponse reached = find(response, "TEST_SQUAD");
     assertTrue(reached.achieved());
-    assertNotNull(reached.achievedAt());
-    assertEquals(1L, reached.current());
-    assertEquals(1L, reached.target());
-    assertFalse(reached.rewardClaimed());
+    assertNotNull(reached.achievedInfo().achievedAt());
+    assertEquals(1L, reached.progress().current());
+    assertEquals(1L, reached.progress().target());
+    assertFalse(reached.achievedInfo().rewardClaimed());
 
-    AchievementResponse inProgress = find(response, "TEST_LEVEL_5");
+    AchievementResponse inProgress = find(response, "TEST_ONE_TYPE");
     assertFalse(inProgress.achieved());
-    assertNull(inProgress.achievedAt());
-    assertEquals(1L, inProgress.current());
-    assertEquals(5L, inProgress.target());
+    assertNull(inProgress.achievedInfo());
+    assertEquals(0L, inProgress.progress().current());
+    assertEquals(10L, inProgress.progress().target());
 
     assertEquals(1, userAchievementRepository.findByUserId(userId).size());
   }
 
   @Test
+  void computesCollectionAndFarmMetricsFromOwnedAnimals() {
+    Long groundSpaceId = insertFarmSpace(userId, "GROUND");
+    Long skySpaceId = insertFarmSpace(userId, "SKY");
+    insertAnimal(groundSpaceId, 1, 1);
+    insertAnimal(groundSpaceId, 4, 4);
+    insertAnimal(skySpaceId, 1, 2);
+    persistAchievement("TEST_FIRST_HOME", AchievementMetric.PLACED_ANIMAL_COUNT, 1);
+    persistAchievement("TEST_ONE_TYPE", AchievementMetric.MAX_OWNED_COUNT_PER_TYPE, 10);
+    persistAchievement("TEST_COLLECTOR", AchievementMetric.OWNED_TYPE_COUNT, 4);
+    persistAchievement("TEST_START_END", AchievementMetric.ONLY_START_END_PLACED, 1);
+
+    CursorPage<AchievementResponse> response =
+        achievementQueryService.getAchievements(userId, null, null);
+
+    AchievementResponse firstHome = find(response, "TEST_FIRST_HOME");
+    assertTrue(firstHome.achieved());
+    assertEquals(3L, firstHome.progress().current());
+
+    assertEquals(2L, find(response, "TEST_ONE_TYPE").progress().current());
+    assertEquals(2L, find(response, "TEST_COLLECTOR").progress().current());
+
+    AchievementResponse startEnd = find(response, "TEST_START_END");
+    assertTrue(startEnd.achieved());
+    assertEquals(1L, startEnd.progress().current());
+  }
+
+  @Test
+  void startEndIsNotSatisfiedWhenSameSpaceHasAnotherAnimal() {
+    Long groundSpaceId = insertFarmSpace(userId, "GROUND");
+    insertAnimal(groundSpaceId, 1, 1);
+    insertAnimal(groundSpaceId, 4, 4);
+    insertAnimal(groundSpaceId, 2, 1);
+    persistAchievement("TEST_START_END", AchievementMetric.ONLY_START_END_PLACED, 1);
+
+    CursorPage<AchievementResponse> response =
+        achievementQueryService.getAchievements(userId, null, null);
+
+    AchievementResponse startEnd = find(response, "TEST_START_END");
+    assertFalse(startEnd.achieved());
+    assertEquals(0L, startEnd.progress().current());
+  }
+
+  @Test
+  void masksHiddenAchievementUntilAchievedAndRevealsAfterward() {
+    Achievement hiddenAchievement =
+        achievementRepository.save(
+            Achievement.createHidden(
+                "TEST_HIDDEN",
+                "시작과 끝",
+                "숨김 조건",
+                AchievementCategory.FARM,
+                AchievementMetric.PRE_REGISTRATION_CONVERTED,
+                null,
+                1));
+    achievementRewardRepository.save(AchievementReward.ofCoin(hiddenAchievement.getId(), 1000));
+
+    AchievementResponse locked =
+        find(achievementQueryService.getAchievements(userId, null, null), "TEST_HIDDEN");
+    assertTrue(locked.hidden());
+    assertFalse(locked.achieved());
+    assertNull(locked.achievedInfo());
+    assertNull(locked.title());
+    assertNull(locked.description());
+    assertNull(locked.progress());
+    assertNull(locked.imageUrl());
+    assertNull(locked.rewards());
+
+    convertPreRegistrationCoupon(userId);
+
+    AchievementResponse revealed =
+        find(achievementQueryService.getAchievements(userId, null, null), "TEST_HIDDEN");
+    assertTrue(revealed.hidden());
+    assertTrue(revealed.achieved());
+    assertNotNull(revealed.achievedInfo());
+    assertEquals("시작과 끝", revealed.title());
+    assertEquals("숨김 조건", revealed.description());
+    assertEquals(1L, revealed.progress().current());
+    assertEquals(1L, revealed.progress().target());
+    assertEquals(1, revealed.rewards().size());
+  }
+
+  @Test
+  void buildsAchievementImageUrlsFromStoredKeys() {
+    achievementRepository.save(
+        Achievement.create(
+            "TEST_WITH_IMAGES",
+            "이미지 업적",
+            null,
+            AchievementCategory.EVENT,
+            AchievementMetric.PRE_REGISTRATION_CONVERTED,
+            null,
+            1,
+            "achievements/locked.png",
+            "achievements/done.png"));
+    persistAchievement("TEST_WITHOUT_IMAGES", AchievementMetric.PRE_REGISTRATION_CONVERTED, 1);
+
+    AchievementResponse locked =
+        find(achievementQueryService.getAchievements(userId, null, null), "TEST_WITH_IMAGES");
+    assertNotNull(locked.imageUrl());
+    assertTrue(locked.imageUrl().contains("achievements/locked.png"));
+
+    convertPreRegistrationCoupon(userId);
+
+    AchievementResponse done =
+        find(achievementQueryService.getAchievements(userId, null, null), "TEST_WITH_IMAGES");
+    assertNotNull(done.imageUrl());
+    assertTrue(done.imageUrl().contains("achievements/done.png"));
+
+    AchievementResponse withoutImages =
+        find(achievementQueryService.getAchievements(userId, null, null), "TEST_WITHOUT_IMAGES");
+    assertNull(withoutImages.imageUrl());
+  }
+
+  @Test
   void keepsAchievedAtStableAndDoesNotDuplicateOnRepeatedReads() {
-    persistAchievement("TEST_LEVEL_1", 1);
+    convertPreRegistrationCoupon(userId);
+    persistAchievement("TEST_SQUAD", AchievementMetric.PRE_REGISTRATION_CONVERTED, 1);
 
     Instant first =
-        find(achievementQueryService.getAchievements(userId, null, null), "TEST_LEVEL_1")
+        find(achievementQueryService.getAchievements(userId, null, null), "TEST_SQUAD")
+            .achievedInfo()
             .achievedAt();
     Instant second =
-        find(achievementQueryService.getAchievements(userId, null, null), "TEST_LEVEL_1")
+        find(achievementQueryService.getAchievements(userId, null, null), "TEST_SQUAD")
+            .achievedInfo()
             .achievedAt();
 
     assertEquals(first, second);
@@ -103,7 +221,8 @@ class AchievementQueryServiceIntegrationTest {
 
   @Test
   void hidesDisabledAchievementUntilItIsAlreadyAchieved() {
-    Achievement disabled = persistAchievement("TEST_LEVEL_1", 1);
+    Achievement disabled =
+        persistAchievement("TEST_SQUAD", AchievementMetric.PRE_REGISTRATION_CONVERTED, 1);
     disable(disabled.getId());
 
     assertTrue(achievementQueryService.getAchievements(userId, null, null).content().isEmpty());
@@ -111,41 +230,42 @@ class AchievementQueryServiceIntegrationTest {
     userAchievementRepository.save(UserAchievement.achieve(userId, disabled.getId()));
 
     AchievementResponse listed =
-        find(achievementQueryService.getAchievements(userId, null, null), "TEST_LEVEL_1");
+        find(achievementQueryService.getAchievements(userId, null, null), "TEST_SQUAD");
     assertTrue(listed.achieved());
   }
 
   @Test
   void excludesInvalidDefinitionInsteadOfFailingWholeList() {
-    persistAchievement("TEST_LEVEL_1", 1);
+    persistAchievement("TEST_SQUAD", AchievementMetric.PRE_REGISTRATION_CONVERTED, 1);
     Achievement broken =
         achievementRepository.save(
             Achievement.create(
                 "TEST_BROKEN",
                 "잘못된 정의",
                 null,
-                AchievementCategory.CARD_TYPE,
-                AchievementMetric.CAPTURE_COUNT_BY_CARD_TYPE,
-                "OCEAN",
+                AchievementCategory.COLLECTION,
+                AchievementMetric.MAX_OWNED_COUNT_PER_TYPE,
+                "GROUND",
                 10));
 
     CursorPage<AchievementResponse> response =
         achievementQueryService.getAchievements(userId, null, null);
 
     assertEquals(1, response.content().size());
-    assertEquals("TEST_LEVEL_1", response.content().get(0).code());
+    assertEquals("TEST_SQUAD", response.content().get(0).code());
     assertNotNull(broken.getId());
   }
 
   @Test
   void describesCoinAndBadgeRewardsWithBadgeMetadata() {
-    Achievement achievement = persistAchievement("TEST_LEVEL_1", 1);
+    Achievement achievement =
+        persistAchievement("TEST_SQUAD", AchievementMetric.PRE_REGISTRATION_CONVERTED, 1);
     badgeRepository.save(Badge.create("TEST_BADGE", "첫 걸음", "설명", "badges/first.png"));
     achievementRewardRepository.save(AchievementReward.ofCoin(achievement.getId(), 100));
     achievementRewardRepository.save(AchievementReward.ofBadge(achievement.getId(), "TEST_BADGE"));
 
     List<AchievementRewardResponse> rewards =
-        find(achievementQueryService.getAchievements(userId, null, null), "TEST_LEVEL_1").rewards();
+        find(achievementQueryService.getAchievements(userId, null, null), "TEST_SQUAD").rewards();
 
     assertEquals(2, rewards.size());
     AchievementRewardResponse badge =
@@ -156,7 +276,8 @@ class AchievementQueryServiceIntegrationTest {
 
   @Test
   void dropsRewardRowsThatViolateRewardTypeContract() {
-    Achievement achievement = persistAchievement("TEST_LEVEL_1", 1);
+    Achievement achievement =
+        persistAchievement("TEST_SQUAD", AchievementMetric.PRE_REGISTRATION_CONVERTED, 1);
     achievementRewardRepository.save(AchievementReward.ofCoin(achievement.getId(), 100));
     jdbcTemplate.update(
         "insert into achievement_rewards "
@@ -165,7 +286,7 @@ class AchievementQueryServiceIntegrationTest {
         achievement.getId());
 
     List<AchievementRewardResponse> rewards =
-        find(achievementQueryService.getAchievements(userId, null, null), "TEST_LEVEL_1").rewards();
+        find(achievementQueryService.getAchievements(userId, null, null), "TEST_SQUAD").rewards();
 
     assertEquals(1, rewards.size());
     assertEquals(100L, rewards.get(0).amount());
@@ -175,7 +296,8 @@ class AchievementQueryServiceIntegrationTest {
   void pagesByCreatedAtAndFollowsNextCursor() {
     List<Achievement> saved = new ArrayList<>();
     for (int i = 1; i <= 25; i++) {
-      saved.add(persistAchievement("TEST_LEVEL_" + i, 99));
+      saved.add(
+          persistAchievement("TEST_ONE_TYPE_" + i, AchievementMetric.MAX_OWNED_COUNT_PER_TYPE, 99));
     }
 
     CursorPage<AchievementResponse> first =
@@ -184,7 +306,8 @@ class AchievementQueryServiceIntegrationTest {
     assertEquals(20, first.content().size());
     assertTrue(first.hasNext());
     assertEquals(saved.get(19).getId(), first.nextCursor());
-    assertEquals("TEST_LEVEL_1", first.content().get(0).code());
+    assertEquals(saved.get(0).getId(), first.content().get(0).id());
+    assertEquals("TEST_ONE_TYPE_1", first.content().get(0).code());
 
     CursorPage<AchievementResponse> second =
         achievementQueryService.getAchievements(userId, null, first.nextCursor());
@@ -192,34 +315,35 @@ class AchievementQueryServiceIntegrationTest {
     assertEquals(5, second.content().size());
     assertFalse(second.hasNext());
     assertNull(second.nextCursor());
-    assertEquals("TEST_LEVEL_21", second.content().get(0).code());
+    assertEquals("TEST_ONE_TYPE_21", second.content().get(0).code());
   }
 
   @Test
   void filtersByCategory() {
-    persistAchievement("TEST_LEVEL_1", 1);
+    persistAchievement("TEST_SQUAD", AchievementMetric.PRE_REGISTRATION_CONVERTED, 1);
     achievementRepository.save(
         Achievement.create(
-            "TEST_TIER_S",
-            "S 등급",
+            "TEST_COLLECTOR",
+            "골고루 수집가",
             null,
-            AchievementCategory.TIER,
-            AchievementMetric.CAPTURE_COUNT_BY_TIER,
-            "S",
-            5));
+            AchievementCategory.COLLECTION,
+            AchievementMetric.OWNED_TYPE_COUNT,
+            null,
+            4));
 
-    CursorPage<AchievementResponse> levelOnly =
-        achievementQueryService.getAchievements(userId, AchievementCategory.LEVEL, null);
+    CursorPage<AchievementResponse> eventOnly =
+        achievementQueryService.getAchievements(userId, AchievementCategory.EVENT, null);
 
-    assertEquals(1, levelOnly.content().size());
-    assertEquals("TEST_LEVEL_1", levelOnly.content().get(0).code());
+    assertEquals(1, eventOnly.content().size());
+    assertEquals("TEST_SQUAD", eventOnly.content().get(0).code());
     assertEquals(2, achievementQueryService.getAchievements(userId, null, null).content().size());
   }
 
   @Test
   void recordsAchievementsOutsideRequestedPage() {
+    convertPreRegistrationCoupon(userId);
     for (int i = 1; i <= 25; i++) {
-      persistAchievement("TEST_LEVEL_" + i, 1);
+      persistAchievement("TEST_SQUAD_" + i, AchievementMetric.PRE_REGISTRATION_CONVERTED, 1);
     }
 
     CursorPage<AchievementResponse> first =
@@ -229,16 +353,38 @@ class AchievementQueryServiceIntegrationTest {
     assertEquals(25, userAchievementRepository.findByUserId(userId).size());
   }
 
-  private Achievement persistAchievement(String code, long target) {
+  private Achievement persistAchievement(String code, AchievementMetric metric, long target) {
     return achievementRepository.save(
-        Achievement.create(
-            code,
-            code,
-            null,
-            AchievementCategory.LEVEL,
-            AchievementMetric.USER_LEVEL,
-            null,
-            target));
+        Achievement.create(code, code, null, AchievementCategory.EVENT, metric, null, target));
+  }
+
+  private void convertPreRegistrationCoupon(Long userId) {
+    jdbcTemplate.update(
+        "insert into pre_registration_coupon_recipients "
+            + "(coupon_id, pre_registration_id, user_id, capture_id, converted_at, created_at, updated_at) "
+            + "values (?, ?, ?, 0, current_timestamp, current_timestamp, current_timestamp)",
+        userId,
+        userId,
+        userId);
+  }
+
+  private Long insertFarmSpace(Long userId, String type) {
+    jdbcTemplate.update(
+        "insert into farm_spaces (user_id, type, floor, version, created_at, updated_at) "
+            + "values (?, ?, 4, 0, current_timestamp, current_timestamp)",
+        userId,
+        type);
+    return jdbcTemplate.queryForObject(
+        "select id from farm_spaces where user_id = ? and type = ?", Long.class, userId, type);
+  }
+
+  private void insertAnimal(Long spaceId, int floorNum, int slotNum) {
+    jdbcTemplate.update(
+        "insert into animals (capture_id, space_id, floor_num, slot_num, version, created_at, updated_at) "
+            + "values (0, ?, ?, ?, 0, current_timestamp, current_timestamp)",
+        spaceId,
+        floorNum,
+        slotNum);
   }
 
   private void disable(Long achievementId) {
@@ -258,5 +404,8 @@ class AchievementQueryServiceIntegrationTest {
     jdbcTemplate.update("delete from achievement_rewards");
     jdbcTemplate.update("delete from achievements");
     jdbcTemplate.update("delete from badges");
+    jdbcTemplate.update("delete from animals");
+    jdbcTemplate.update("delete from farm_spaces");
+    jdbcTemplate.update("delete from pre_registration_coupon_recipients");
   }
 }

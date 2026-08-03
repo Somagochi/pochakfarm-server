@@ -11,5 +11,7 @@ public interface PreRegistrationCouponRecipientRepository
 
   boolean existsByUserId(Long userId);
 
+  boolean existsByUserIdAndConvertedAtIsNotNull(Long userId);
+
   boolean existsByPreRegistrationId(Long preRegistrationId);
 }

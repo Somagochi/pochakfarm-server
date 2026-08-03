@@ -1,38 +1,23 @@
 package com.somagochi.pochakfarm.achievement.domain;
 
-import com.somagochi.pochakfarm.capture.domain.Tier;
-import com.somagochi.pochakfarm.characterization.domain.CardType;
-
 public enum AchievementMetric {
-  USER_LEVEL,
-  CAPTURE_COUNT_BY_CARD_TYPE,
-  CAPTURE_COUNT_BY_TIER;
+  PRE_REGISTRATION_CONVERTED,
+  PLACED_ANIMAL_COUNT,
+  MAX_OWNED_COUNT_PER_TYPE,
+  OWNED_TYPE_COUNT,
+  ONLY_START_END_PLACED;
 
   public boolean supports(String metricParam) {
-    return switch (this) {
-      case USER_LEVEL -> metricParam == null;
-      case CAPTURE_COUNT_BY_CARD_TYPE -> isConstantOf(CardType.class, metricParam);
-      case CAPTURE_COUNT_BY_TIER -> isConstantOf(Tier.class, metricParam);
-    };
+    return metricParam == null;
   }
 
   public long extract(AchievementStats stats, String metricParam) {
     return switch (this) {
-      case USER_LEVEL -> stats.userLevel();
-      case CAPTURE_COUNT_BY_CARD_TYPE -> stats.captureCountOf(CardType.valueOf(metricParam));
-      case CAPTURE_COUNT_BY_TIER -> stats.captureCountOf(Tier.valueOf(metricParam));
+      case PRE_REGISTRATION_CONVERTED -> stats.preRegistrationConverted() ? 1 : 0;
+      case PLACED_ANIMAL_COUNT -> stats.placedAnimalCount();
+      case MAX_OWNED_COUNT_PER_TYPE -> stats.maxOwnedCountPerType();
+      case OWNED_TYPE_COUNT -> stats.ownedTypeCount();
+      case ONLY_START_END_PLACED -> stats.onlyStartEndPlaced() ? 1 : 0;
     };
-  }
-
-  private static <E extends Enum<E>> boolean isConstantOf(Class<E> type, String name) {
-    if (name == null) {
-      return false;
-    }
-    for (E constant : type.getEnumConstants()) {
-      if (constant.name().equals(name)) {
-        return true;
-      }
-    }
-    return false;
   }
 }

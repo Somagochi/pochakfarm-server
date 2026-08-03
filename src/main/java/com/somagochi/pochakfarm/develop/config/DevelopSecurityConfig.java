@@ -13,12 +13,19 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.AnyRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
 
 @Configuration
 @Profile({"local", "dev"})
 public class DevelopSecurityConfig {
 
   private static final String[] AUTHENTICATED_ENDPOINTS = {"/api/dev/animal"};
+  private static final String[] BASIC_AUTH_ENDPOINTS = {
+    "/dev/achievements", "/dev/achievements/**"
+  };
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
   private final SecurityAuthenticationEntryPoint authenticationEntryPoint;
@@ -33,20 +40,45 @@ public class DevelopSecurityConfig {
   @Bean
   @Order(Ordered.HIGHEST_PRECEDENCE)
   SecurityFilterChain devSecurityFilterChain(HttpSecurity http) throws Exception {
-    http.securityMatcher("/api/dev/**", "/", "/pre-registration.html", "/social-login-test.html")
+    http.securityMatcher(
+            "/api/dev/**",
+            "/dev/achievements",
+            "/dev/achievements/**",
+            "/",
+            "/pre-registration.html",
+            "/social-login-test.html")
         .csrf(AbstractHttpConfigurer::disable)
         .formLogin(AbstractHttpConfigurer::disable)
-        .httpBasic(AbstractHttpConfigurer::disable)
+        .httpBasic(Customizer.withDefaults())
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .cors(Customizer.withDefaults())
         .authorizeHttpRequests(
             auth ->
                 auth.requestMatchers(AUTHENTICATED_ENDPOINTS)
                     .authenticated()
+                    .requestMatchers(BASIC_AUTH_ENDPOINTS)
+                    .authenticated()
                     .anyRequest()
                     .permitAll())
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-        .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint));
+        .exceptionHandling(
+            ex ->
+                ex.defaultAuthenticationEntryPointFor(
+                        basicAuthenticationEntryPoint(), basicAuthEndpointsMatcher())
+                    .defaultAuthenticationEntryPointFor(
+                        authenticationEntryPoint, AnyRequestMatcher.INSTANCE));
     return http.build();
+  }
+
+  private BasicAuthenticationEntryPoint basicAuthenticationEntryPoint() {
+    BasicAuthenticationEntryPoint entryPoint = new BasicAuthenticationEntryPoint();
+    entryPoint.setRealmName("pochakfarm-dev");
+    return entryPoint;
+  }
+
+  private OrRequestMatcher basicAuthEndpointsMatcher() {
+    PathPatternRequestMatcher.Builder builder = PathPatternRequestMatcher.withDefaults();
+    return new OrRequestMatcher(
+        builder.matcher("/dev/achievements"), builder.matcher("/dev/achievements/**"));
   }
 }

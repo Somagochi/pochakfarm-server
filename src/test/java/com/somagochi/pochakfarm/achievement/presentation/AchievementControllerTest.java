@@ -68,15 +68,16 @@ class AchievementControllerTest {
             CursorPage.of(
                 List.of(
                     new AchievementResponse(
-                        "LEVEL_10",
-                        "레벨 10 달성",
-                        "레벨 10에 도달하세요",
-                        AchievementCategory.LEVEL,
-                        12,
-                        10,
-                        true,
-                        ACHIEVED_AT,
+                        3L,
+                        "ONE_TYPE_FOCUS",
+                        "한 우물 포착",
+                        "같은 타입의 동물을 10마리 이상 보유한다",
+                        AchievementCategory.COLLECTION,
                         false,
+                        "https://cdn.example.com/achievements/done.png",
+                        new AchievementResponse.Progress(12, 10),
+                        true,
+                        new AchievementResponse.AchievedInfo(ACHIEVED_AT, false),
                         List.of(
                             new AchievementRewardResponse(RewardType.COIN, 100L, null, null),
                             new AchievementRewardResponse(
@@ -85,16 +86,17 @@ class AchievementControllerTest {
                                 "첫 걸음",
                                 "https://cdn.example.com/badge.png"))),
                     new AchievementResponse(
-                        "CAPTURE_TIER_S_5",
-                        "S 등급 5마리",
+                        5L,
+                        "START_AND_END",
                         null,
-                        AchievementCategory.TIER,
-                        2,
-                        5,
+                        null,
+                        AchievementCategory.FARM,
+                        true,
+                        null,
+                        null,
                         false,
                         null,
-                        false,
-                        List.of())),
+                        null)),
                 20L,
                 true));
 
@@ -104,28 +106,42 @@ class AchievementControllerTest {
         .andExpect(jsonPath("$.data.content.length()").value(2))
         .andExpect(jsonPath("$.data.nextCursor").value(20))
         .andExpect(jsonPath("$.data.hasNext").value(true))
-        .andExpect(jsonPath("$.data.content[0].code").value("LEVEL_10"))
-        .andExpect(jsonPath("$.data.content[0].category").value("LEVEL"))
-        .andExpect(jsonPath("$.data.content[0].current").value(12))
-        .andExpect(jsonPath("$.data.content[0].target").value(10))
+        .andExpect(jsonPath("$.data.content[0].id").value(3))
+        .andExpect(jsonPath("$.data.content[0].code").value("ONE_TYPE_FOCUS"))
+        .andExpect(jsonPath("$.data.content[0].category").value("COLLECTION"))
+        .andExpect(jsonPath("$.data.content[0].hidden").value(false))
+        .andExpect(
+            jsonPath("$.data.content[0].imageUrl")
+                .value("https://cdn.example.com/achievements/done.png"))
+        .andExpect(jsonPath("$.data.content[0].progress.current").value(12))
+        .andExpect(jsonPath("$.data.content[0].progress.target").value(10))
         .andExpect(jsonPath("$.data.content[0].achieved").value(true))
-        .andExpect(jsonPath("$.data.content[0].rewardClaimed").value(false))
+        .andExpect(jsonPath("$.data.content[0].achievedInfo.achievedAt").exists())
+        .andExpect(jsonPath("$.data.content[0].achievedInfo.rewardClaimed").value(false))
         .andExpect(jsonPath("$.data.content[0].rewards[0].type").value("COIN"))
         .andExpect(jsonPath("$.data.content[0].rewards[0].amount").value(100))
+        .andExpect(jsonPath("$.data.content[0].rewards[0].badgeName").doesNotExist())
+        .andExpect(jsonPath("$.data.content[0].rewards[1].amount").doesNotExist())
         .andExpect(jsonPath("$.data.content[0].rewards[1].badgeName").value("첫 걸음"))
+        .andExpect(jsonPath("$.data.content[1].id").value(5))
+        .andExpect(jsonPath("$.data.content[1].hidden").value(true))
+        .andExpect(jsonPath("$.data.content[1].title").doesNotExist())
+        .andExpect(jsonPath("$.data.content[1].imageUrl").doesNotExist())
+        .andExpect(jsonPath("$.data.content[1].progress").doesNotExist())
         .andExpect(jsonPath("$.data.content[1].achieved").value(false))
-        .andExpect(jsonPath("$.data.content[1].achievedAt").doesNotExist());
+        .andExpect(jsonPath("$.data.content[1].achievedInfo").doesNotExist())
+        .andExpect(jsonPath("$.data.content[1].rewards").doesNotExist());
   }
 
   @Test
   void passesCategoryAndCursorToQueryService() throws Exception {
-    given(achievementQueryService.getAchievements(USER_ID, AchievementCategory.TIER, 20L))
+    given(achievementQueryService.getAchievements(USER_ID, AchievementCategory.FARM, 20L))
         .willReturn(CursorPage.of(List.of(), null, false));
 
     mockMvc
         .perform(
             get("/api/achievements")
-                .param("category", "TIER")
+                .param("category", "FARM")
                 .param("cursor", "20")
                 .with(authentication(userAuthentication())))
         .andExpect(status().isOk())
@@ -146,20 +162,20 @@ class AchievementControllerTest {
 
   @Test
   void returnsClaimedRewardsAndUpdatedBalance() throws Exception {
-    given(achievementClaimService.claim(USER_ID, "LEVEL_10"))
+    given(achievementClaimService.claim(USER_ID, "ONE_TYPE_FOCUS"))
         .willReturn(
             new AchievementClaimResponse(
-                "LEVEL_10",
+                "ONE_TYPE_FOCUS",
                 List.of(new AchievementRewardResponse(RewardType.COIN, 100L, null, null)),
                 350,
                 80));
 
     mockMvc
         .perform(
-            post("/api/achievements/{code}/claim", "LEVEL_10")
+            post("/api/achievements/{code}/claim", "ONE_TYPE_FOCUS")
                 .with(authentication(userAuthentication())))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data.code").value("LEVEL_10"))
+        .andExpect(jsonPath("$.data.code").value("ONE_TYPE_FOCUS"))
         .andExpect(jsonPath("$.data.rewards[0].type").value("COIN"))
         .andExpect(jsonPath("$.data.coins").value(350))
         .andExpect(jsonPath("$.data.experience").value(80));
@@ -169,11 +185,11 @@ class AchievementControllerTest {
   void returnsConflictWhenRewardAlreadyClaimed() throws Exception {
     willThrow(new BusinessException(ErrorCode.ACHIEVEMENT_REWARD_ALREADY_CLAIMED))
         .given(achievementClaimService)
-        .claim(USER_ID, "LEVEL_10");
+        .claim(USER_ID, "ONE_TYPE_FOCUS");
 
     mockMvc
         .perform(
-            post("/api/achievements/{code}/claim", "LEVEL_10")
+            post("/api/achievements/{code}/claim", "ONE_TYPE_FOCUS")
                 .with(authentication(userAuthentication())))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("ACHIEVEMENT_REWARD_ALREADY_CLAIMED"));
@@ -183,11 +199,11 @@ class AchievementControllerTest {
   void returnsBadRequestWhenAchievementNotAchieved() throws Exception {
     willThrow(new BusinessException(ErrorCode.ACHIEVEMENT_NOT_ACHIEVED))
         .given(achievementClaimService)
-        .claim(USER_ID, "LEVEL_10");
+        .claim(USER_ID, "ONE_TYPE_FOCUS");
 
     mockMvc
         .perform(
-            post("/api/achievements/{code}/claim", "LEVEL_10")
+            post("/api/achievements/{code}/claim", "ONE_TYPE_FOCUS")
                 .with(authentication(userAuthentication())))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("ACHIEVEMENT_NOT_ACHIEVED"));
@@ -211,7 +227,7 @@ class AchievementControllerTest {
   void returnsUnauthorizedWithoutAuthentication() throws Exception {
     mockMvc.perform(get("/api/achievements")).andExpect(status().isUnauthorized());
     mockMvc
-        .perform(post("/api/achievements/{code}/claim", "LEVEL_10"))
+        .perform(post("/api/achievements/{code}/claim", "ONE_TYPE_FOCUS"))
         .andExpect(status().isUnauthorized());
   }
 

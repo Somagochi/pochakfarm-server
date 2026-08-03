@@ -9,6 +9,7 @@ import com.somagochi.pochakfarm.achievement.dto.AchievementRewardResponse;
 import com.somagochi.pochakfarm.achievement.infrastructure.persistence.AchievementRepository;
 import com.somagochi.pochakfarm.achievement.infrastructure.persistence.UserAchievementRepository;
 import com.somagochi.pochakfarm.common.response.CursorPage;
+import com.somagochi.pochakfarm.storage.domain.FileStorage;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -31,6 +32,7 @@ public class AchievementQueryService {
   private final AchievementStatsLoader achievementStatsLoader;
   private final AchievementRecorder achievementRecorder;
   private final AchievementRewardCatalog achievementRewardCatalog;
+  private final FileStorage fileStorage;
 
   @Transactional(readOnly = true)
   public CursorPage<AchievementResponse> getAchievements(
@@ -59,7 +61,7 @@ public class AchievementQueryService {
         .filter(definition -> category == null || definition.getCategory() == category)
         .filter(definition -> definition.isListedWhen(records.containsKey(definition.getId())))
         .filter(definition -> definition.getId() > from)
-        .sorted(Comparator.comparing(Achievement::getCreatedAt).thenComparing(Achievement::getId))
+        .sorted(Comparator.comparing(Achievement::getId))
         .limit(PAGE_SIZE + 1L)
         .toList();
   }
@@ -76,8 +78,14 @@ public class AchievementQueryService {
                     definition,
                     definition.progressOf(stats),
                     records.get(definition.getId()),
-                    rewards.getOrDefault(definition.getId(), List.of())))
+                    rewards.getOrDefault(definition.getId(), List.of()),
+                    buildUrlOrNull(definition.getUnachievedImageKey()),
+                    buildUrlOrNull(definition.getAchievedImageKey())))
         .toList();
+  }
+
+  private String buildUrlOrNull(String key) {
+    return key == null ? null : fileStorage.buildUrl(key);
   }
 
   private Long nextCursor(List<Achievement> page, boolean hasNext) {
