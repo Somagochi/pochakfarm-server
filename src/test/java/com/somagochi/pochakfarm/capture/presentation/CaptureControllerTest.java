@@ -13,6 +13,7 @@ import com.somagochi.pochakfarm.capture.application.CaptureAnimalService;
 import com.somagochi.pochakfarm.capture.application.CaptureAvailabilityService;
 import com.somagochi.pochakfarm.capture.application.CaptureCompleteService;
 import com.somagochi.pochakfarm.capture.application.CaptureGameResultService;
+import com.somagochi.pochakfarm.capture.application.CaptureOverviewService;
 import com.somagochi.pochakfarm.capture.application.CaptureQueryService;
 import com.somagochi.pochakfarm.capture.application.CaptureStartService;
 import com.somagochi.pochakfarm.capture.domain.CaptureDifficulty;
@@ -20,6 +21,7 @@ import com.somagochi.pochakfarm.capture.domain.CapturePaymentType;
 import com.somagochi.pochakfarm.capture.domain.GameStatus;
 import com.somagochi.pochakfarm.capture.domain.GenerationStatus;
 import com.somagochi.pochakfarm.capture.domain.Tier;
+import com.somagochi.pochakfarm.capture.domain.TierProbability;
 import com.somagochi.pochakfarm.capture.dto.CaptureAnimalPlacementRequest;
 import com.somagochi.pochakfarm.capture.dto.CaptureAnimalPlacementResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureAvailabilityResponse;
@@ -30,6 +32,7 @@ import com.somagochi.pochakfarm.capture.dto.CaptureGameResultResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureGameResultResponse.Progression;
 import com.somagochi.pochakfarm.capture.dto.CaptureGameResultResponse.ProgressionState;
 import com.somagochi.pochakfarm.capture.dto.CaptureGameResultResponse.Reward;
+import com.somagochi.pochakfarm.capture.dto.CaptureOverviewResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartRequest;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartResponse;
@@ -52,7 +55,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,6 +88,7 @@ class CaptureControllerTest {
   @MockitoBean private CaptureAvailabilityService captureAvailabilityService;
   @MockitoBean private CaptureCompleteService captureCompleteService;
   @MockitoBean private CaptureGameResultService captureGameResultService;
+  @MockitoBean private CaptureOverviewService captureOverviewService;
   @MockitoBean private CaptureQueryService captureQueryService;
 
   @Test
@@ -203,6 +209,48 @@ class CaptureControllerTest {
         .andExpect(jsonPath("$.data.extraCaptureCost").value(200))
         .andExpect(jsonPath("$.data.coins").value(1000))
         .andExpect(jsonPath("$.data.canStartCapture").value(true));
+  }
+
+  @Test
+  void returnsCaptureOverview() throws Exception {
+    given(captureOverviewService.getOverview(1L))
+        .willReturn(
+            new CaptureOverviewResponse(
+                new CaptureOverviewResponse.Level(12, 54, 150, 96),
+                List.of(
+                    new CaptureOverviewResponse.CaptureCount(CardType.SKY, 23),
+                    new CaptureOverviewResponse.CaptureCount(CardType.GROUND, 47),
+                    new CaptureOverviewResponse.CaptureCount(CardType.SEA, 0),
+                    new CaptureOverviewResponse.CaptureCount(CardType.SPACE, 1)),
+                List.of(
+                    new TierProbability(Tier.C, new BigDecimal("44.9")),
+                    new TierProbability(Tier.B, new BigDecimal("38")))));
+
+    mockMvc
+        .perform(get("/api/captures/overview").with(authentication(authenticationFor(1L))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.level.currentLevel").value(12))
+        .andExpect(jsonPath("$.data.level.currentExperience").value(54))
+        .andExpect(jsonPath("$.data.level.requiredExperience").value(150))
+        .andExpect(jsonPath("$.data.level.remainingExperience").value(96))
+        .andExpect(jsonPath("$.data.captureCounts[0].cardType").value("SKY"))
+        .andExpect(jsonPath("$.data.captureCounts[0].count").value(23))
+        .andExpect(jsonPath("$.data.captureCounts[1].cardType").value("GROUND"))
+        .andExpect(jsonPath("$.data.captureCounts[2].cardType").value("SEA"))
+        .andExpect(jsonPath("$.data.captureCounts[2].count").value(0))
+        .andExpect(jsonPath("$.data.captureCounts[3].cardType").value("SPACE"))
+        .andExpect(jsonPath("$.data.tierProbabilities[0].tier").value("C"))
+        .andExpect(jsonPath("$.data.tierProbabilities[0].probabilityPercent").value(44.9))
+        .andExpect(jsonPath("$.data.tierProbabilities[1].probabilityPercent").value(38));
+
+    verify(captureOverviewService).getOverview(1L);
+  }
+
+  @Test
+  void rejectsUnauthenticatedCaptureOverview() throws Exception {
+    mockMvc.perform(get("/api/captures/overview")).andExpect(status().isUnauthorized());
+
+    verify(captureOverviewService, org.mockito.Mockito.never()).getOverview(any());
   }
 
   @Test

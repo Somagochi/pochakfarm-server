@@ -6,6 +6,7 @@ import com.somagochi.pochakfarm.capture.dto.CaptureAvailabilityResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureCompleteResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureGameResultRequest;
 import com.somagochi.pochakfarm.capture.dto.CaptureGameResultResponse;
+import com.somagochi.pochakfarm.capture.dto.CaptureOverviewResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartRequest;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartResponse;
@@ -71,6 +72,21 @@ public interface CaptureApiSpec {
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   ApiResponse<CaptureAvailabilityResponse> getAvailability(
       @Schema(hidden = true) UserPrincipal principal);
+
+  @Operation(
+      summary = "포착 정보 요약 조회",
+      description = "현재 레벨과 경험치, 타입별 누적 포착 성공 횟수, 현재 레벨의 티어별 포착 확률을 조회한다.")
+  @SecurityRequirement(name = "bearerAuth")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "401",
+      description = "인증 실패",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "404",
+      description = "사용자 없음(USER_NOT_FOUND)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  ApiResponse<CaptureOverviewResponse> getOverview(@Schema(hidden = true) UserPrincipal principal);
 
   @Operation(summary = "원본 이미지 업로드 완료", description = "S3 원본 업로드를 검증하고 비동기 AI 이미지 생성을 접수한다.")
   @SecurityRequirement(name = "bearerAuth")

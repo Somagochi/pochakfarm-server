@@ -4,6 +4,7 @@ import com.somagochi.pochakfarm.capture.application.CaptureAnimalService;
 import com.somagochi.pochakfarm.capture.application.CaptureAvailabilityService;
 import com.somagochi.pochakfarm.capture.application.CaptureCompleteService;
 import com.somagochi.pochakfarm.capture.application.CaptureGameResultService;
+import com.somagochi.pochakfarm.capture.application.CaptureOverviewService;
 import com.somagochi.pochakfarm.capture.application.CaptureQueryService;
 import com.somagochi.pochakfarm.capture.application.CaptureStartService;
 import com.somagochi.pochakfarm.capture.dto.CaptureAnimalPlacementRequest;
@@ -12,6 +13,7 @@ import com.somagochi.pochakfarm.capture.dto.CaptureAvailabilityResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureCompleteResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureGameResultRequest;
 import com.somagochi.pochakfarm.capture.dto.CaptureGameResultResponse;
+import com.somagochi.pochakfarm.capture.dto.CaptureOverviewResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartRequest;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartResponse;
@@ -39,6 +41,7 @@ public class CaptureController implements CaptureApiSpec {
   private final CaptureAnimalService captureAnimalService;
   private final CaptureCompleteService captureCompleteService;
   private final CaptureGameResultService captureGameResultService;
+  private final CaptureOverviewService captureOverviewService;
   private final CaptureQueryService captureQueryService;
 
   @Override
@@ -53,6 +56,13 @@ public class CaptureController implements CaptureApiSpec {
   public ApiResponse<CaptureAvailabilityResponse> getAvailability(
       @AuthenticationPrincipal UserPrincipal principal) {
     return ApiResponse.success(captureAvailabilityService.getAvailability(principal.id()));
+  }
+
+  @Override
+  @GetMapping("/overview")
+  public ApiResponse<CaptureOverviewResponse> getOverview(
+      @AuthenticationPrincipal UserPrincipal principal) {
+    return ApiResponse.success(captureOverviewService.getOverview(principal.id()));
   }
 
   @Override
