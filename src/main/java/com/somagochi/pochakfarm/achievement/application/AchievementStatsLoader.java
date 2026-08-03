@@ -1,14 +1,14 @@
 package com.somagochi.pochakfarm.achievement.application;
 
 import com.somagochi.pochakfarm.achievement.domain.AchievementStats;
-import com.somagochi.pochakfarm.capture.application.CaptureQueryService;
-import com.somagochi.pochakfarm.capture.domain.Tier;
-import com.somagochi.pochakfarm.capture.dto.CaptureCount;
-import com.somagochi.pochakfarm.characterization.domain.CardType;
-import com.somagochi.pochakfarm.user.application.UserQueryService;
-import java.util.EnumMap;
+import com.somagochi.pochakfarm.animal.application.AnimalQueryService;
+import com.somagochi.pochakfarm.animal.dto.AnimalPlacement;
+import com.somagochi.pochakfarm.coupon.application.CouponQueryService;
+import com.somagochi.pochakfarm.farm.domain.FarmSpace;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,19 +17,32 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AchievementStatsLoader {
 
-  private final UserQueryService userQueryService;
-  private final CaptureQueryService captureQueryService;
+  private final CouponQueryService couponQueryService;
+  private final AnimalQueryService animalQueryService;
 
   @Transactional(readOnly = true)
   public AchievementStats load(Long userId) {
-    int userLevel = userQueryService.getLevel(userId);
-    List<CaptureCount> counts = captureQueryService.countCapturedByCardTypeAndTier(userId);
-    Map<CardType, Long> byCardType = new EnumMap<>(CardType.class);
-    Map<Tier, Long> byTier = new EnumMap<>(Tier.class);
-    for (CaptureCount count : counts) {
-      byCardType.merge(count.cardType(), count.count(), Long::sum);
-      byTier.merge(count.tier(), count.count(), Long::sum);
-    }
-    return new AchievementStats(userLevel, byCardType, byTier);
+    List<AnimalPlacement> placements = animalQueryService.getPlacements(userId);
+    return new AchievementStats(
+        couponQueryService.hasConvertedPreRegistrationCoupon(userId),
+        placements.size(),
+        animalQueryService.countOwnedByCardType(userId),
+        hasSpaceWithOnlyStartAndEndPlaced(placements));
+  }
+
+  private boolean hasSpaceWithOnlyStartAndEndPlaced(List<AnimalPlacement> placements) {
+    Map<Long, List<AnimalPlacement>> bySpace =
+        placements.stream().collect(Collectors.groupingBy(AnimalPlacement::spaceId));
+    return bySpace.values().stream().anyMatch(this::isOnlyStartAndEndPlaced);
+  }
+
+  private boolean isOnlyStartAndEndPlaced(Collection<AnimalPlacement> spacePlacements) {
+    return spacePlacements.size() == 2
+        && spacePlacements.stream()
+            .anyMatch(placement -> placement.isAt(FarmSpace.FIRST_FLOOR, FarmSpace.FIRST_SLOT))
+        && spacePlacements.stream()
+            .anyMatch(
+                placement ->
+                    placement.isAt(FarmSpace.TOTAL_FLOOR_COUNT, FarmSpace.SLOT_COUNT_PER_FLOOR));
   }
 }

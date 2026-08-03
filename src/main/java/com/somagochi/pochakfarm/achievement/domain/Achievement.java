@@ -59,6 +59,15 @@ public class Achievement extends BaseEntity {
   @Column(name = "enabled", nullable = false)
   private boolean enabled;
 
+  @Column(name = "hidden", nullable = false)
+  private boolean hidden;
+
+  @Column(name = "unachieved_image_key")
+  private String unachievedImageKey;
+
+  @Column(name = "achieved_image_key")
+  private String achievedImageKey;
+
   private Achievement(
       String code,
       String title,
@@ -67,7 +76,10 @@ public class Achievement extends BaseEntity {
       AchievementMetric metric,
       String metricParam,
       long targetValue,
-      boolean enabled) {
+      boolean enabled,
+      boolean hidden,
+      String unachievedImageKey,
+      String achievedImageKey) {
     this.code = Objects.requireNonNull(code);
     this.title = Objects.requireNonNull(title);
     this.description = description;
@@ -76,6 +88,9 @@ public class Achievement extends BaseEntity {
     this.metricParam = metricParam;
     this.targetValue = targetValue;
     this.enabled = enabled;
+    this.hidden = hidden;
+    this.unachievedImageKey = unachievedImageKey;
+    this.achievedImageKey = achievedImageKey;
   }
 
   public static Achievement create(
@@ -86,8 +101,67 @@ public class Achievement extends BaseEntity {
       AchievementMetric metric,
       String metricParam,
       long targetValue) {
+    return create(code, title, description, category, metric, metricParam, targetValue, null, null);
+  }
+
+  public static Achievement create(
+      String code,
+      String title,
+      String description,
+      AchievementCategory category,
+      AchievementMetric metric,
+      String metricParam,
+      long targetValue,
+      String unachievedImageKey,
+      String achievedImageKey) {
     return new Achievement(
-        code, title, description, category, metric, metricParam, targetValue, true);
+        code,
+        title,
+        description,
+        category,
+        metric,
+        metricParam,
+        targetValue,
+        true,
+        false,
+        unachievedImageKey,
+        achievedImageKey);
+  }
+
+  public static Achievement createHidden(
+      String code,
+      String title,
+      String description,
+      AchievementCategory category,
+      AchievementMetric metric,
+      String metricParam,
+      long targetValue) {
+    return createHidden(
+        code, title, description, category, metric, metricParam, targetValue, null, null);
+  }
+
+  public static Achievement createHidden(
+      String code,
+      String title,
+      String description,
+      AchievementCategory category,
+      AchievementMetric metric,
+      String metricParam,
+      long targetValue,
+      String unachievedImageKey,
+      String achievedImageKey) {
+    return new Achievement(
+        code,
+        title,
+        description,
+        category,
+        metric,
+        metricParam,
+        targetValue,
+        true,
+        true,
+        unachievedImageKey,
+        achievedImageKey);
   }
 
   public boolean isDefinitionValid() {

@@ -2,9 +2,11 @@ package com.somagochi.pochakfarm.animal.application;
 
 import com.somagochi.pochakfarm.animal.domain.Animal;
 import com.somagochi.pochakfarm.animal.dto.AnimalDetailResponse;
+import com.somagochi.pochakfarm.animal.dto.AnimalPlacement;
 import com.somagochi.pochakfarm.animal.dto.AnimalPosition;
 import com.somagochi.pochakfarm.animal.dto.AnimalResponse;
 import com.somagochi.pochakfarm.animal.dto.AnimalSkillResponse;
+import com.somagochi.pochakfarm.animal.dto.AnimalTypeCount;
 import com.somagochi.pochakfarm.animal.infrastructure.persistence.AnimalRepository;
 import com.somagochi.pochakfarm.capture.domain.Capture;
 import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureRepository;
@@ -76,6 +78,21 @@ public class AnimalQueryService {
         AnimalSkillResponse.from(capture.getSkill2()),
         buildUrlOrNull(capture.getCardImage()),
         buildUrlOrNull(capture.getAnimalImage()));
+  }
+
+  @Transactional(readOnly = true)
+  public Map<CardType, Long> countOwnedByCardType(Long userId) {
+    return animalRepository.countOwnedByCardType(userId).stream()
+        .collect(Collectors.toMap(AnimalTypeCount::cardType, AnimalTypeCount::count));
+  }
+
+  @Transactional(readOnly = true)
+  public List<AnimalPlacement> getPlacements(Long userId) {
+    return animalRepository.findPlacedAnimals(userId).stream()
+        .map(
+            animal ->
+                new AnimalPlacement(animal.getSpaceId(), animal.getFloorNum(), animal.getSlotNum()))
+        .toList();
   }
 
   @Transactional(readOnly = true)
