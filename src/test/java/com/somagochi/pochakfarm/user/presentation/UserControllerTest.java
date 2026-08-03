@@ -20,7 +20,7 @@ import com.somagochi.pochakfarm.common.security.SecurityAccessDeniedHandler;
 import com.somagochi.pochakfarm.common.security.SecurityAuthenticationEntryPoint;
 import com.somagochi.pochakfarm.common.security.UserPrincipal;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
-import com.somagochi.pochakfarm.user.application.ChangeNicknameService;
+import com.somagochi.pochakfarm.user.application.UserNicknameService;
 import com.somagochi.pochakfarm.user.application.UserQueryService;
 import com.somagochi.pochakfarm.user.application.WithdrawService;
 import com.somagochi.pochakfarm.user.dto.NicknameResponse;
@@ -56,7 +56,7 @@ class UserControllerTest {
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private UserQueryService userQueryService;
-  @MockitoBean private ChangeNicknameService changeNicknameService;
+  @MockitoBean private UserNicknameService userNicknameService;
   @MockitoBean private WithdrawService withdrawService;
 
   @Test
@@ -106,7 +106,7 @@ class UserControllerTest {
 
   @Test
   void changesNicknameWhenAuthenticated() throws Exception {
-    given(changeNicknameService.changeNickname(1L, "포착이")).willReturn(new NicknameResponse("포착이"));
+    given(userNicknameService.changeNickname(1L, "포착이")).willReturn(new NicknameResponse("포착이"));
 
     mockMvc
         .perform(
@@ -117,7 +117,7 @@ class UserControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.nickname").value("포착이"));
 
-    verify(changeNicknameService).changeNickname(1L, "포착이");
+    verify(userNicknameService).changeNickname(1L, "포착이");
   }
 
   @Test

@@ -2,7 +2,7 @@ package com.somagochi.pochakfarm.user.presentation;
 
 import com.somagochi.pochakfarm.common.response.ApiResponse;
 import com.somagochi.pochakfarm.common.security.UserPrincipal;
-import com.somagochi.pochakfarm.user.application.ChangeNicknameService;
+import com.somagochi.pochakfarm.user.application.UserNicknameService;
 import com.somagochi.pochakfarm.user.application.UserQueryService;
 import com.somagochi.pochakfarm.user.application.WithdrawService;
 import com.somagochi.pochakfarm.user.dto.NicknameResponse;
@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -26,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController implements UserApiSpec {
 
   private final UserQueryService userQueryService;
-  private final ChangeNicknameService changeNicknameService;
+  private final UserNicknameService userNicknameService;
   private final WithdrawService withdrawService;
 
   @Override
@@ -41,7 +42,14 @@ public class UserController implements UserApiSpec {
       @AuthenticationPrincipal UserPrincipal principal,
       @RequestBody NicknameUpdateRequest request) {
     return ApiResponse.success(
-        changeNicknameService.changeNickname(principal.id(), request.nickname()));
+        userNicknameService.changeNickname(principal.id(), request.nickname()));
+  }
+
+  @Override
+  @GetMapping("/nickname/check")
+  public ApiResponse<Void> checkNickname(@RequestParam String nickname) {
+    userNicknameService.checkNickname(nickname);
+    return ApiResponse.empty();
   }
 
   @Override

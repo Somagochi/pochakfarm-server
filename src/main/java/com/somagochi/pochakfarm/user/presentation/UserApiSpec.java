@@ -59,8 +59,27 @@ public interface UserApiSpec {
       responseCode = "404",
       description = "회원을 찾을 수 없음",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "409",
+      description = "이미 사용 중인 닉네임",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   ApiResponse<NicknameResponse> changeNickname(
       UserPrincipal principal, NicknameUpdateRequest request);
+
+  @Operation(summary = "닉네임 중복 확인", description = "해당 닉네임이 이미 사용 중인지 확인한다.")
+  @SecurityRequirement(name = "bearerAuth")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "200",
+      description = "사용 가능한 닉네임")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "401",
+      description = "인증 실패 (토큰 만료/무효)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "409",
+      description = "이미 사용 중인 닉네임",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  ApiResponse<Void> checkNickname(String nickname);
 
   @Operation(summary = "회원 탈퇴", description = "현재 로그인한 회원을 탈퇴(소프트 삭제)하고 액세스/리프레시 토큰을 무효화한다.")
   @SecurityRequirement(name = "bearerAuth")

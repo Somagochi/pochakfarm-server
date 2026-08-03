@@ -13,6 +13,7 @@ public enum ErrorCode {
   USER_NOT_FOUND(404, "USER_NOT_FOUND", "User not found"),
   USER_ALREADY_REGISTERED(409, "USER_ALREADY_REGISTERED", "User already registered"),
   INVALID_NICKNAME(400, "INVALID_NICKNAME", "Invalid nickname"),
+  DUPLICATE_NICKNAME(409, "DUPLICATE_NICKNAME", "Nickname is already in use"),
   TOKEN_OWNER_MISMATCH(401, "TOKEN_OWNER_MISMATCH", "Token owner mismatch"),
   UNSUPPORTED_CONTENT_TYPE(400, "UNSUPPORTED_CONTENT_TYPE", "Unsupported content type"),
   INVALID_UPLOAD_PURPOSE(400, "INVALID_UPLOAD_PURPOSE", "Invalid upload purpose"),

@@ -20,4 +20,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
   Optional<User> findByIdForUpdate(@Param("id") Long id);
 
   Optional<User> findBySocialAccountProviderAndEmail(SocialProvider provider, String email);
+
+  Optional<User> findUserByNickname(String nickname);
 }
