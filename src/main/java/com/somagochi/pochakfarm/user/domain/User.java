@@ -23,10 +23,12 @@ import org.hibernate.annotations.SQLRestriction;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(
     name = "users",
-    uniqueConstraints =
-        @UniqueConstraint(
-            name = "uk_users_provider_email",
-            columnNames = {"provider", "email"}))
+    uniqueConstraints = {
+      @UniqueConstraint(
+          name = "uk_users_provider_email",
+          columnNames = {"provider", "email"}),
+      @UniqueConstraint(name = "uk_users_nickname", columnNames = "nickname")
+    })
 @SQLRestriction("deleted_at is null")
 public class User extends BaseEntity {
 
@@ -109,6 +111,7 @@ public class User extends BaseEntity {
     String token = UUID.randomUUID().toString();
     delete(Instant.now());
     this.socialAccount = socialAccount.anonymized(token);
+    this.nickname = null;
     if (email != null) {
       this.email = "deleted-" + token + "-" + email;
     }

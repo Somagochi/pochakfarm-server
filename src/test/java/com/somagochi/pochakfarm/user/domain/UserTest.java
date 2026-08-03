@@ -3,6 +3,7 @@ package com.somagochi.pochakfarm.user.domain;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -96,10 +97,12 @@ class UserTest {
   @Test
   void withdrawMarksDeletedAndAnonymizesUniqueIdentifiers() {
     User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    user.changeNickname("포착이");
 
     user.withdraw();
 
     assertTrue(user.isDeleted());
+    assertNull(user.getNickname());
     assertEquals(SocialProvider.KAKAO, user.getSocialAccount().getProvider());
     assertNotEquals("provider-id-1", user.getSocialAccount().getProviderId());
     assertTrue(user.getSocialAccount().getProviderId().startsWith("deleted-"));
