@@ -56,11 +56,18 @@ public enum ErrorCode {
   CONCURRENCY_CONFLICT(409, "CONCURRENCY_CONFLICT", "Concurrent modification conflict"),
   FORBIDDEN_FARM_SLOT_ACCESS(403, "FORBIDDEN_FARM_SLOT_ACCESS", "Forbidden farm slot access"),
   FARM_SLOT_TYPE_MISMATCH(400, "FARM_SLOT_TYPE_MISMATCH", "Farm slot type mismatch"),
+  FARM_SPACE_FULL(409, "FARM_SPACE_FULL", "Farm space is full"),
   ACHIEVEMENT_NOT_FOUND(404, "ACHIEVEMENT_NOT_FOUND", "Achievement not found"),
   ACHIEVEMENT_NOT_ACHIEVED(400, "ACHIEVEMENT_NOT_ACHIEVED", "Achievement is not achieved yet"),
   ACHIEVEMENT_REWARD_ALREADY_CLAIMED(
       409, "ACHIEVEMENT_REWARD_ALREADY_CLAIMED", "Achievement reward already claimed"),
   BADGE_NOT_FOUND(404, "BADGE_NOT_FOUND", "Badge not found"),
+  COUPON_NOT_FOUND(404, "COUPON_NOT_FOUND", "Coupon not found"),
+  COUPON_EXPIRED(400, "COUPON_EXPIRED", "Coupon has expired"),
+  COUPON_ALREADY_USED(409, "COUPON_ALREADY_USED", "Coupon already used"),
+  COUPON_ALREADY_REDEEMED(409, "COUPON_ALREADY_REDEEMED", "User already redeemed a coupon"),
+  COUPON_REDEEM_NOT_STARTED(409, "COUPON_REDEEM_NOT_STARTED", "Coupon redeem not started"),
+  FORBIDDEN_COUPON_ACCESS(403, "FORBIDDEN_COUPON_ACCESS", "Forbidden coupon access"),
   ;
 
   private final int status;
