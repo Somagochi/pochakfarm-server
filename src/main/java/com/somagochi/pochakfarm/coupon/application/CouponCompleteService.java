@@ -41,7 +41,8 @@ public class CouponCompleteService {
     imageUploadService.validateUploadedObject(userId, animalImageKey, ANIMAL_IMAGE_CONTENT_TYPE);
     Capture capture =
         captureGrantService.completeGrant(userId, recipient.getCaptureId(), animalImageKey);
-    animalPlacementService.place(userId, capture.getCardType(), capture.getId());
+    animalPlacementService.placeInFirstAvailableSlot(
+        userId, capture.getCardType(), capture.getId());
 
     User user = userQueryService.getForUpdate(userId);
     user.addCoins(REWARD_COINS);

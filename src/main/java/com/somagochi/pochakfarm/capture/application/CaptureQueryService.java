@@ -38,8 +38,9 @@ public class CaptureQueryService {
     return CaptureResponse.from(
         capture,
         capture.gameStatusAt(clock.instant()),
-        buildUrlWhenSucceeded(capture, capture.getAnimalImage()),
-        buildUrlWhenSucceeded(capture, capture.getCardImage()));
+        buildUrlWhenSucceeded(capture, capture.getSceneImage()),
+        buildUrlWhenSucceeded(capture, capture.getCardImage()),
+        buildUrlWhenSucceeded(capture, capture.getAnimalImage()));
   }
 
   @Transactional(readOnly = true)

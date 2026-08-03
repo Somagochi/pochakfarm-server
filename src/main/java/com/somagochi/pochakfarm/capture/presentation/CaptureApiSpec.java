@@ -1,5 +1,7 @@
 package com.somagochi.pochakfarm.capture.presentation;
 
+import com.somagochi.pochakfarm.capture.dto.CaptureAnimalPlacementRequest;
+import com.somagochi.pochakfarm.capture.dto.CaptureAnimalPlacementResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureAvailabilityResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureCompleteResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureGameResultRequest;
@@ -10,6 +12,7 @@ import com.somagochi.pochakfarm.capture.dto.CaptureStartResponse;
 import com.somagochi.pochakfarm.common.exception.ErrorResponse;
 import com.somagochi.pochakfarm.common.response.ApiResponse;
 import com.somagochi.pochakfarm.common.security.UserPrincipal;
+import com.somagochi.pochakfarm.storage.dto.PresignResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -125,4 +128,58 @@ public interface CaptureApiSpec {
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   ApiResponse<CaptureResponse> getCapture(
       @Schema(hidden = true) UserPrincipal principal, Long captureId);
+
+  @Operation(
+      summary = "농장용 누끼 이미지 업로드 URL 발급",
+      description = "이미지 생성과 미니게임에 성공한 일반 포착의 PNG 업로드용 presigned PUT URL을 발급한다.")
+  @SecurityRequirement(name = "bearerAuth")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "발급 성공")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "403",
+      description = "Capture 소유권 없음(FORBIDDEN_CAPTURE_ACCESS)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "404",
+      description = "Capture 없음(CAPTURE_NOT_FOUND)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "409",
+      description = "저장 불가능 상태 또는 이미 배치됨(CAPTURE_NOT_PLACEABLE, CAPTURE_ALREADY_PLACED)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  ApiResponse<PresignResponse> presignAnimalImage(
+      @Schema(hidden = true) UserPrincipal principal, Long captureId);
+
+  @Operation(
+      summary = "포착 동물 농장 저장",
+      description = "누끼 PNG를 등록하고 Capture 타입 농장의 선택 슬롯에 동물을 저장하거나 명시한 기존 동물을 교체한다.")
+  @SecurityRequirement(name = "bearerAuth")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "200",
+      description = "저장 성공 또는 동일 요청 결과 재반환")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "400",
+      description = "누끼 이미지 형식 오류(UNSUPPORTED_CONTENT_TYPE)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "403",
+      description = "Capture 또는 교체 동물 소유권 없음",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "404",
+      description =
+          "Capture, 업로드 이미지 또는 농장 슬롯 없음"
+              + "(CAPTURE_NOT_FOUND, FILE_NOT_FOUND, FARM_SLOT_NOT_FOUND)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "409",
+      description = "배치 상태, 슬롯 점유, 교체 대상 또는 멱등 요청 충돌",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "413",
+      description = "누끼 이미지 용량 초과(FILE_TOO_LARGE)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  ApiResponse<CaptureAnimalPlacementResponse> placeAnimal(
+      @Schema(hidden = true) UserPrincipal principal,
+      Long captureId,
+      CaptureAnimalPlacementRequest request);
 }

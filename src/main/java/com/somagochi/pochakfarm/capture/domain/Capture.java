@@ -76,6 +76,9 @@ public class Capture extends BaseEntity {
   @Column(name = "card_image")
   private String cardImage;
 
+  @Column(name = "scene_image")
+  private String sceneImage;
+
   @Column(name = "animal_image")
   private String animalImage;
 
@@ -236,6 +239,12 @@ public class Capture extends BaseEntity {
     return Objects.equals(this.userId, userId);
   }
 
+  public boolean isPlaceableInFarm() {
+    return getPaymentType() != CapturePaymentType.COUPON
+        && generationStatus == GenerationStatus.SUCCEEDED
+        && gameStatus == GameStatus.SUCCEEDED;
+  }
+
   public boolean isWaitingUpload() {
     return generationStatus == GenerationStatus.WAITING_UPLOAD;
   }
@@ -276,7 +285,7 @@ public class Capture extends BaseEntity {
   }
 
   public void succeed(String sceneImageKey, String cardImageKey, Integer elapsedMs) {
-    this.animalImage = Objects.requireNonNull(sceneImageKey);
+    this.sceneImage = Objects.requireNonNull(sceneImageKey);
     this.cardImage = Objects.requireNonNull(cardImageKey);
     this.elapsedMs = elapsedMs;
     this.generationStatus = GenerationStatus.SUCCEEDED;
@@ -284,9 +293,13 @@ public class Capture extends BaseEntity {
   }
 
   public void fail(String failureReason) {
-    this.animalImage = null;
+    this.sceneImage = null;
     this.cardImage = null;
     this.generationStatus = GenerationStatus.FAILED;
     this.failureReason = failureReason;
+  }
+
+  public void registerAnimalImage(String animalImageKey) {
+    this.animalImage = Objects.requireNonNull(animalImageKey);
   }
 }

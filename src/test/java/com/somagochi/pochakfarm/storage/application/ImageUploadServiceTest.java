@@ -60,11 +60,31 @@ class ImageUploadServiceTest {
   }
 
   @Test
+  void refreshesPresignForPublicOwnerScopedKey() {
+    String key = "public/capture-animal/42/123.png";
+
+    PresignResponse response = service.refreshPresign(42L, key, "image/png");
+
+    assertEquals(key, response.key());
+    assertEquals("https://upload.test/" + key, response.uploadUrl());
+  }
+
+  @Test
   void rejectsPresignRefreshForAnotherUsersKey() {
     BusinessException exception =
         assertThrows(
             BusinessException.class,
             () -> service.refreshPresign(42L, "images/capture-source/99/source.jpg", "image/jpeg"));
+
+    assertEquals(ErrorCode.FORBIDDEN_FILE_ACCESS.getCode(), exception.getCode());
+  }
+
+  @Test
+  void rejectsPublicPresignRefreshForAnotherUsersKey() {
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () -> service.refreshPresign(42L, "public/capture-animal/99/123.png", "image/png"));
 
     assertEquals(ErrorCode.FORBIDDEN_FILE_ACCESS.getCode(), exception.getCode());
   }

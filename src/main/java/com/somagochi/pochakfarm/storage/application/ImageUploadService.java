@@ -128,7 +128,7 @@ public class ImageUploadService {
   private boolean isOwnedBy(Long userId, String key) {
     String[] segments = key.split("/");
     return segments.length == 4
-        && segments[0].equals("images")
+        && (segments[0].equals("images") || segments[0].equals("public"))
         && segments[2].equals(String.valueOf(userId));
   }
 
