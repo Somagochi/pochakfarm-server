@@ -26,7 +26,10 @@ import org.hibernate.annotations.SQLRestriction;
           columnNames = {"coupon_id"}),
       @UniqueConstraint(
           name = "uk_pre_registration_coupon_recipients_user_id",
-          columnNames = {"user_id"})
+          columnNames = {"user_id"}),
+      @UniqueConstraint(
+          name = "uk_pre_registration_coupon_recipients_pre_registration_id",
+          columnNames = {"pre_registration_id"})
     })
 @SQLRestriction("deleted_at is null")
 public class PreRegistrationCouponRecipient extends BaseEntity {
