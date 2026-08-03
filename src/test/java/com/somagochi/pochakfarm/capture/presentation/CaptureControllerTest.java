@@ -253,7 +253,7 @@ class CaptureControllerTest {
     given(captureAnimalService.presign(1L, 123L))
         .willReturn(
             new com.somagochi.pochakfarm.storage.dto.PresignResponse(
-                "https://upload.test/animal", "images/capture-animal/1/123.png", expiresAt));
+                "https://upload.test/animal", "public/capture-animal/1/123.png", expiresAt));
 
     mockMvc
         .perform(
@@ -261,13 +261,13 @@ class CaptureControllerTest {
                 .with(authentication(authenticationFor(1L))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.uploadUrl").value("https://upload.test/animal"))
-        .andExpect(jsonPath("$.data.key").value("images/capture-animal/1/123.png"));
+        .andExpect(jsonPath("$.data.key").value("public/capture-animal/1/123.png"));
   }
 
   @Test
   void savesCapturedAnimalAtSelectedSlot() throws Exception {
     CaptureAnimalPlacementRequest request =
-        new CaptureAnimalPlacementRequest("images/capture-animal/1/123.png", 1, 2, null);
+        new CaptureAnimalPlacementRequest("public/capture-animal/1/123.png", 1, 2, null);
     given(captureAnimalService.place(1L, 123L, request))
         .willReturn(
             new CaptureAnimalPlacementResponse(
@@ -276,7 +276,7 @@ class CaptureControllerTest {
                 CardType.GROUND,
                 1,
                 2,
-                "https://cdn.test/images/capture-animal/1/123.png"));
+                "https://cdn.test/public/capture-animal/1/123.png"));
 
     mockMvc
         .perform(
@@ -286,7 +286,7 @@ class CaptureControllerTest {
                 .content(
                     """
                     {
-                      "animalImageKey": "images/capture-animal/1/123.png",
+                      "animalImageKey": "public/capture-animal/1/123.png",
                       "floorNum": 1,
                       "slotNum": 2
                     }

@@ -188,7 +188,7 @@ class CaptureAnimalServiceIntegrationTest {
   }
 
   private String key(Long captureId) {
-    return "images/capture-animal/%d/%d.png".formatted(userId, captureId);
+    return "public/capture-animal/%d/%d.png".formatted(userId, captureId);
   }
 
   private void upload(String key, String contentType) {

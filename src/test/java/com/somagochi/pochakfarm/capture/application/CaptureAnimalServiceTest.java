@@ -40,7 +40,7 @@ class CaptureAnimalServiceTest {
   private static final long USER_ID = 1L;
   private static final long CAPTURE_ID = 123L;
   private static final long ANIMAL_ID = 10L;
-  private static final String ANIMAL_IMAGE_KEY = "images/capture-animal/1/123.png";
+  private static final String ANIMAL_IMAGE_KEY = "public/capture-animal/1/123.png";
 
   @Mock private CaptureRepository captureRepository;
   @Mock private AnimalRepository animalRepository;

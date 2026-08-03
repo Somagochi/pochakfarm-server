@@ -124,6 +124,6 @@ public class CaptureAnimalService {
   }
 
   private String animalImageKey(Long userId, Long captureId) {
-    return "images/capture-animal/%d/%d.png".formatted(userId, captureId);
+    return "public/capture-animal/%d/%d.png".formatted(userId, captureId);
   }
 }

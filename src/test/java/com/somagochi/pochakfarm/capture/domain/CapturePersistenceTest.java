@@ -140,7 +140,7 @@ class CapturePersistenceTest {
     User user = persistUser();
     Capture capture = capture(user.getId(), CardType.GROUND, Tier.C);
     capture.succeed("public/scene.png", "public/card.png", 100);
-    capture.registerAnimalImage("images/capture-animal/1/123.png");
+    capture.registerAnimalImage("public/capture-animal/1/123.png");
 
     entityManager.persist(capture);
     entityManager.flush();
@@ -154,7 +154,7 @@ class CapturePersistenceTest {
                 .getSingleResult();
     assertEquals("public/scene.png", row[0]);
     assertEquals("public/card.png", row[1]);
-    assertEquals("images/capture-animal/1/123.png", row[2]);
+    assertEquals("public/capture-animal/1/123.png", row[2]);
   }
 
   private User persistUser() {
