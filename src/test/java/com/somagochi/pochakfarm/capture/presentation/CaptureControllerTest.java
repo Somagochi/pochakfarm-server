@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.somagochi.pochakfarm.capture.application.CaptureAnimalService;
 import com.somagochi.pochakfarm.capture.application.CaptureAvailabilityService;
 import com.somagochi.pochakfarm.capture.application.CaptureCompleteService;
 import com.somagochi.pochakfarm.capture.application.CaptureGameResultService;
@@ -19,6 +20,8 @@ import com.somagochi.pochakfarm.capture.domain.CapturePaymentType;
 import com.somagochi.pochakfarm.capture.domain.GameStatus;
 import com.somagochi.pochakfarm.capture.domain.GenerationStatus;
 import com.somagochi.pochakfarm.capture.domain.Tier;
+import com.somagochi.pochakfarm.capture.dto.CaptureAnimalPlacementRequest;
+import com.somagochi.pochakfarm.capture.dto.CaptureAnimalPlacementResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureAvailabilityResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureAvailabilityResponse.FreeAttempts;
 import com.somagochi.pochakfarm.capture.dto.CaptureCompleteResponse;
@@ -76,6 +79,7 @@ class CaptureControllerTest {
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private CaptureStartService captureStartService;
+  @MockitoBean private CaptureAnimalService captureAnimalService;
   @MockitoBean private CaptureAvailabilityService captureAvailabilityService;
   @MockitoBean private CaptureCompleteService captureCompleteService;
   @MockitoBean private CaptureGameResultService captureGameResultService;
@@ -227,6 +231,7 @@ class CaptureControllerTest {
                 GameStatus.PENDING,
                 "https://cdn.test/public/capture-scene/scene.png",
                 "https://cdn.test/public/capture-card/card.png",
+                null,
                 18420,
                 null));
 
@@ -240,6 +245,58 @@ class CaptureControllerTest {
                 .value("https://cdn.test/public/capture-scene/scene.png"))
         .andExpect(
             jsonPath("$.data.cardImageUrl").value("https://cdn.test/public/capture-card/card.png"));
+  }
+
+  @Test
+  void presignsCaptureAnimalImageUpload() throws Exception {
+    Instant expiresAt = Instant.parse("2026-08-03T01:05:00Z");
+    given(captureAnimalService.presign(1L, 123L))
+        .willReturn(
+            new com.somagochi.pochakfarm.storage.dto.PresignResponse(
+                "https://upload.test/animal", "images/capture-animal/1/123.png", expiresAt));
+
+    mockMvc
+        .perform(
+            post("/api/captures/123/animal-image/presign")
+                .with(authentication(authenticationFor(1L))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.uploadUrl").value("https://upload.test/animal"))
+        .andExpect(jsonPath("$.data.key").value("images/capture-animal/1/123.png"));
+  }
+
+  @Test
+  void savesCapturedAnimalAtSelectedSlot() throws Exception {
+    CaptureAnimalPlacementRequest request =
+        new CaptureAnimalPlacementRequest("images/capture-animal/1/123.png", 1, 2, null);
+    given(captureAnimalService.place(1L, 123L, request))
+        .willReturn(
+            new CaptureAnimalPlacementResponse(
+                10L,
+                123L,
+                CardType.GROUND,
+                1,
+                2,
+                "https://cdn.test/images/capture-animal/1/123.png"));
+
+    mockMvc
+        .perform(
+            post("/api/captures/123/animal")
+                .with(authentication(authenticationFor(1L)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "animalImageKey": "images/capture-animal/1/123.png",
+                      "floorNum": 1,
+                      "slotNum": 2
+                    }
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.animalId").value(10))
+        .andExpect(jsonPath("$.data.floorNum").value(1))
+        .andExpect(jsonPath("$.data.slotNum").value(2));
+
+    verify(captureAnimalService).place(1L, 123L, request);
   }
 
   @Test

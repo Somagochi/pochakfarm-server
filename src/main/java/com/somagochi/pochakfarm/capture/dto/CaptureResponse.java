@@ -14,15 +14,16 @@ public record CaptureResponse(
     GameStatus gameStatus,
     String sceneImageUrl,
     String cardImageUrl,
+    String animalImageUrl,
     Integer elapsedMs,
     String failureReason) {
 
-  public static CaptureResponse from(Capture capture, String sceneImageUrl, String cardImageUrl) {
-    return from(capture, capture.getGameStatus(), sceneImageUrl, cardImageUrl);
-  }
-
   public static CaptureResponse from(
-      Capture capture, GameStatus gameStatus, String sceneImageUrl, String cardImageUrl) {
+      Capture capture,
+      GameStatus gameStatus,
+      String sceneImageUrl,
+      String cardImageUrl,
+      String animalImageUrl) {
     return new CaptureResponse(
         capture.getId(),
         capture.getTier(),
@@ -31,6 +32,7 @@ public record CaptureResponse(
         gameStatus,
         sceneImageUrl,
         cardImageUrl,
+        animalImageUrl,
         capture.getElapsedMs(),
         capture.getFailureReason());
   }

@@ -40,7 +40,7 @@ class CapturePersistenceTest {
                     """
                     SELECT generation_status, game_status, client_request_id, original_image_key,
                            original_image_content_type, animal_name, skill_1, skill_2,
-                           card_no, card_image, animal_image, elapsed_ms, failure_reason
+                           card_no, scene_image, card_image, animal_image, elapsed_ms, failure_reason
                     FROM captures
                     WHERE id = :id
                     """)
@@ -133,6 +133,28 @@ class CapturePersistenceTest {
     Capture saved = entityManager.find(Capture.class, capture.getId());
     assertEquals(GameStatus.SUCCEEDED, saved.getGameStatus());
     assertEquals(10, saved.getGrantedExperience());
+  }
+
+  @Test
+  void persistsSceneCardAndAnimalImagesInSeparateColumns() {
+    User user = persistUser();
+    Capture capture = capture(user.getId(), CardType.GROUND, Tier.C);
+    capture.succeed("public/scene.png", "public/card.png", 100);
+    capture.registerAnimalImage("images/capture-animal/1/123.png");
+
+    entityManager.persist(capture);
+    entityManager.flush();
+
+    Object[] row =
+        (Object[])
+            entityManager
+                .createNativeQuery(
+                    "SELECT scene_image, card_image, animal_image FROM captures WHERE id = :id")
+                .setParameter("id", capture.getId())
+                .getSingleResult();
+    assertEquals("public/scene.png", row[0]);
+    assertEquals("public/card.png", row[1]);
+    assertEquals("images/capture-animal/1/123.png", row[2]);
   }
 
   private User persistUser() {

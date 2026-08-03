@@ -38,6 +38,10 @@ public enum ErrorCode {
   CAPTURE_REQUEST_CONFLICT(409, "CAPTURE_REQUEST_CONFLICT", "Capture request conflict"),
   CAPTURE_NOT_FOUND(404, "CAPTURE_NOT_FOUND", "Capture not found"),
   FORBIDDEN_CAPTURE_ACCESS(403, "FORBIDDEN_CAPTURE_ACCESS", "Forbidden capture access"),
+  CAPTURE_NOT_PLACEABLE(409, "CAPTURE_NOT_PLACEABLE", "Capture is not placeable in farm"),
+  CAPTURE_ALREADY_PLACED(409, "CAPTURE_ALREADY_PLACED", "Capture is already placed in farm"),
+  CAPTURE_PLACEMENT_CONFLICT(
+      409, "CAPTURE_PLACEMENT_CONFLICT", "Capture placement request conflict"),
   INVALID_GAME_RESULT(400, "INVALID_GAME_RESULT", "Invalid game result"),
   DEVICE_NOT_FOUND(404, "DEVICE_NOT_FOUND", "Device not found"),
   INVALID_PHONE_NUMBER(400, "INVALID_PHONE_NUMBER", "Invalid phone number"),
@@ -52,6 +56,9 @@ public enum ErrorCode {
   ANIMAL_NOT_FOUND(404, "ANIMAL_NOT_FOUND", "Animal not found"),
   FORBIDDEN_ANIMAL_ACCESS(403, "FORBIDDEN_ANIMAL_ACCESS", "Forbidden animal access"),
   FARM_SLOT_NOT_FOUND(404, "FARM_SLOT_NOT_FOUND", "Farm slot not found"),
+  FARM_SLOT_OCCUPIED(409, "FARM_SLOT_OCCUPIED", "Farm slot is occupied"),
+  ANIMAL_REPLACEMENT_CONFLICT(
+      409, "ANIMAL_REPLACEMENT_CONFLICT", "Animal replacement target conflict"),
   ANIMAL_NOT_PLACED(409, "ANIMAL_NOT_PLACED", "Animal is not placed in the farm"),
   FARM_FLOOR_MAX_REACHED(409, "FARM_FLOOR_MAX_REACHED", "Farm floor already at maximum"),
   CONCURRENCY_CONFLICT(409, "CONCURRENCY_CONFLICT", "Concurrent modification conflict"),

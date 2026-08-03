@@ -1,10 +1,13 @@
 package com.somagochi.pochakfarm.capture.presentation;
 
+import com.somagochi.pochakfarm.capture.application.CaptureAnimalService;
 import com.somagochi.pochakfarm.capture.application.CaptureAvailabilityService;
 import com.somagochi.pochakfarm.capture.application.CaptureCompleteService;
 import com.somagochi.pochakfarm.capture.application.CaptureGameResultService;
 import com.somagochi.pochakfarm.capture.application.CaptureQueryService;
 import com.somagochi.pochakfarm.capture.application.CaptureStartService;
+import com.somagochi.pochakfarm.capture.dto.CaptureAnimalPlacementRequest;
+import com.somagochi.pochakfarm.capture.dto.CaptureAnimalPlacementResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureAvailabilityResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureCompleteResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureGameResultRequest;
@@ -14,6 +17,7 @@ import com.somagochi.pochakfarm.capture.dto.CaptureStartRequest;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartResponse;
 import com.somagochi.pochakfarm.common.response.ApiResponse;
 import com.somagochi.pochakfarm.common.security.UserPrincipal;
+import com.somagochi.pochakfarm.storage.dto.PresignResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -32,6 +36,7 @@ public class CaptureController implements CaptureApiSpec {
 
   private final CaptureStartService captureStartService;
   private final CaptureAvailabilityService captureAvailabilityService;
+  private final CaptureAnimalService captureAnimalService;
   private final CaptureCompleteService captureCompleteService;
   private final CaptureGameResultService captureGameResultService;
   private final CaptureQueryService captureQueryService;
@@ -73,5 +78,21 @@ public class CaptureController implements CaptureApiSpec {
   public ApiResponse<CaptureResponse> getCapture(
       @AuthenticationPrincipal UserPrincipal principal, @PathVariable Long captureId) {
     return ApiResponse.success(captureQueryService.getCapture(principal.id(), captureId));
+  }
+
+  @Override
+  @PostMapping("/{captureId}/animal-image/presign")
+  public ApiResponse<PresignResponse> presignAnimalImage(
+      @AuthenticationPrincipal UserPrincipal principal, @PathVariable Long captureId) {
+    return ApiResponse.success(captureAnimalService.presign(principal.id(), captureId));
+  }
+
+  @Override
+  @PostMapping("/{captureId}/animal")
+  public ApiResponse<CaptureAnimalPlacementResponse> placeAnimal(
+      @AuthenticationPrincipal UserPrincipal principal,
+      @PathVariable Long captureId,
+      @RequestBody CaptureAnimalPlacementRequest request) {
+    return ApiResponse.success(captureAnimalService.place(principal.id(), captureId, request));
   }
 }

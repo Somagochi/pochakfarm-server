@@ -57,7 +57,8 @@ class CaptureGenerationWorkerTest {
     verify(imageUploadService).validatePublicObject("public/capture-scene/scene.png", "image/png");
     verify(imageUploadService).validatePublicObject("public/capture-card/card.png", "image/png");
     assertEquals(GenerationStatus.SUCCEEDED, capture.getGenerationStatus());
-    assertEquals("public/capture-scene/scene.png", capture.getAnimalImage());
+    assertEquals("public/capture-scene/scene.png", capture.getSceneImage());
+    assertEquals(null, capture.getAnimalImage());
     assertEquals("public/capture-card/card.png", capture.getCardImage());
     assertEquals(100, capture.getElapsedMs());
   }

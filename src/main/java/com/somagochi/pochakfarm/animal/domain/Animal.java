@@ -8,6 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import java.util.Objects;
 import lombok.AccessLevel;
@@ -22,14 +23,16 @@ import lombok.NoArgsConstructor;
     indexes =
         @Index(
             name = "idx_animals_space_id_floor_num_slot_num",
-            columnList = "space_id, floor_num, slot_num"))
+            columnList = "space_id, floor_num, slot_num"),
+    uniqueConstraints =
+        @UniqueConstraint(name = "uk_animals_capture_id", columnNames = "capture_id"))
 public class Animal extends BaseEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(name = "capture_id")
+  @Column(name = "capture_id", nullable = false, updatable = false)
   private Long captureId;
 
   @Column(name = "space_id")

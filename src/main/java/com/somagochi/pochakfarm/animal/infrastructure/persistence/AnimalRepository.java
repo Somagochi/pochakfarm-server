@@ -14,6 +14,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface AnimalRepository extends JpaRepository<Animal, Long> {
 
+  Optional<Animal> findByCaptureId(Long captureId);
+
   @Query(
       "select a from Animal a, FarmSpace s "
           + "where a.spaceId = s.id and s.userId = :userId and s.type in :cardTypes "
