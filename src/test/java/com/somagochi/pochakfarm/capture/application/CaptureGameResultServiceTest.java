@@ -22,6 +22,7 @@ import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
+import com.somagochi.pochakfarm.user.domain.Coin;
 import com.somagochi.pochakfarm.user.domain.LevelRewardPolicy;
 import com.somagochi.pochakfarm.user.domain.User;
 import com.somagochi.pochakfarm.user.infrastructure.persistence.UserRepository;
@@ -204,7 +205,7 @@ class CaptureGameResultServiceTest {
         service.submit(USER_ID, CAPTURE_ID, request(new ThrowResult(1, true)));
     ReflectionTestUtils.setField(user, "level", 2);
     ReflectionTestUtils.setField(user, "experience", 5L);
-    ReflectionTestUtils.setField(user, "coins", 1_500L);
+    ReflectionTestUtils.setField(user, "coins", Coin.of(1_500L));
     CaptureGameResultResponse retry =
         service.submit(
             USER_ID,

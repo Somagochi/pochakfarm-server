@@ -27,6 +27,7 @@ import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
 import com.somagochi.pochakfarm.storage.application.ImageUploadService;
 import com.somagochi.pochakfarm.storage.dto.PresignResponse;
+import com.somagochi.pochakfarm.user.domain.Coin;
 import com.somagochi.pochakfarm.user.domain.User;
 import com.somagochi.pochakfarm.user.infrastructure.persistence.UserRepository;
 import java.time.Clock;
@@ -260,7 +261,7 @@ class CaptureStartServiceTest {
   @Test
   void rejectsCoinPaymentWhenCoinsAreInsufficient() {
     User user = user();
-    ReflectionTestUtils.setField(user, "coins", 100L);
+    ReflectionTestUtils.setField(user, "coins", Coin.of(100L));
     given(userRepository.findByIdForUpdate(USER_ID)).willReturn(Optional.of(user));
     given(captureRepository.findByUserIdAndClientRequestId(USER_ID, CLIENT_REQUEST_ID))
         .willReturn(Optional.empty());

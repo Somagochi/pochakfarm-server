@@ -2,6 +2,8 @@ package com.somagochi.pochakfarm.farm.domain;
 
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.entity.BaseEntity;
+import com.somagochi.pochakfarm.common.exception.BusinessException;
+import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,6 +13,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -35,6 +38,7 @@ public class FarmSpace extends BaseEntity {
   public static final int FIRST_FLOOR = 1;
   public static final int FIRST_SLOT = 1;
   public static final int SLOT_COUNT_PER_FLOOR = 4;
+  public static final long FLOOR_UNLOCK_PRICE = 1_000L;
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,6 +54,10 @@ public class FarmSpace extends BaseEntity {
   @Column(name = "floor", nullable = false)
   private Integer floor = FIRST_FLOOR;
 
+  @Version
+  @Column(name = "version", nullable = false)
+  private Long version;
+
   private FarmSpace(Long userId, CardType type) {
     this.userId = userId;
     this.type = type;
@@ -61,6 +69,14 @@ public class FarmSpace extends BaseEntity {
 
   public boolean isUnlocked(int floorSequence) {
     return floorSequence <= floor;
+  }
+
+  public int unlockNextFloor() {
+    if (floor >= TOTAL_FLOOR_COUNT) {
+      throw new BusinessException(ErrorCode.FARM_FLOOR_MAX_REACHED);
+    }
+    this.floor = floor + 1;
+    return floor;
   }
 
   public boolean canPlaceAt(Integer floorNum, Integer slotNum) {

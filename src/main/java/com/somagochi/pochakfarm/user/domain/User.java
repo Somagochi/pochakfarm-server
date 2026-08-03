@@ -49,13 +49,13 @@ public class User extends BaseEntity {
 
   private long experience;
 
-  private long coins;
+  @Embedded private Coin coins;
 
   private User(SocialAccount socialAccount, String email) {
     this.socialAccount = socialAccount;
     this.email = email;
     this.level = INITIAL_LEVEL;
-    this.coins = INITIAL_COINS;
+    this.coins = Coin.of(INITIAL_COINS);
   }
 
   public static User register(SocialProvider provider, String providerId, String email) {
@@ -73,29 +73,26 @@ public class User extends BaseEntity {
     this.nickname = trimmed;
   }
 
+  public long getCoins() {
+    return coins.value();
+  }
+
+  public void spendCoins(long amount) {
+    this.coins = coins.spend(amount);
+  }
+
+  public void addCoins(long amount) {
+    this.coins = coins.add(amount);
+  }
+
   public LevelReward gainExperience(long experienceReward, LevelRewardPolicy levelRewardPolicy) {
     LevelReward reward = levelRewardPolicy.calculate(level, experience, experienceReward);
     this.level = reward.levelAfter();
     this.experience = reward.experienceAfter();
-    this.coins = Math.addExact(coins, reward.coinReward());
+    if (reward.coinReward() > 0) {
+      this.coins = coins.add(reward.coinReward());
+    }
     return reward;
-  }
-
-  public void spendCoins(long amount) {
-    if (amount < 0) {
-      throw new IllegalArgumentException("amount must not be negative");
-    }
-    if (coins < amount) {
-      throw new BusinessException(ErrorCode.INSUFFICIENT_COINS);
-    }
-    this.coins -= amount;
-  }
-
-  public void addCoins(long amount) {
-    if (amount <= 0) {
-      throw new BusinessException(ErrorCode.INVALID_PARAMETER);
-    }
-    this.coins += amount;
   }
 
   public void addExperience(long amount) {

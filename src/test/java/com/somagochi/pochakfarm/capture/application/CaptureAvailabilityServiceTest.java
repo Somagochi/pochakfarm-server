@@ -11,6 +11,7 @@ import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureReposi
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
+import com.somagochi.pochakfarm.user.domain.Coin;
 import com.somagochi.pochakfarm.user.domain.User;
 import com.somagochi.pochakfarm.user.infrastructure.persistence.UserRepository;
 import java.time.Clock;
@@ -84,7 +85,7 @@ class CaptureAvailabilityServiceTest {
   @Test
   void cannotStartCaptureWhenFreeAttemptsAreUsedAndCoinsAreInsufficient() {
     User user = User.register(SocialProvider.KAKAO, "provider-id", "user@example.com");
-    ReflectionTestUtils.setField(user, "coins", 100L);
+    ReflectionTestUtils.setField(user, "coins", Coin.of(100L));
     given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
     given(
             captureRepository.countFreeAttemptsByUserIdBetween(
