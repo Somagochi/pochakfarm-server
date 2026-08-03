@@ -63,6 +63,10 @@ public class AchievementReward extends BaseEntity {
     return new AchievementReward(achievementId, RewardType.BADGE, badgeCode, null);
   }
 
+  public void changeAmount(long amount) {
+    this.amount = amount;
+  }
+
   public boolean isDefinitionValid() {
     return rewardType.supports(referenceCode, amount);
   }

@@ -164,6 +164,14 @@ public class Achievement extends BaseEntity {
         achievedImageKey);
   }
 
+  public void changeUnachievedImageKey(String unachievedImageKey) {
+    this.unachievedImageKey = unachievedImageKey;
+  }
+
+  public void changeAchievedImageKey(String achievedImageKey) {
+    this.achievedImageKey = achievedImageKey;
+  }
+
   public boolean isDefinitionValid() {
     return targetValue > 0 && metric.supports(metricParam);
   }
