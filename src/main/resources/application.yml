@@ -106,6 +106,8 @@ logbook:
     form-request-mode: parameter
 
 app:
+  admin:
+    api-key: ${secret.admin.api-key:}
   discord:
     webhook-url: ${secret.discord.webhook-url:}
   jwt:

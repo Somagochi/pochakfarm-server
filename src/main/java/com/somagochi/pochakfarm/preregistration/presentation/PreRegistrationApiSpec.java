@@ -64,11 +64,20 @@ public interface PreRegistrationApiSpec {
           "쿠폰이 발급된 사전예약자 중 아직 SMS를 받지 않은 대상 전원에게 쿠폰 코드를 문자로 발송한다. "
               + "dryRun=true(기본값)면 발송 없이 대상 수만 집계한다. 발송 성공 건은 재호출해도 다시 발송되지 않는다.")
   @Parameter(
+      in = ParameterIn.HEADER,
+      name = "X-Admin-Key",
+      required = true,
+      description = "관리용 API 키")
+  @Parameter(
       in = ParameterIn.QUERY,
       name = "dryRun",
       description = "true면 발송하지 않고 대상 수만 반환 (기본값 true)")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "200",
       description = "발송 결과 (targetCount/sentCount/failedCount/couponNotIssuedCount)")
-  ApiResponse<PreRegistrationCouponSmsResult> sendCouponSms(boolean dryRun);
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "403",
+      description = "관리용 API 키 불일치(FORBIDDEN_ADMIN_ACCESS)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  ApiResponse<PreRegistrationCouponSmsResult> sendCouponSms(String adminKey, boolean dryRun);
 }

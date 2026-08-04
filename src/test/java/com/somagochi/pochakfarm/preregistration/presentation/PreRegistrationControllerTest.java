@@ -36,12 +36,16 @@ import org.springframework.security.core.Authentication;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(PreRegistrationController.class)
+@WebMvcTest(
+    value = PreRegistrationController.class,
+    properties = "app.admin.api-key=test-admin-key")
 @Import({
   SecurityConfig.class,
   SecurityAuthenticationEntryPoint.class,
   SecurityAccessDeniedHandler.class,
   GlobalExceptionHandler.class,
+  com.somagochi.pochakfarm.common.config.AdminApiConfig.class,
+  com.somagochi.pochakfarm.common.security.AdminApiKeyValidator.class,
   PreRegistrationControllerTest.TestConfig.class
 })
 class PreRegistrationControllerTest {
@@ -60,7 +64,10 @@ class PreRegistrationControllerTest {
         .willReturn(new PreRegistrationCouponSmsResult(10, 0, 0, 0, true));
 
     mockMvc
-        .perform(post("/api/pre-registrations/coupon-sms").with(authentication(authenticationOf())))
+        .perform(
+            post("/api/pre-registrations/coupon-sms")
+                .header("X-Admin-Key", "test-admin-key")
+                .with(authentication(authenticationOf())))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.dryRun").value(true))
         .andExpect(jsonPath("$.data.targetCount").value(10));
@@ -74,10 +81,33 @@ class PreRegistrationControllerTest {
     mockMvc
         .perform(
             post("/api/pre-registrations/coupon-sms?dryRun=false")
+                .header("X-Admin-Key", "test-admin-key")
                 .with(authentication(authenticationOf())))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.sentCount").value(9))
         .andExpect(jsonPath("$.data.failedCount").value(1));
+  }
+
+  @Test
+  void couponSmsRejectsInvalidAdminKey() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/pre-registrations/coupon-sms")
+                .header("X-Admin-Key", "wrong-key")
+                .with(authentication(authenticationOf())))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("FORBIDDEN_ADMIN_ACCESS"));
+
+    verify(preRegistrationCouponSmsService, never()).send(anyBoolean());
+  }
+
+  @Test
+  void couponSmsRejectsMissingAdminKey() throws Exception {
+    mockMvc
+        .perform(post("/api/pre-registrations/coupon-sms").with(authentication(authenticationOf())))
+        .andExpect(status().isForbidden());
+
+    verify(preRegistrationCouponSmsService, never()).send(anyBoolean());
   }
 
   @Test
