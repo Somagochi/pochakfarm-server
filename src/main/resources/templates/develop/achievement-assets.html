@@ -63,7 +63,7 @@
 
   <div class="section">
     <div class="section-title">업적 이미지</div>
-    <form class="image-form" th:action="@{/dev/achievements/{id}/images(id=${achievement.id})}" method="post">
+    <form class="image-form" th:action="@{/api/dev/achievements/{id}/images(id=${achievement.id})}" method="post">
       <div class="asset-row">
         <div class="asset-cell">
           <span class="label">미달성</span>
@@ -91,7 +91,7 @@
     <div class="reward-row" th:each="reward : ${achievement.rewards}">
       <th:block th:if="${reward.isBadge()}">
         <span class="reward-type badge-type">BADGE</span>
-        <form class="reward-form badge-form" th:action="@{/dev/achievements/rewards/{id}/badge-image(id=${reward.id})}" method="post">
+        <form class="reward-form badge-form" th:action="@{/api/dev/achievements/rewards/{id}/badge-image(id=${reward.id})}" method="post">
           <img class="preview" th:if="${reward.badgeImageUrl}" th:src="${reward.badgeImageUrl}" alt="뱃지 아이콘">
           <div class="no-image" th:unless="${reward.badgeImageUrl}">없음</div>
           <span class="desc" th:text="${reward.badgeCode} + ' · ' + ${reward.badgeName}"></span>
@@ -103,7 +103,7 @@
       </th:block>
       <th:block th:unless="${reward.isBadge()}">
         <span class="reward-type" th:classappend="${reward.rewardType.name() == 'COIN'} ? 'coin' : 'experience'" th:text="${reward.rewardType}"></span>
-        <form class="reward-form" th:action="@{/dev/achievements/rewards/{id}/amount(id=${reward.id})}" method="post">
+        <form class="reward-form" th:action="@{/api/dev/achievements/rewards/{id}/amount(id=${reward.id})}" method="post">
           <input type="number" name="amount" min="1" th:value="${reward.amount}">
           <button type="submit">수치 저장</button>
         </form>
@@ -123,7 +123,7 @@
   }
 
   async function presignAndPut(file, target) {
-    const presignResponse = await fetch('/dev/achievements/presign', {
+    const presignResponse = await fetch('/api/dev/achievements/presign', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({contentType: file.type, target: target})

@@ -24,7 +24,7 @@ public class DevelopSecurityConfig {
 
   private static final String[] AUTHENTICATED_ENDPOINTS = {"/api/dev/animal"};
   private static final String[] BASIC_AUTH_ENDPOINTS = {
-    "/dev/achievements", "/dev/achievements/**"
+    "/api/dev/achievements", "/api/dev/achievements/**"
   };
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -40,13 +40,7 @@ public class DevelopSecurityConfig {
   @Bean
   @Order(Ordered.HIGHEST_PRECEDENCE)
   SecurityFilterChain devSecurityFilterChain(HttpSecurity http) throws Exception {
-    http.securityMatcher(
-            "/api/dev/**",
-            "/dev/achievements",
-            "/dev/achievements/**",
-            "/",
-            "/pre-registration.html",
-            "/social-login-test.html")
+    http.securityMatcher("/api/dev/**", "/", "/pre-registration.html", "/social-login-test.html")
         .csrf(AbstractHttpConfigurer::disable)
         .formLogin(AbstractHttpConfigurer::disable)
         .httpBasic(Customizer.withDefaults())
@@ -79,6 +73,6 @@ public class DevelopSecurityConfig {
   private OrRequestMatcher basicAuthEndpointsMatcher() {
     PathPatternRequestMatcher.Builder builder = PathPatternRequestMatcher.withDefaults();
     return new OrRequestMatcher(
-        builder.matcher("/dev/achievements"), builder.matcher("/dev/achievements/**"));
+        builder.matcher("/api/dev/achievements"), builder.matcher("/api/dev/achievements/**"));
   }
 }
