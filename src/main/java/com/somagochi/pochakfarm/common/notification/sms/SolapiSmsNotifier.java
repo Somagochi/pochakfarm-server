@@ -1,5 +1,8 @@
-package com.somagochi.pochakfarm.common.sms;
+package com.somagochi.pochakfarm.common.notification.sms;
 
+import com.somagochi.pochakfarm.common.notification.Notification;
+import com.somagochi.pochakfarm.common.notification.Notifier;
+import com.somagochi.pochakfarm.common.notification.SmsNotification;
 import com.somagochi.pochakfarm.common.properties.SolapiProperties;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -17,7 +20,7 @@ import org.springframework.web.client.RestClient;
 
 @Component
 @Slf4j
-public class SolapiSmsSender implements SmsSender {
+public class SolapiSmsNotifier implements Notifier {
 
   private static final String SEND_PATH = "/messages/v4/send";
   private static final String HMAC_ALGORITHM = "HmacSHA256";
@@ -28,27 +31,33 @@ public class SolapiSmsSender implements SmsSender {
   private final SecureRandom secureRandom = new SecureRandom();
 
   @Autowired
-  public SolapiSmsSender(SolapiProperties properties) {
+  public SolapiSmsNotifier(SolapiProperties properties) {
     this(properties, RestClient.builder());
   }
 
-  SolapiSmsSender(SolapiProperties properties, RestClient.Builder restClientBuilder) {
+  SolapiSmsNotifier(SolapiProperties properties, RestClient.Builder restClientBuilder) {
     this.properties = properties;
     this.restClient = restClientBuilder.baseUrl(properties.baseUrl()).build();
   }
 
   @Override
-  public void send(String to, String text) {
+  public boolean supports(Notification notification) {
+    return notification instanceof SmsNotification;
+  }
+
+  @Override
+  public void notify(Notification notification) {
+    SmsNotification sms = (SmsNotification) notification;
     validateConfigured();
     restClient
         .post()
         .uri(SEND_PATH)
         .contentType(MediaType.APPLICATION_JSON)
         .header(HttpHeaders.AUTHORIZATION, createAuthorizationHeader())
-        .body(SolapiSendRequest.of(to, properties.from(), text))
+        .body(SolapiSendRequest.of(sms.to(), properties.from(), sms.text()))
         .retrieve()
         .toBodilessEntity();
-    log.info("solapi_sms_sent textLength={}", text.length());
+    log.info("solapi_sms_sent textLength={}", sms.text().length());
   }
 
   private void validateConfigured() {

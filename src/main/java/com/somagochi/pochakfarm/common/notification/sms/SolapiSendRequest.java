@@ -1,4 +1,4 @@
-package com.somagochi.pochakfarm.common.sms;
+package com.somagochi.pochakfarm.common.notification.sms;
 
 public record SolapiSendRequest(SolapiMessage message) {
 
