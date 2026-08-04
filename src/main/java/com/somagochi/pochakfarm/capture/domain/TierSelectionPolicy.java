@@ -1,6 +1,8 @@
 package com.somagochi.pochakfarm.capture.domain;
 
 import com.somagochi.pochakfarm.common.random.RandomProvider;
+import java.math.BigDecimal;
+import java.util.List;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -34,6 +36,17 @@ public class TierSelectionPolicy {
       }
     }
     throw new IllegalStateException("Tier weights must add up to " + TOTAL_WEIGHT);
+  }
+
+  public List<TierProbability> probabilitiesFor(int level) {
+    int[] weights = weightsFor(level);
+    return java.util.stream.IntStream.range(0, TIER_ORDER.length)
+        .mapToObj(
+            index ->
+                new TierProbability(
+                    TIER_ORDER[index],
+                    BigDecimal.valueOf(weights[index]).movePointLeft(2).stripTrailingZeros()))
+        .toList();
   }
 
   private int[] weightsFor(int level) {

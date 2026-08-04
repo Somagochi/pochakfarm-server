@@ -3,14 +3,49 @@ package com.somagochi.pochakfarm.capture.domain;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.somagochi.pochakfarm.common.random.RandomProvider;
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class TierSelectionPolicyTest {
+
+  @Test
+  void returnsProbabilitiesFromTheSameWeightsUsedForSelection() {
+    RandomProvider randomProvider = mock(RandomProvider.class);
+    TierSelectionPolicy policy = new TierSelectionPolicy(randomProvider);
+
+    assertEquals(
+        List.of(
+            new TierProbability(Tier.C, new BigDecimal("44.9")),
+            new TierProbability(Tier.B, new BigDecimal("38")),
+            new TierProbability(Tier.A, new BigDecimal("14")),
+            new TierProbability(Tier.S, new BigDecimal("2.5")),
+            new TierProbability(Tier.SS, new BigDecimal("0.5")),
+            new TierProbability(Tier.SSS, new BigDecimal("0.1"))),
+        policy.probabilitiesFor(12));
+    verifyNoInteractions(randomProvider);
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1, 6, 11, 21, 31, 41, 46, 50})
+  void probabilityPercentAlwaysAddsUpToOneHundred(int level) {
+    TierSelectionPolicy policy = new TierSelectionPolicy(mock(RandomProvider.class));
+
+    BigDecimal total =
+        policy.probabilitiesFor(level).stream()
+            .map(TierProbability::probabilityPercent)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+    assertEquals(0, new BigDecimal("100").compareTo(total));
+  }
 
   @ParameterizedTest
   @MethodSource("tierCases")
