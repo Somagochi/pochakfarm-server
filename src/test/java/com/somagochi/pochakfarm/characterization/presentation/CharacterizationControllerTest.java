@@ -45,7 +45,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.multipart.MultipartFile;
 
-@WebMvcTest(CharacterizationController.class)
+@WebMvcTest(
+    value = CharacterizationController.class,
+    properties = "app.characterization.enabled=true")
 @Import({
   SecurityConfig.class,
   SecurityAuthenticationEntryPoint.class,

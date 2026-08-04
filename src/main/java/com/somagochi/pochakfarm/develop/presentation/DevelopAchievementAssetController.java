@@ -6,6 +6,7 @@ import com.somagochi.pochakfarm.develop.application.DevelopAchievementAssetServi
 import com.somagochi.pochakfarm.develop.dto.DevelopAchievementAssetPresignRequest;
 import com.somagochi.pochakfarm.storage.dto.PresignResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+@Slf4j
 @Controller
 @RequestMapping("/api/dev/achievements")
 @Profile({"local", "dev"})
@@ -92,6 +94,7 @@ public class DevelopAchievementAssetController {
       action.run();
       redirectAttributes.addFlashAttribute("message", "저장했습니다.");
     } catch (BusinessException e) {
+      log.error("업적 에셋 저장 실패: {} - {}", e.getCode(), e.getMessage(), e);
       redirectAttributes.addFlashAttribute("error", e.getCode() + ": " + e.getMessage());
     }
     return "redirect:/api/dev/achievements";

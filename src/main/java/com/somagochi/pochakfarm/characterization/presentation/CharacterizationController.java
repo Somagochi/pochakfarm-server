@@ -10,6 +10,7 @@ import com.somagochi.pochakfarm.device.application.DeviceService.DeviceResolutio
 import com.somagochi.pochakfarm.device.presentation.DeviceTokenCookieFactory;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -24,6 +25,11 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/characterizations")
 @RequiredArgsConstructor
+@ConditionalOnProperty(
+    prefix = "app.characterization",
+    name = "enabled",
+    havingValue = "true",
+    matchIfMissing = false)
 public class CharacterizationController implements CharacterizationApiSpec {
 
   private final CharacterizationService characterizationService;
