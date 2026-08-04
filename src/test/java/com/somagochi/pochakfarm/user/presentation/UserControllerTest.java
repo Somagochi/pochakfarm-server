@@ -77,14 +77,18 @@ class UserControllerTest {
 
   @Test
   void returnsProfileWhenAuthenticated() throws Exception {
-    given(userQueryService.getProfile(1L)).willReturn(new UserProfileResponse("포착이", 3, 1200L));
+    given(userQueryService.getProfile(1L))
+        .willReturn(new UserProfileResponse("포착이", 3, 1200L, 54L, 60L, 6L));
 
     mockMvc
         .perform(get("/api/users/profile").with(authentication(authenticationFor(1L))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.nickname").value("포착이"))
         .andExpect(jsonPath("$.data.level").value(3))
-        .andExpect(jsonPath("$.data.coins").value(1200));
+        .andExpect(jsonPath("$.data.coins").value(1200))
+        .andExpect(jsonPath("$.data.currentExperience").value(54))
+        .andExpect(jsonPath("$.data.requiredExperience").value(60))
+        .andExpect(jsonPath("$.data.remainingExperience").value(6));
   }
 
   @Test

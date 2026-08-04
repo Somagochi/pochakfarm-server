@@ -32,7 +32,10 @@ public interface UserApiSpec {
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   ApiResponse<UserResponse> getMe(UserPrincipal principal);
 
-  @Operation(summary = "내 프로필 조회", description = "액세스 토큰으로 인증된 사용자의 게임 프로필(닉네임, 레벨, 코인)을 조회한다.")
+  @Operation(
+      summary = "내 프로필 조회",
+      description =
+          "액세스 토큰으로 인증된 사용자의 게임 프로필(닉네임, 레벨, 코인, " + "현재 경험치, 다음 레벨 요구 경험치, 남은 경험치)을 조회한다.")
   @SecurityRequirement(name = "bearerAuth")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
