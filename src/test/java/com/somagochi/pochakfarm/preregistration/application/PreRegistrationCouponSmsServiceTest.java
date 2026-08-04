@@ -29,6 +29,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 class PreRegistrationCouponSmsServiceTest {
 
+  private static final String TEMPLATE = "[포착팜] 사전등록 쿠폰이 도착했어요!\n쿠폰 코드: {couponCode}";
+
   private PreRegistrationRepository preRegistrationRepository;
   private PreRegistrationCryptoService cryptoService;
   private CouponQueryService couponQueryService;
@@ -76,7 +78,7 @@ class PreRegistrationCouponSmsServiceTest {
     given(preRegistrationRepository.findAllById(List.of(1L, 2L)))
         .willReturn(List.of(first, second));
 
-    PreRegistrationCouponSmsResult result = service.send(false);
+    PreRegistrationCouponSmsResult result = service.send(false, TEMPLATE);
 
     ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
     verify(notificationService).notify(captor.capture());
@@ -105,7 +107,7 @@ class PreRegistrationCouponSmsServiceTest {
         .willReturn(new NotificationResult(List.of("01033334444")));
     given(preRegistrationRepository.findAllById(List.of(1L))).willReturn(List.of(first));
 
-    PreRegistrationCouponSmsResult result = service.send(false);
+    PreRegistrationCouponSmsResult result = service.send(false, TEMPLATE);
 
     assertEquals(new PreRegistrationCouponSmsResult(2, 1, 1, 0, false), result);
     verify(preRegistrationRepository).findAllById(List.of(1L));
@@ -126,9 +128,21 @@ class PreRegistrationCouponSmsServiceTest {
         .willReturn(NotificationResult.success());
     given(preRegistrationRepository.findAllById(List.of(1L))).willReturn(List.of(first));
 
-    PreRegistrationCouponSmsResult result = service.send(false);
+    PreRegistrationCouponSmsResult result = service.send(false, TEMPLATE);
 
     assertEquals(new PreRegistrationCouponSmsResult(2, 1, 0, 1, false), result);
+  }
+
+  @Test
+  void rejectsTemplateWithoutCouponCodePlaceholder() {
+    org.junit.jupiter.api.Assertions.assertThrows(
+        com.somagochi.pochakfarm.common.exception.BusinessException.class,
+        () -> service.send(false, "플레이스홀더 없는 문구"));
+    org.junit.jupiter.api.Assertions.assertThrows(
+        com.somagochi.pochakfarm.common.exception.BusinessException.class,
+        () -> service.send(false, " "));
+
+    verify(notificationService, never()).notify(any(Notification.class));
   }
 
   @Test
@@ -141,7 +155,7 @@ class PreRegistrationCouponSmsServiceTest {
     given(couponQueryService.findCouponCodesByPreRegistrationIds(List.of(1L)))
         .willReturn(Map.of(1L, "AAAAAA"));
 
-    PreRegistrationCouponSmsResult result = service.send(true);
+    PreRegistrationCouponSmsResult result = service.send(true, TEMPLATE);
 
     assertEquals(new PreRegistrationCouponSmsResult(1, 0, 0, 0, true), result);
     verify(notificationService, never()).notify(any(Notification.class));

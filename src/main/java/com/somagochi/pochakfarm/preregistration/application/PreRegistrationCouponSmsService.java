@@ -1,5 +1,7 @@
 package com.somagochi.pochakfarm.preregistration.application;
 
+import com.somagochi.pochakfarm.common.exception.BusinessException;
+import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.notification.BulkSmsNotification;
 import com.somagochi.pochakfarm.common.notification.NotificationResult;
 import com.somagochi.pochakfarm.common.notification.NotificationService;
@@ -24,7 +26,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @RequiredArgsConstructor
 public class PreRegistrationCouponSmsService {
 
-  private static final String MESSAGE_TEMPLATE = "[포착팜] 사전등록 쿠폰이 도착했어요!\n쿠폰 코드: %s";
+  private static final String COUPON_CODE_PLACEHOLDER = "{couponCode}";
 
   private final PreRegistrationRepository preRegistrationRepository;
   private final PreRegistrationCryptoService cryptoService;
@@ -32,7 +34,8 @@ public class PreRegistrationCouponSmsService {
   private final NotificationService notificationService;
   private final TransactionTemplate transactionTemplate;
 
-  public PreRegistrationCouponSmsResult send(boolean dryRun) {
+  public PreRegistrationCouponSmsResult send(boolean dryRun, String messageTemplate) {
+    validateMessageTemplate(messageTemplate);
     List<PreRegistration> targets =
         preRegistrationRepository.findAllByStatusAndMessageSentAtIsNull(
             PreRegistrationStatus.REGISTERED);
@@ -59,7 +62,8 @@ public class PreRegistrationCouponSmsService {
                 target ->
                     new SmsNotification(
                         phoneNumbers.get(target.getId()),
-                        MESSAGE_TEMPLATE.formatted(couponCodes.get(target.getId()))))
+                        messageTemplate.replace(
+                            COUPON_CODE_PLACEHOLDER, couponCodes.get(target.getId()))))
             .toList();
 
     NotificationResult result = notificationService.notify(new BulkSmsNotification(messages));
@@ -86,5 +90,13 @@ public class PreRegistrationCouponSmsService {
     }
     return new PreRegistrationCouponSmsResult(
         targets.size(), sentIds.size(), failedPhoneNumbers.size(), couponNotIssuedCount, false);
+  }
+
+  private void validateMessageTemplate(String messageTemplate) {
+    if (messageTemplate == null
+        || messageTemplate.isBlank()
+        || !messageTemplate.contains(COUPON_CODE_PLACEHOLDER)) {
+      throw new BusinessException(ErrorCode.INVALID_PARAMETER);
+    }
   }
 }

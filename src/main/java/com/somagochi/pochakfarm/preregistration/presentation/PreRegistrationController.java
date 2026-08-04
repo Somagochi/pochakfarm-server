@@ -5,6 +5,7 @@ import com.somagochi.pochakfarm.common.security.AdminApiKeyValidator;
 import com.somagochi.pochakfarm.preregistration.application.PreRegistrationCancelService;
 import com.somagochi.pochakfarm.preregistration.application.PreRegistrationCouponSmsService;
 import com.somagochi.pochakfarm.preregistration.application.PreRegistrationRegisterService;
+import com.somagochi.pochakfarm.preregistration.dto.PreRegistrationCouponSmsRequest;
 import com.somagochi.pochakfarm.preregistration.dto.PreRegistrationCouponSmsResult;
 import com.somagochi.pochakfarm.preregistration.dto.PreRegistrationRequest;
 import com.somagochi.pochakfarm.preregistration.dto.PreRegistrationResponse;
@@ -49,11 +50,13 @@ public class PreRegistrationController implements PreRegistrationApiSpec {
   }
 
   @Override
-  @PostMapping("/coupon-sms")
+  @PostMapping(value = "/coupon-sms", consumes = MediaType.APPLICATION_JSON_VALUE)
   public ApiResponse<PreRegistrationCouponSmsResult> sendCouponSms(
       @RequestHeader(value = "X-Admin-Key", required = false) String adminKey,
-      @RequestParam(defaultValue = "true") boolean dryRun) {
+      @RequestParam(defaultValue = "true") boolean dryRun,
+      @RequestBody PreRegistrationCouponSmsRequest request) {
     adminApiKeyValidator.validate(adminKey);
-    return ApiResponse.success(preRegistrationCouponSmsService.send(dryRun));
+    return ApiResponse.success(
+        preRegistrationCouponSmsService.send(dryRun, request.messageTemplate()));
   }
 }
