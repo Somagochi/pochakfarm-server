@@ -8,9 +8,12 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+import com.somagochi.pochakfarm.common.notification.BulkSmsNotification;
 import com.somagochi.pochakfarm.common.notification.Notification;
+import com.somagochi.pochakfarm.common.notification.NotificationResult;
 import com.somagochi.pochakfarm.common.notification.SmsNotification;
 import com.somagochi.pochakfarm.common.properties.SolapiProperties;
+import java.util.List;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -34,7 +37,38 @@ class SolapiSmsNotifierTest {
         notifier(properties("test-api-key", "test-api-secret", "0212345678"));
 
     Assertions.assertTrue(notifier.supports(new SmsNotification("01012345678", "text")));
+    Assertions.assertTrue(
+        notifier.supports(
+            new BulkSmsNotification(List.of(new SmsNotification("01012345678", "text")))));
     Assertions.assertFalse(notifier.supports(new Notification() {}));
+  }
+
+  @Test
+  void sendsManyMessagesAndReturnsFailedRecipients() {
+    SolapiSmsNotifier notifier =
+        notifier(properties("test-api-key", "test-api-secret", "0212345678"));
+    server
+        .expect(requestTo("https://api.solapi.com/messages/v4/send-many/detail"))
+        .andExpect(method(HttpMethod.POST))
+        .andExpect(header("Authorization", Matchers.matchesPattern(AUTHORIZATION_PATTERN)))
+        .andExpect(jsonPath("$.messages[0].to").value("01011112222"))
+        .andExpect(jsonPath("$.messages[0].text").value("쿠폰 코드: AAAAAA"))
+        .andExpect(jsonPath("$.messages[1].to").value("01033334444"))
+        .andExpect(jsonPath("$.messages[1].text").value("쿠폰 코드: BBBBBB"))
+        .andRespond(
+            withSuccess(
+                "{\"groupInfo\":{\"count\":{\"total\":2}},\"failedMessageList\":[{\"to\":\"01033334444\",\"statusCode\":\"1026\",\"statusMessage\":\"invalid\"}]}",
+                MediaType.APPLICATION_JSON));
+
+    NotificationResult result =
+        notifier.notify(
+            new BulkSmsNotification(
+                List.of(
+                    new SmsNotification("01011112222", "쿠폰 코드: AAAAAA"),
+                    new SmsNotification("01033334444", "쿠폰 코드: BBBBBB"))));
+
+    server.verify();
+    Assertions.assertEquals(List.of("01033334444"), result.failedRecipients());
   }
 
   @Test

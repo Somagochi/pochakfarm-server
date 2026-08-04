@@ -11,4 +11,6 @@ public interface PreRegistrationRepository extends JpaRepository<PreRegistration
   Optional<PreRegistration> findByPhoneNumberHash(String phoneNumberHash);
 
   List<PreRegistration> findAllByStatus(PreRegistrationStatus status);
+
+  List<PreRegistration> findAllByStatusAndCouponSmsSentAtIsNull(PreRegistrationStatus status);
 }

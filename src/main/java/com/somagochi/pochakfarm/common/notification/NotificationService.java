@@ -10,8 +10,8 @@ public class NotificationService {
 
   private final List<Notifier> notifiers;
 
-  public void notify(Notification notification) {
-    notifiers.stream()
+  public NotificationResult notify(Notification notification) {
+    return notifiers.stream()
         .filter(notifier -> notifier.supports(notification))
         .findFirst()
         .orElseThrow(

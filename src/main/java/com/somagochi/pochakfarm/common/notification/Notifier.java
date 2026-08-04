@@ -4,5 +4,5 @@ public interface Notifier {
 
   boolean supports(Notification notification);
 
-  void notify(Notification notification);
+  NotificationResult notify(Notification notification);
 }

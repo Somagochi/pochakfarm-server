@@ -24,7 +24,10 @@ public class DevelopSecurityConfig {
 
   private static final String[] AUTHENTICATED_ENDPOINTS = {"/api/dev/animal"};
   private static final String[] BASIC_AUTH_ENDPOINTS = {
-    "/api/dev/achievements", "/api/dev/achievements/**", "/api/dev/notifications/**"
+    "/api/dev/achievements",
+    "/api/dev/achievements/**",
+    "/api/dev/notifications/**",
+    "/sms-test.html"
   };
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;

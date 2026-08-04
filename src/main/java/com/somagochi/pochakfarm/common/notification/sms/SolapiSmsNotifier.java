@@ -1,6 +1,8 @@
 package com.somagochi.pochakfarm.common.notification.sms;
 
+import com.somagochi.pochakfarm.common.notification.BulkSmsNotification;
 import com.somagochi.pochakfarm.common.notification.Notification;
+import com.somagochi.pochakfarm.common.notification.NotificationResult;
 import com.somagochi.pochakfarm.common.notification.Notifier;
 import com.somagochi.pochakfarm.common.notification.SmsNotification;
 import com.somagochi.pochakfarm.common.properties.SolapiProperties;
@@ -9,6 +11,7 @@ import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.HexFormat;
+import java.util.List;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +26,7 @@ import org.springframework.web.client.RestClient;
 public class SolapiSmsNotifier implements Notifier {
 
   private static final String SEND_PATH = "/messages/v4/send";
+  private static final String SEND_MANY_PATH = "/messages/v4/send-many/detail";
   private static final String HMAC_ALGORITHM = "HmacSHA256";
   private static final int SALT_LENGTH_BYTES = 16;
 
@@ -42,13 +46,19 @@ public class SolapiSmsNotifier implements Notifier {
 
   @Override
   public boolean supports(Notification notification) {
-    return notification instanceof SmsNotification;
+    return notification instanceof SmsNotification || notification instanceof BulkSmsNotification;
   }
 
   @Override
-  public void notify(Notification notification) {
-    SmsNotification sms = (SmsNotification) notification;
+  public NotificationResult notify(Notification notification) {
     validateConfigured();
+    if (notification instanceof BulkSmsNotification bulk) {
+      return sendMany(bulk);
+    }
+    return sendOne((SmsNotification) notification);
+  }
+
+  private NotificationResult sendOne(SmsNotification sms) {
     restClient
         .post()
         .uri(SEND_PATH)
@@ -58,6 +68,31 @@ public class SolapiSmsNotifier implements Notifier {
         .retrieve()
         .toBodilessEntity();
     log.info("solapi_sms_sent textLength={}", sms.text().length());
+    return NotificationResult.success();
+  }
+
+  private NotificationResult sendMany(BulkSmsNotification bulk) {
+    List<SolapiSendRequest.SolapiMessage> messages =
+        bulk.messages().stream()
+            .map(
+                sms -> new SolapiSendRequest.SolapiMessage(sms.to(), properties.from(), sms.text()))
+            .toList();
+    SolapiSendManyResponse response =
+        restClient
+            .post()
+            .uri(SEND_MANY_PATH)
+            .contentType(MediaType.APPLICATION_JSON)
+            .header(HttpHeaders.AUTHORIZATION, createAuthorizationHeader())
+            .body(new SolapiSendManyRequest(messages))
+            .retrieve()
+            .body(SolapiSendManyResponse.class);
+    List<String> failedRecipients =
+        response == null
+            ? List.<String>of()
+            : response.failures().stream().map(SolapiSendManyResponse.FailedMessage::to).toList();
+    log.info(
+        "solapi_sms_sent_many total={} failed={}", bulk.messages().size(), failedRecipients.size());
+    return new NotificationResult(failedRecipients);
   }
 
   private void validateConfigured() {

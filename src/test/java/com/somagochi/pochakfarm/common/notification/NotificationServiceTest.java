@@ -20,8 +20,9 @@ class NotificationServiceTest {
           }
 
           @Override
-          public void notify(Notification notification) {
+          public NotificationResult notify(Notification notification) {
             delivered.set(notification);
+            return NotificationResult.success();
           }
         };
     NotificationService service = new NotificationService(List.of(smsNotifier));
