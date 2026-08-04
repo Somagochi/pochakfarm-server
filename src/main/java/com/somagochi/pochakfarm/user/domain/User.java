@@ -4,6 +4,7 @@ import com.somagochi.pochakfarm.common.entity.BaseEntity;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
+import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -53,6 +54,15 @@ public class User extends BaseEntity {
 
   @Embedded private Coin coins;
 
+  @Column(name = "required_terms_agreed_at")
+  private Instant requiredTermsAgreedAt;
+
+  @Column(name = "service_quality_agreed_at")
+  private Instant serviceQualityAgreedAt;
+
+  @Column(name = "marketing_agreed_at")
+  private Instant marketingAgreedAt;
+
   private User(SocialAccount socialAccount, String email) {
     this.socialAccount = socialAccount;
     this.email = email;
@@ -62,6 +72,30 @@ public class User extends BaseEntity {
 
   public static User register(SocialProvider provider, String providerId, String email) {
     return new User(new SocialAccount(provider, providerId), email);
+  }
+
+  public boolean isTermsAgreementRequired() {
+    return requiredTermsAgreedAt == null;
+  }
+
+  public void agreeToTerms(
+      Boolean ageRequirementAgreed,
+      Boolean termsOfServiceAgreed,
+      Boolean privacyPolicyAgreed,
+      Boolean serviceQualityAgreed,
+      Boolean marketingAgreed,
+      Instant agreedAt) {
+    if (!isTermsAgreementRequired()) {
+      return;
+    }
+    if (!Boolean.TRUE.equals(ageRequirementAgreed)
+        || !Boolean.TRUE.equals(termsOfServiceAgreed)
+        || !Boolean.TRUE.equals(privacyPolicyAgreed)) {
+      throw new BusinessException(ErrorCode.REQUIRED_CONSENT_REQUIRED);
+    }
+    this.requiredTermsAgreedAt = agreedAt;
+    this.serviceQualityAgreedAt = Boolean.TRUE.equals(serviceQualityAgreed) ? agreedAt : null;
+    this.marketingAgreedAt = Boolean.TRUE.equals(marketingAgreed) ? agreedAt : null;
   }
 
   public void changeNickname(String nickname) {

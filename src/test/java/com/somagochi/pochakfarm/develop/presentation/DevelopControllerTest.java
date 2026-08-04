@@ -60,7 +60,8 @@ class DevelopControllerTest {
   void issuesTokenPairWithoutAuthentication() throws Exception {
     given(developLoginService.login(5L))
         .willReturn(
-            new SocialLoginResponse(new TokenResponse("access-token", "refresh-token"), false));
+            new SocialLoginResponse(
+                new TokenResponse("access-token", "refresh-token"), false, false));
 
     mockMvc
         .perform(post("/api/dev/login/5"))

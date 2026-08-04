@@ -36,6 +36,7 @@ class SocialLoginServiceTest {
         new SocialUserInfo(SocialProvider.KAKAO, "kakao-123", "user@kakao.com");
     User user = mock(User.class);
     given(user.getId()).willReturn(1L);
+    given(user.isTermsAgreementRequired()).willReturn(true);
     given(socialLoginResolver.fetchUserInfo(SocialProvider.KAKAO, "social-token"))
         .willReturn(userInfo);
     given(userRegistrationService.getOrRegister(userInfo))
@@ -47,7 +48,28 @@ class SocialLoginServiceTest {
     assertEquals("access", response.token().accessToken());
     assertEquals("refresh", response.token().refreshToken());
     assertEquals(true, response.isNew());
+    assertEquals(true, response.termsAgreementRequired());
     verify(tokenService).generateTokenPair("1");
+  }
+
+  @Test
+  void requiresTermsAgreementOnSubsequentLoginUntilAgreementIsCompleted() {
+    SocialLoginRequest request = new SocialLoginRequest("kakao", "social-token");
+    SocialUserInfo userInfo =
+        new SocialUserInfo(SocialProvider.KAKAO, "kakao-123", "user@kakao.com");
+    User user = mock(User.class);
+    given(user.getId()).willReturn(1L);
+    given(user.isTermsAgreementRequired()).willReturn(true);
+    given(socialLoginResolver.fetchUserInfo(SocialProvider.KAKAO, "social-token"))
+        .willReturn(userInfo);
+    given(userRegistrationService.getOrRegister(userInfo))
+        .willReturn(new UserRegistration(user, false));
+    given(tokenService.generateTokenPair("1")).willReturn(new TokenResponse("access", "refresh"));
+
+    SocialLoginResponse response = socialLoginService.login(request);
+
+    assertEquals(false, response.isNew());
+    assertEquals(true, response.termsAgreementRequired());
   }
 
   @Test

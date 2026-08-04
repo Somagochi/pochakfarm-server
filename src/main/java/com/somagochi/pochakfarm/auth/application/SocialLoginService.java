@@ -38,7 +38,8 @@ public class SocialLoginService {
     User user = registration.user();
 
     TokenResponse tokenResponse = tokenService.generateTokenPair(String.valueOf(user.getId()));
-    return new SocialLoginResponse(tokenResponse, registration.isNew());
+    return new SocialLoginResponse(
+        tokenResponse, registration.isNew(), user.isTermsAgreementRequired());
   }
 
   private void validateToken(String token) {

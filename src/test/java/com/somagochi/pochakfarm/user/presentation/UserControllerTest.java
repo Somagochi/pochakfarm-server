@@ -6,6 +6,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -22,6 +23,7 @@ import com.somagochi.pochakfarm.common.security.UserPrincipal;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
 import com.somagochi.pochakfarm.user.application.UserNicknameService;
 import com.somagochi.pochakfarm.user.application.UserQueryService;
+import com.somagochi.pochakfarm.user.application.UserTermsAgreementService;
 import com.somagochi.pochakfarm.user.application.WithdrawService;
 import com.somagochi.pochakfarm.user.dto.NicknameResponse;
 import com.somagochi.pochakfarm.user.dto.UserProfileResponse;
@@ -57,6 +59,7 @@ class UserControllerTest {
 
   @MockitoBean private UserQueryService userQueryService;
   @MockitoBean private UserNicknameService userNicknameService;
+  @MockitoBean private UserTermsAgreementService userTermsAgreementService;
   @MockitoBean private WithdrawService withdrawService;
 
   @Test
@@ -127,6 +130,43 @@ class UserControllerTest {
             patch("/api/users/me/nickname")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"nickname\":\"포착이\"}"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void agreesToTermsWhenAuthenticated() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/users/me/terms-agreement")
+                .with(authentication(authenticationFor(1L)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "ageRequirementAgreed": true,
+                      "termsOfServiceAgreed": true,
+                      "privacyPolicyAgreed": true,
+                      "serviceQualityAgreed": false,
+                      "marketingAgreed": true
+                    }
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data").doesNotExist());
+
+    verify(userTermsAgreementService)
+        .agree(
+            1L,
+            new com.somagochi.pochakfarm.user.dto.TermsAgreementRequest(
+                true, true, true, false, true));
+  }
+
+  @Test
+  void returnsUnauthorizedWhenAgreeingToTermsWithoutAuthentication() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/users/me/terms-agreement")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
         .andExpect(status().isUnauthorized());
   }
 

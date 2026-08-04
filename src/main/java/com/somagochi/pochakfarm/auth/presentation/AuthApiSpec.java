@@ -23,6 +23,7 @@ public interface AuthApiSpec {
           "App SDK로 발급받은 provider 토큰으로 로그인하고 서비스 access/refresh 토큰을 발급한다.<br>"
               + "- provider: kakao / naver / apple (대소문자 무관)<br>"
               + "- token: 카카오·네이버는 access token, 애플은 id token(JWT)<br>"
+              + "- termsAgreementRequired: 신규 사용자 약관 동의 화면 진입 필요 여부<br>"
               + "REST(OAuth2 리다이렉트) 방식은 `GET /api/auth/oauth2/{provider}` 참고.")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그인 성공")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(

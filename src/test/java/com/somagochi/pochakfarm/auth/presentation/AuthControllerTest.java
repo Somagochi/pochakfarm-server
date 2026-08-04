@@ -61,7 +61,8 @@ class AuthControllerTest {
   void returnsTokenPairWhenLoginSucceeds() throws Exception {
     given(socialLoginService.login(any(SocialLoginRequest.class)))
         .willReturn(
-            new SocialLoginResponse(new TokenResponse("access-token", "refresh-token"), true));
+            new SocialLoginResponse(
+                new TokenResponse("access-token", "refresh-token"), true, true));
 
     mockMvc
         .perform(
@@ -71,7 +72,8 @@ class AuthControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.token.accessToken").value("access-token"))
         .andExpect(jsonPath("$.data.token.refreshToken").value("refresh-token"))
-        .andExpect(jsonPath("$.data.isNew").value(true));
+        .andExpect(jsonPath("$.data.isNew").value(true))
+        .andExpect(jsonPath("$.data.termsAgreementRequired").value(true));
   }
 
   @Test

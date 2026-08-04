@@ -29,7 +29,8 @@ public class DevelopLoginService {
     UserRegistration registration = userRegistrationService.getOrRegister(toDevUserInfo(userId));
     TokenResponse token =
         tokenService.generateTokenPair(String.valueOf(registration.user().getId()));
-    return new SocialLoginResponse(token, registration.isNew());
+    return new SocialLoginResponse(
+        token, registration.isNew(), registration.user().isTermsAgreementRequired());
   }
 
   private SocialUserInfo toDevUserInfo(Long userId) {
