@@ -19,7 +19,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
-@RequestMapping("/dev/achievements")
+@RequestMapping("/api/dev/achievements")
 @Profile({"local", "dev"})
 @RequiredArgsConstructor
 public class DevelopAchievementAssetController {
@@ -94,6 +94,6 @@ public class DevelopAchievementAssetController {
     } catch (BusinessException e) {
       redirectAttributes.addFlashAttribute("error", e.getCode() + ": " + e.getMessage());
     }
-    return "redirect:/dev/achievements";
+    return "redirect:/api/dev/achievements";
   }
 }
