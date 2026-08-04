@@ -7,6 +7,8 @@ import com.somagochi.pochakfarm.common.social.SocialProvider;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -62,6 +64,10 @@ public class User extends BaseEntity {
 
   @Column(name = "marketing_agreed_at")
   private Instant marketingAgreedAt;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "withdrawal_reason", columnDefinition = "varchar(32)")
+  private WithdrawalReason withdrawalReason;
 
   private User(SocialAccount socialAccount, String email) {
     this.socialAccount = socialAccount;
@@ -138,11 +144,12 @@ public class User extends BaseEntity {
     this.experience += amount;
   }
 
-  public void withdraw() {
+  public void withdraw(WithdrawalReason withdrawalReason) {
     if (isDeleted()) {
       return;
     }
     String token = UUID.randomUUID().toString();
+    this.withdrawalReason = withdrawalReason;
     delete(Instant.now());
     this.socialAccount = socialAccount.anonymized(token);
     this.nickname = null;

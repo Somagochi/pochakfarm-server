@@ -5,6 +5,7 @@ import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.transaction.AfterCommitExecutor;
 import com.somagochi.pochakfarm.user.domain.User;
+import com.somagochi.pochakfarm.user.domain.WithdrawalReason;
 import com.somagochi.pochakfarm.user.infrastructure.persistence.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,12 +22,13 @@ public class WithdrawService {
   }
 
   @Transactional
-  public void withdraw(Long userId, String accessToken, String refreshToken) {
+  public void withdraw(
+      Long userId, String accessToken, String refreshToken, WithdrawalReason withdrawalReason) {
     User user =
         userRepository
             .findById(userId)
             .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-    user.withdraw();
+    user.withdraw(withdrawalReason);
     AfterCommitExecutor.execute(() -> tokenService.revokeTokens(accessToken, refreshToken));
   }
 }

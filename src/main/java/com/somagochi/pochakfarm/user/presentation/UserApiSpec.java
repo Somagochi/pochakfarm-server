@@ -108,9 +108,15 @@ public interface UserApiSpec {
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   ApiResponse<Void> checkNickname(String nickname);
 
-  @Operation(summary = "회원 탈퇴", description = "현재 로그인한 회원을 탈퇴(소프트 삭제)하고 액세스/리프레시 토큰을 무효화한다.")
+  @Operation(
+      summary = "회원 탈퇴",
+      description = "선택적으로 탈퇴 사유를 저장하고 현재 로그인한 회원을 탈퇴(소프트 삭제)한 뒤 " + "액세스/리프레시 토큰을 무효화한다.")
   @SecurityRequirement(name = "bearerAuth")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "탈퇴 성공")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "400",
+      description = "지원하지 않는 탈퇴 사유(INVALID_PARAMETER)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "401",
       description = "인증 실패 (토큰 만료/무효 또는 토큰 소유자 불일치)",
