@@ -79,7 +79,6 @@ CREATE TABLE `pre_registrations` (
   `phone_number_encrypted` varchar(512) NOT NULL,
   `phone_number_hash` varchar(128) NOT NULL,
   `required_consent` bit(1) NOT NULL,
-  `message_sent_at` datetime(6) DEFAULT NULL,
   `status` enum('CANCELED','REGISTERED') NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_pre_registrations_phone_number_hash` (`phone_number_hash`),
@@ -100,11 +99,8 @@ CREATE TABLE `users` (
   `deleted_at` datetime(6) DEFAULT NULL,
   `updated_at` datetime(6) NOT NULL,
   `email` varchar(255) DEFAULT NULL,
-  `marketing_agreed_at` datetime(6) DEFAULT NULL,
   `provider` enum('APPLE','KAKAO','NAVER') NOT NULL,
   `provider_id` varchar(255) NOT NULL,
-  `required_terms_agreed_at` datetime(6) DEFAULT NULL,
-  `service_quality_agreed_at` datetime(6) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_users_provider_provider_id` (`provider`,`provider_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
