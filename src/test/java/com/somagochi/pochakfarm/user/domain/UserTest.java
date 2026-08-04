@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 
 class UserTest {
@@ -21,6 +22,64 @@ class UserTest {
     assertEquals(1, user.getLevel());
     assertEquals(0, user.getExperience());
     assertEquals(1000, user.getCoins());
+    assertTrue(user.isTermsAgreementRequired());
+  }
+
+  @Test
+  void agreesToRequiredAndSelectedOptionalTerms() {
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    Instant agreedAt = Instant.parse("2026-08-04T01:02:03Z");
+
+    user.agreeToTerms(true, true, true, false, true, agreedAt);
+
+    assertEquals(agreedAt, user.getRequiredTermsAgreedAt());
+    assertNull(user.getServiceQualityAgreedAt());
+    assertEquals(agreedAt, user.getMarketingAgreedAt());
+    assertFalse(user.isTermsAgreementRequired());
+  }
+
+  @Test
+  void rejectsTermsAgreementWhenAnyRequiredConsentIsMissing() {
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () ->
+                user.agreeToTerms(
+                    true, false, true, true, true, Instant.parse("2026-08-04T01:02:03Z")));
+
+    assertEquals(ErrorCode.REQUIRED_CONSENT_REQUIRED.getCode(), exception.getCode());
+    assertNull(user.getRequiredTermsAgreedAt());
+    assertNull(user.getServiceQualityAgreedAt());
+    assertNull(user.getMarketingAgreedAt());
+  }
+
+  @Test
+  void rejectsTermsAgreementWhenRequiredConsentIsNull() {
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () ->
+                user.agreeToTerms(
+                    true, true, null, false, false, Instant.parse("2026-08-04T01:02:03Z")));
+
+    assertEquals(ErrorCode.REQUIRED_CONSENT_REQUIRED.getCode(), exception.getCode());
+  }
+
+  @Test
+  void termsAgreementIsIdempotent() {
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    Instant firstAgreedAt = Instant.parse("2026-08-04T01:02:03Z");
+    user.agreeToTerms(true, true, true, false, true, firstAgreedAt);
+
+    user.agreeToTerms(true, true, true, true, false, Instant.parse("2026-08-05T01:02:03Z"));
+
+    assertEquals(firstAgreedAt, user.getRequiredTermsAgreedAt());
+    assertNull(user.getServiceQualityAgreedAt());
+    assertEquals(firstAgreedAt, user.getMarketingAgreedAt());
   }
 
   @Test

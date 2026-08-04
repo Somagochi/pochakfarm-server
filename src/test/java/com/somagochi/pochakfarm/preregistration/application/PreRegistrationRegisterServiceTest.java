@@ -74,7 +74,8 @@ class PreRegistrationRegisterServiceTest {
             "phoneNumberHash",
             "requiredConsent",
             "characterizationId",
-            "status"),
+            "status",
+            "messageSentAt"),
         fieldNames);
   }
 
