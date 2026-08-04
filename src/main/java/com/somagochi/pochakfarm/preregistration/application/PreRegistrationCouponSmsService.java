@@ -34,7 +34,7 @@ public class PreRegistrationCouponSmsService {
 
   public PreRegistrationCouponSmsResult send(boolean dryRun) {
     List<PreRegistration> targets =
-        preRegistrationRepository.findAllByStatusAndCouponSmsSentAtIsNull(
+        preRegistrationRepository.findAllByStatusAndMessageSentAtIsNull(
             PreRegistrationStatus.REGISTERED);
     Map<Long, String> couponCodes =
         couponQueryService.findCouponCodesByPreRegistrationIds(

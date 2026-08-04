@@ -12,5 +12,5 @@ public interface PreRegistrationRepository extends JpaRepository<PreRegistration
 
   List<PreRegistration> findAllByStatus(PreRegistrationStatus status);
 
-  List<PreRegistration> findAllByStatusAndCouponSmsSentAtIsNull(PreRegistrationStatus status);
+  List<PreRegistration> findAllByStatusAndMessageSentAtIsNull(PreRegistrationStatus status);
 }

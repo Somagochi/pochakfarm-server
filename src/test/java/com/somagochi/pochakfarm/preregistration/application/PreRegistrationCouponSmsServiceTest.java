@@ -64,7 +64,7 @@ class PreRegistrationCouponSmsServiceTest {
     PreRegistration first = preRegistration(1L, "enc-1");
     PreRegistration second = preRegistration(2L, "enc-2");
     given(
-            preRegistrationRepository.findAllByStatusAndCouponSmsSentAtIsNull(
+            preRegistrationRepository.findAllByStatusAndMessageSentAtIsNull(
                 PreRegistrationStatus.REGISTERED))
         .willReturn(List.of(first, second));
     given(couponQueryService.findCouponCodesByPreRegistrationIds(List.of(1L, 2L)))
@@ -85,8 +85,8 @@ class PreRegistrationCouponSmsServiceTest {
     assertEquals("01011112222", bulk.messages().get(0).to());
     assertEquals("[포착팜] 사전등록 쿠폰이 도착했어요!\n쿠폰 코드: AAAAAA", bulk.messages().get(0).text());
     assertEquals(new PreRegistrationCouponSmsResult(2, 2, 0, 0, false), result);
-    assertEquals(true, first.getCouponSmsSentAt() != null);
-    assertEquals(true, second.getCouponSmsSentAt() != null);
+    assertEquals(true, first.getMessageSentAt() != null);
+    assertEquals(true, second.getMessageSentAt() != null);
   }
 
   @Test
@@ -94,7 +94,7 @@ class PreRegistrationCouponSmsServiceTest {
     PreRegistration first = preRegistration(1L, "enc-1");
     PreRegistration second = preRegistration(2L, "enc-2");
     given(
-            preRegistrationRepository.findAllByStatusAndCouponSmsSentAtIsNull(
+            preRegistrationRepository.findAllByStatusAndMessageSentAtIsNull(
                 PreRegistrationStatus.REGISTERED))
         .willReturn(List.of(first, second));
     given(couponQueryService.findCouponCodesByPreRegistrationIds(List.of(1L, 2L)))
@@ -116,7 +116,7 @@ class PreRegistrationCouponSmsServiceTest {
     PreRegistration first = preRegistration(1L, "enc-1");
     PreRegistration second = preRegistration(2L, "enc-2");
     given(
-            preRegistrationRepository.findAllByStatusAndCouponSmsSentAtIsNull(
+            preRegistrationRepository.findAllByStatusAndMessageSentAtIsNull(
                 PreRegistrationStatus.REGISTERED))
         .willReturn(List.of(first, second));
     given(couponQueryService.findCouponCodesByPreRegistrationIds(List.of(1L, 2L)))
@@ -135,7 +135,7 @@ class PreRegistrationCouponSmsServiceTest {
   void dryRunCountsWithoutSending() {
     PreRegistration first = preRegistration(1L, "enc-1");
     given(
-            preRegistrationRepository.findAllByStatusAndCouponSmsSentAtIsNull(
+            preRegistrationRepository.findAllByStatusAndMessageSentAtIsNull(
                 PreRegistrationStatus.REGISTERED))
         .willReturn(List.of(first));
     given(couponQueryService.findCouponCodesByPreRegistrationIds(List.of(1L)))
@@ -159,7 +159,7 @@ class PreRegistrationCouponSmsServiceTest {
             })
         .when(preRegistration)
         .markCouponSmsSent(any(Instant.class));
-    given(preRegistration.getCouponSmsSentAt()).willAnswer(invocation -> sentAt[0]);
+    given(preRegistration.getMessageSentAt()).willAnswer(invocation -> sentAt[0]);
     return preRegistration;
   }
 }
