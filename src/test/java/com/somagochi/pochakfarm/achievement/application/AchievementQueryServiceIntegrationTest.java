@@ -45,6 +45,7 @@ class AchievementQueryServiceIntegrationTest {
   @Autowired private JdbcTemplate jdbcTemplate;
 
   private Long userId;
+  private long captureIdSequence;
 
   @BeforeEach
   void setUp() {
@@ -381,7 +382,8 @@ class AchievementQueryServiceIntegrationTest {
   private void insertAnimal(Long spaceId, int floorNum, int slotNum) {
     jdbcTemplate.update(
         "insert into animals (capture_id, space_id, floor_num, slot_num, version, created_at, updated_at) "
-            + "values (0, ?, ?, ?, 0, current_timestamp, current_timestamp)",
+            + "values (?, ?, ?, ?, 0, current_timestamp, current_timestamp)",
+        ++captureIdSequence,
         spaceId,
         floorNum,
         slotNum);
