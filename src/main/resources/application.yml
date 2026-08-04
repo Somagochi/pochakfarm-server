@@ -101,6 +101,10 @@ springdoc:
   swagger-ui:
     enabled: ${secret.springdoc.swagger-ui.enabled}
 
+logbook:
+  filter:
+    form-request-mode: parameter
+
 app:
   discord:
     webhook-url: ${secret.discord.webhook-url:}
@@ -124,11 +128,12 @@ app:
         ttl: ${secret.social.oidc.jwks-cache.ttl}
         min-refresh-interval: ${secret.social.oidc.jwks-cache.min-refresh-interval}
   pre-registration:
-    enabled: ${secret.pre-registration.enabled:true}
+    enabled: ${secret.pre-registration.enabled:false}
     crypto:
       encryption-key: ${secret.pre-registration.crypto.encryption-key}
       hash-key: ${secret.pre-registration.crypto.hash-key}
   characterization:
+    enabled: ${secret.characterization.enabled:false}
     device-limit-enabled: ${secret.characterization.device-limit-enabled:false}
     reaper:
       enabled: ${secret.characterization.reaper.enabled:true}

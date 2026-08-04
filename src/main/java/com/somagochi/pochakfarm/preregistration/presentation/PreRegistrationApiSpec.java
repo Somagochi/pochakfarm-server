@@ -36,6 +36,7 @@ public interface PreRegistrationApiSpec {
       responseCode = "404",
       description = "캐릭터라이징 내역 없음(CHARACTERIZATION_NOT_FOUND)",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @Deprecated
   ApiResponse<PreRegistrationResponse> register(PreRegistrationRequest request);
 
   @Operation(
@@ -53,5 +54,6 @@ public interface PreRegistrationApiSpec {
       responseCode = "404",
       description = "사전예약 내역 없음(PRE_REGISTRATION_NOT_FOUND)",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @Deprecated
   ApiResponse<PreRegistrationResponse> cancel(String phoneNumber);
 }
