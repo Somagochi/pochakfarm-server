@@ -2,6 +2,7 @@ package com.somagochi.pochakfarm.user.application;
 
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
+import com.somagochi.pochakfarm.user.domain.LevelRewardPolicy;
 import com.somagochi.pochakfarm.user.domain.User;
 import com.somagochi.pochakfarm.user.dto.UserProfileResponse;
 import com.somagochi.pochakfarm.user.dto.UserResponse;
@@ -14,9 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserQueryService {
 
   private final UserRepository userRepository;
+  private final LevelRewardPolicy levelRewardPolicy;
 
-  public UserQueryService(UserRepository userRepository) {
+  public UserQueryService(UserRepository userRepository, LevelRewardPolicy levelRewardPolicy) {
     this.userRepository = userRepository;
+    this.levelRewardPolicy = levelRewardPolicy;
   }
 
   @Transactional(readOnly = true)
@@ -26,7 +29,10 @@ public class UserQueryService {
 
   @Transactional(readOnly = true)
   public UserProfileResponse getProfile(Long userId) {
-    return UserProfileResponse.from(findUser(userId));
+    User user = findUser(userId);
+    long requiredExperience = levelRewardPolicy.requiredExperienceForNextLevel(user.getLevel());
+    long remainingExperience = requiredExperience - user.getExperience();
+    return UserProfileResponse.from(user, requiredExperience, remainingExperience);
   }
 
   @Transactional(propagation = Propagation.MANDATORY)
