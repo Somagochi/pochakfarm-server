@@ -10,13 +10,14 @@ import static org.mockito.Mockito.verify;
 import com.somagochi.pochakfarm.capture.domain.Capture;
 import com.somagochi.pochakfarm.capture.domain.CaptureDifficulty;
 import com.somagochi.pochakfarm.capture.domain.CaptureDifficultyPolicy;
-import com.somagochi.pochakfarm.capture.domain.CapturePaymentType;
 import com.somagochi.pochakfarm.capture.domain.CardTypeSelectionPolicy;
+import com.somagochi.pochakfarm.capture.domain.DailyCaptureAttempt;
 import com.somagochi.pochakfarm.capture.domain.Tier;
 import com.somagochi.pochakfarm.capture.domain.TierSelectionPolicy;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartRequest;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartResponse;
 import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureRepository;
+import com.somagochi.pochakfarm.capture.infrastructure.persistence.DailyCaptureAttemptRepository;
 import com.somagochi.pochakfarm.characterization.domain.AnimalName;
 import com.somagochi.pochakfarm.characterization.domain.CardMetadata;
 import com.somagochi.pochakfarm.characterization.domain.CardMetadataGenerator;
@@ -27,11 +28,11 @@ import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
 import com.somagochi.pochakfarm.storage.application.ImageUploadService;
 import com.somagochi.pochakfarm.storage.dto.PresignResponse;
-import com.somagochi.pochakfarm.user.domain.Coin;
 import com.somagochi.pochakfarm.user.domain.User;
 import com.somagochi.pochakfarm.user.infrastructure.persistence.UserRepository;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,19 +46,17 @@ import org.springframework.test.util.ReflectionTestUtils;
 class CaptureStartServiceTest {
 
   private static final Long USER_ID = 1L;
-  private static final String CLIENT_REQUEST_ID = "550e8400-e29b-41d4-a716-446655440000";
-  private static final String CONTENT_TYPE = "image/jpeg";
-  private static final String ORIGINAL_IMAGE = "images/capture-original/1/original.jpg";
+  private static final String REQUEST_ID = "550e8400-e29b-41d4-a716-446655440000";
   private static final Instant NOW = Instant.parse("2026-07-24T01:00:00Z");
 
   @Mock private CaptureRepository captureRepository;
+  @Mock private DailyCaptureAttemptRepository attemptRepository;
   @Mock private UserRepository userRepository;
   @Mock private TierSelectionPolicy tierSelectionPolicy;
   @Mock private CardTypeSelectionPolicy cardTypeSelectionPolicy;
-  @Mock private CaptureDifficultyPolicy captureDifficultyPolicy;
-  @Mock private CardMetadataGenerator cardMetadataGenerator;
+  @Mock private CaptureDifficultyPolicy difficultyPolicy;
+  @Mock private CardMetadataGenerator metadataGenerator;
   @Mock private ImageUploadService imageUploadService;
-
   private CaptureStartService service;
 
   @BeforeEach
@@ -65,37 +64,39 @@ class CaptureStartServiceTest {
     service =
         new CaptureStartService(
             captureRepository,
+            attemptRepository,
             userRepository,
             tierSelectionPolicy,
             cardTypeSelectionPolicy,
-            captureDifficultyPolicy,
-            cardMetadataGenerator,
+            difficultyPolicy,
+            metadataGenerator,
             imageUploadService,
             Clock.fixed(NOW, ZoneOffset.UTC));
   }
 
   @Test
-  void startsCaptureAndConsumesOneDailyAttempt() {
-    User user = user();
-    CaptureDifficulty difficulty = new CaptureDifficulty(2_800);
-    PresignResponse presign =
-        new PresignResponse(
-            "https://upload.example/original", ORIGINAL_IMAGE, NOW.plusSeconds(300));
+  void startsCaptureAndConsumesOneAttemptWithoutSpendingCoins() {
+    User user = User.register(SocialProvider.KAKAO, "provider", "user@test.com");
+    DailyCaptureAttempt attempt = DailyCaptureAttempt.create(USER_ID, LocalDate.of(2026, 7, 24), 5);
     given(userRepository.findByIdForUpdate(USER_ID)).willReturn(Optional.of(user));
-    given(captureRepository.findByUserIdAndClientRequestId(USER_ID, CLIENT_REQUEST_ID))
+    given(captureRepository.findByUserIdAndClientRequestId(USER_ID, REQUEST_ID))
         .willReturn(Optional.empty());
-    given(
-            captureRepository.countFreeAttemptsByUserIdBetween(
-                USER_ID,
-                Instant.parse("2026-07-23T15:00:00Z"),
-                Instant.parse("2026-07-24T15:00:00Z")))
-        .willReturn(0L);
+    given(attemptRepository.findByUserIdAndAttemptDateForUpdate(USER_ID, LocalDate.of(2026, 7, 24)))
+        .willReturn(Optional.of(attempt));
     given(tierSelectionPolicy.select(1)).willReturn(Tier.B);
     given(cardTypeSelectionPolicy.select()).willReturn(CardType.GROUND);
-    given(cardMetadataGenerator.generate(CardType.GROUND)).willReturn(metadata());
-    given(captureDifficultyPolicy.forTier(Tier.B)).willReturn(difficulty);
-    given(imageUploadService.createPresign(USER_ID, "capture-original", CONTENT_TYPE))
-        .willReturn(presign);
+    given(metadataGenerator.generate(CardType.GROUND))
+        .willReturn(
+            new CardMetadata(
+                CardType.GROUND,
+                82,
+                CardSkill.GROUND_PAW_STRIKE,
+                CardSkill.GROUND_LEAF_GUARD,
+                "001"));
+    CaptureDifficulty difficulty = new CaptureDifficulty(2800);
+    given(difficultyPolicy.forTier(Tier.B)).willReturn(difficulty);
+    given(imageUploadService.createPresign(USER_ID, "capture-original", "image/jpeg"))
+        .willReturn(new PresignResponse("https://upload", "original.jpg", NOW.plusSeconds(300)));
     given(captureRepository.save(any(Capture.class)))
         .willAnswer(
             invocation -> {
@@ -105,178 +106,109 @@ class CaptureStartServiceTest {
             });
 
     CaptureStartResponse response =
-        service.startCapture(
-            USER_ID, new CaptureStartRequest(CLIENT_REQUEST_ID, CONTENT_TYPE, "두부"));
+        service.startCapture(USER_ID, new CaptureStartRequest(REQUEST_ID, "image/jpeg", "두부"));
 
-    assertEquals(123L, response.captureId());
-    assertEquals(Tier.B, response.tier());
-    assertEquals(CardType.GROUND, response.cardType());
-    assertEquals(difficulty, response.difficulty());
-    assertEquals("https://upload.example/original", response.upload().url());
-    assertEquals(ORIGINAL_IMAGE, response.upload().key());
-    assertEquals(5, response.attempts().dailyLimit());
-    assertEquals(1, response.attempts().used());
+    assertEquals(4, attempt.getRemaining());
     assertEquals(4, response.attempts().remaining());
-    assertEquals(CapturePaymentType.FREE, response.payment().type());
-    assertEquals(0, response.payment().chargedCoins());
-    assertEquals(1000, response.payment().currentCoins());
-    assertEquals(NOW.plusSeconds(300), response.gameResultExpiresAt());
-
-    verify(captureRepository).save(any(Capture.class));
+    assertEquals(1000, user.getCoins());
   }
 
   @Test
-  void returnsExistingCaptureWithoutConsumingAgainForSameClientRequest() {
-    User user = user();
-    Capture existing =
+  void rejectsStartWhenNoAttemptRemains() {
+    given(userRepository.findByIdForUpdate(USER_ID))
+        .willReturn(Optional.of(User.register(SocialProvider.KAKAO, "provider", "user@test.com")));
+    given(captureRepository.findByUserIdAndClientRequestId(USER_ID, REQUEST_ID))
+        .willReturn(Optional.empty());
+    given(attemptRepository.findByUserIdAndAttemptDateForUpdate(USER_ID, LocalDate.of(2026, 7, 24)))
+        .willReturn(Optional.of(DailyCaptureAttempt.create(USER_ID, LocalDate.of(2026, 7, 24), 0)));
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () ->
+                service.startCapture(
+                    USER_ID, new CaptureStartRequest(REQUEST_ID, "image/jpeg", "두부")));
+
+    assertEquals(ErrorCode.CAPTURE_ATTEMPT_REQUIRED.getCode(), exception.getCode());
+    verify(captureRepository, never()).save(any());
+  }
+
+  @Test
+  void returnsExistingCaptureWithoutConsumingAgain() {
+    User user = User.register(SocialProvider.KAKAO, "provider", "user@test.com");
+    Capture capture =
         Capture.create(
             USER_ID,
-            CLIENT_REQUEST_ID,
+            REQUEST_ID,
             CardType.SKY,
             Tier.A,
             AnimalName.from("두부"),
             CardSkill.SKY_CLOUD_JUMP,
             CardSkill.SKY_WIND_DASH,
             "055",
-            ORIGINAL_IMAGE,
-            CONTENT_TYPE,
+            "original.jpg",
+            "image/jpeg",
             NOW.plusSeconds(300));
-    ReflectionTestUtils.setField(existing, "id", 55L);
-    CaptureDifficulty difficulty = new CaptureDifficulty(2_400);
-    PresignResponse presign =
-        new PresignResponse(
-            "https://upload.example/refreshed", ORIGINAL_IMAGE, NOW.plusSeconds(300));
+    ReflectionTestUtils.setField(capture, "id", 55L);
     given(userRepository.findByIdForUpdate(USER_ID)).willReturn(Optional.of(user));
-    given(captureRepository.findByUserIdAndClientRequestId(USER_ID, CLIENT_REQUEST_ID))
-        .willReturn(Optional.of(existing));
-    given(captureRepository.countFreeAttemptsByUserIdBetween(any(), any(), any())).willReturn(5L);
-    given(captureDifficultyPolicy.forTier(Tier.A)).willReturn(difficulty);
-    given(imageUploadService.refreshPresign(USER_ID, ORIGINAL_IMAGE, CONTENT_TYPE))
-        .willReturn(presign);
+    given(captureRepository.findByUserIdAndClientRequestId(USER_ID, REQUEST_ID))
+        .willReturn(Optional.of(capture));
+    given(attemptRepository.findByUserIdAndAttemptDate(USER_ID, LocalDate.of(2026, 7, 24)))
+        .willReturn(Optional.of(DailyCaptureAttempt.create(USER_ID, LocalDate.of(2026, 7, 24), 2)));
+    given(difficultyPolicy.forTier(Tier.A)).willReturn(new CaptureDifficulty(2400));
+    given(imageUploadService.refreshPresign(USER_ID, "original.jpg", "image/jpeg"))
+        .willReturn(new PresignResponse("https://refresh", "original.jpg", NOW.plusSeconds(300)));
 
     CaptureStartResponse response =
-        service.startCapture(
-            USER_ID, new CaptureStartRequest(CLIENT_REQUEST_ID, CONTENT_TYPE, "두부"));
+        service.startCapture(USER_ID, new CaptureStartRequest(REQUEST_ID, "image/jpeg", "두부"));
 
     assertEquals(55L, response.captureId());
-    assertEquals(Tier.A, response.tier());
-    assertEquals("https://upload.example/refreshed", response.upload().url());
-    assertEquals(5, response.attempts().used());
-    assertEquals(0, response.attempts().remaining());
-    assertEquals(CapturePaymentType.FREE, response.payment().type());
-    assertEquals(0, response.payment().chargedCoins());
-    assertEquals(1000, response.payment().currentCoins());
-    verify(tierSelectionPolicy, never()).select(any(Integer.class));
-    verify(cardTypeSelectionPolicy, never()).select();
-    verify(captureRepository, never()).save(any());
-    verify(imageUploadService, never()).createPresign(any(), any(), any());
+    assertEquals(2, response.attempts().remaining());
+    verify(attemptRepository, never()).findByUserIdAndAttemptDateForUpdate(any(), any());
   }
 
   @Test
-  void rejectsSameClientRequestIdWithDifferentContentType() {
-    Capture existing =
+  void rejectsConflictingRetryWithoutConsumingAttempt() {
+    Capture capture =
         Capture.create(
             USER_ID,
-            CLIENT_REQUEST_ID,
+            REQUEST_ID,
             CardType.SKY,
             Tier.A,
             AnimalName.from("두부"),
             CardSkill.SKY_CLOUD_JUMP,
             CardSkill.SKY_WIND_DASH,
             "055",
-            ORIGINAL_IMAGE,
-            CONTENT_TYPE,
+            "original.jpg",
+            "image/jpeg",
             NOW.plusSeconds(300));
-    given(userRepository.findByIdForUpdate(USER_ID)).willReturn(Optional.of(user()));
-    given(captureRepository.findByUserIdAndClientRequestId(USER_ID, CLIENT_REQUEST_ID))
-        .willReturn(Optional.of(existing));
+    given(userRepository.findByIdForUpdate(USER_ID))
+        .willReturn(Optional.of(User.register(SocialProvider.KAKAO, "provider", "user@test.com")));
+    given(captureRepository.findByUserIdAndClientRequestId(USER_ID, REQUEST_ID))
+        .willReturn(Optional.of(capture));
 
     BusinessException exception =
         assertThrows(
             BusinessException.class,
             () ->
                 service.startCapture(
-                    USER_ID, new CaptureStartRequest(CLIENT_REQUEST_ID, "image/png", "두부")));
+                    USER_ID, new CaptureStartRequest(REQUEST_ID, "image/png", "두부")));
 
     assertEquals(ErrorCode.CAPTURE_REQUEST_CONFLICT.getCode(), exception.getCode());
-    verify(imageUploadService, never()).refreshPresign(any(), any(), any());
+    verify(attemptRepository, never()).findByUserIdAndAttemptDateForUpdate(any(), any());
   }
 
   @Test
-  void requiresCoinPaymentWhenFreeAttemptsAreUsedWithoutConsent() {
-    given(userRepository.findByIdForUpdate(USER_ID)).willReturn(Optional.of(user()));
-    given(captureRepository.findByUserIdAndClientRequestId(USER_ID, CLIENT_REQUEST_ID))
-        .willReturn(Optional.empty());
-    given(captureRepository.countFreeAttemptsByUserIdBetween(any(), any(), any())).willReturn(5L);
-
+  void rejectsInvalidClientRequestIdBeforeLockingUser() {
     BusinessException exception =
         assertThrows(
             BusinessException.class,
             () ->
                 service.startCapture(
-                    USER_ID, new CaptureStartRequest(CLIENT_REQUEST_ID, CONTENT_TYPE, "두부")));
+                    USER_ID, new CaptureStartRequest("not-a-uuid", "image/jpeg", "두부")));
 
-    assertEquals(ErrorCode.COIN_PAYMENT_REQUIRED.getCode(), exception.getCode());
-    verify(captureRepository, never()).save(any());
-    verify(imageUploadService, never()).createPresign(any(), any(), any());
-  }
-
-  @Test
-  void chargesCoinsWhenFreeAttemptsAreUsedWithConsent() {
-    User user = user();
-    CaptureDifficulty difficulty = new CaptureDifficulty(2_800);
-    PresignResponse presign =
-        new PresignResponse(
-            "https://upload.example/original", ORIGINAL_IMAGE, NOW.plusSeconds(300));
-    given(userRepository.findByIdForUpdate(USER_ID)).willReturn(Optional.of(user));
-    given(captureRepository.findByUserIdAndClientRequestId(USER_ID, CLIENT_REQUEST_ID))
-        .willReturn(Optional.empty());
-    given(captureRepository.countFreeAttemptsByUserIdBetween(any(), any(), any())).willReturn(5L);
-    given(tierSelectionPolicy.select(1)).willReturn(Tier.B);
-    given(cardTypeSelectionPolicy.select()).willReturn(CardType.GROUND);
-    given(cardMetadataGenerator.generate(CardType.GROUND)).willReturn(metadata());
-    given(captureDifficultyPolicy.forTier(Tier.B)).willReturn(difficulty);
-    given(imageUploadService.createPresign(USER_ID, "capture-original", CONTENT_TYPE))
-        .willReturn(presign);
-    given(captureRepository.save(any(Capture.class)))
-        .willAnswer(
-            invocation -> {
-              Capture capture = invocation.getArgument(0);
-              ReflectionTestUtils.setField(capture, "id", 123L);
-              return capture;
-            });
-
-    CaptureStartResponse response =
-        service.startCapture(
-            USER_ID, new CaptureStartRequest(CLIENT_REQUEST_ID, CONTENT_TYPE, "두부", true));
-
-    assertEquals(5, response.attempts().used());
-    assertEquals(0, response.attempts().remaining());
-    assertEquals(CapturePaymentType.COIN, response.payment().type());
-    assertEquals(200, response.payment().chargedCoins());
-    assertEquals(800, response.payment().currentCoins());
-    assertEquals(800, user.getCoins());
-  }
-
-  @Test
-  void rejectsCoinPaymentWhenCoinsAreInsufficient() {
-    User user = user();
-    ReflectionTestUtils.setField(user, "coins", Coin.of(100L));
-    given(userRepository.findByIdForUpdate(USER_ID)).willReturn(Optional.of(user));
-    given(captureRepository.findByUserIdAndClientRequestId(USER_ID, CLIENT_REQUEST_ID))
-        .willReturn(Optional.empty());
-    given(captureRepository.countFreeAttemptsByUserIdBetween(any(), any(), any())).willReturn(5L);
-
-    BusinessException exception =
-        assertThrows(
-            BusinessException.class,
-            () ->
-                service.startCapture(
-                    USER_ID, new CaptureStartRequest(CLIENT_REQUEST_ID, CONTENT_TYPE, "두부", true)));
-
-    assertEquals(ErrorCode.INSUFFICIENT_COINS.getCode(), exception.getCode());
-    verify(captureRepository, never()).save(any());
-    verify(imageUploadService, never()).createPresign(any(), any(), any());
+    assertEquals(ErrorCode.INVALID_CLIENT_REQUEST_ID.getCode(), exception.getCode());
+    verify(userRepository, never()).findByIdForUpdate(any());
   }
 
   @Test
@@ -288,43 +220,8 @@ class CaptureStartServiceTest {
             BusinessException.class,
             () ->
                 service.startCapture(
-                    USER_ID, new CaptureStartRequest(CLIENT_REQUEST_ID, CONTENT_TYPE, "두부")));
+                    USER_ID, new CaptureStartRequest(REQUEST_ID, "image/jpeg", "두부")));
 
     assertEquals(ErrorCode.USER_NOT_FOUND.getCode(), exception.getCode());
-  }
-
-  @Test
-  void rejectsInvalidClientRequestId() {
-    BusinessException exception =
-        assertThrows(
-            BusinessException.class,
-            () ->
-                service.startCapture(
-                    USER_ID, new CaptureStartRequest("not-a-uuid", CONTENT_TYPE, "두부")));
-
-    assertEquals(ErrorCode.INVALID_CLIENT_REQUEST_ID.getCode(), exception.getCode());
-    verify(userRepository, never()).findByIdForUpdate(any());
-  }
-
-  @Test
-  void rejectsNonCanonicalClientRequestIdAcceptedByJavaUuidParser() {
-    BusinessException exception =
-        assertThrows(
-            BusinessException.class,
-            () ->
-                service.startCapture(
-                    USER_ID, new CaptureStartRequest("1-1-1-1-1", CONTENT_TYPE, "두부")));
-
-    assertEquals(ErrorCode.INVALID_CLIENT_REQUEST_ID.getCode(), exception.getCode());
-    verify(userRepository, never()).findByIdForUpdate(any());
-  }
-
-  private User user() {
-    return User.register(SocialProvider.KAKAO, "provider-id", "user@example.com");
-  }
-
-  private CardMetadata metadata() {
-    return new CardMetadata(
-        CardType.GROUND, 82, CardSkill.GROUND_PAW_STRIKE, CardSkill.GROUND_LEAF_GUARD, "001");
   }
 }

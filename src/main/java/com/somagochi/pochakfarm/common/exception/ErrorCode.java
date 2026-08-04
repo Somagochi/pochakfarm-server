@@ -33,8 +33,10 @@ public enum ErrorCode {
   CHARACTERIZATION_BUSY(503, "CHARACTERIZATION_BUSY", "Characterization service is busy"),
   CHARACTERIZATION_TIMED_OUT(504, "CHARACTERIZATION_TIMED_OUT", "Characterization timed out"),
   INVALID_CLIENT_REQUEST_ID(400, "INVALID_CLIENT_REQUEST_ID", "Invalid client request id"),
-  COIN_PAYMENT_REQUIRED(402, "COIN_PAYMENT_REQUIRED", "Coin payment is required"),
   INSUFFICIENT_COINS(402, "INSUFFICIENT_COINS", "Insufficient coins"),
+  CAPTURE_ATTEMPT_REQUIRED(409, "CAPTURE_ATTEMPT_REQUIRED", "Capture attempt is required"),
+  CAPTURE_ATTEMPT_ALREADY_AVAILABLE(
+      409, "CAPTURE_ATTEMPT_ALREADY_AVAILABLE", "Capture attempt is already available"),
   CAPTURE_REQUEST_CONFLICT(409, "CAPTURE_REQUEST_CONFLICT", "Capture request conflict"),
   CAPTURE_NOT_FOUND(404, "CAPTURE_NOT_FOUND", "Capture not found"),
   FORBIDDEN_CAPTURE_ACCESS(403, "FORBIDDEN_CAPTURE_ACCESS", "Forbidden capture access"),

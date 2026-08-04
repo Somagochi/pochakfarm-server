@@ -10,7 +10,6 @@ import com.somagochi.pochakfarm.animal.application.AnimalPlacementService;
 import com.somagochi.pochakfarm.animal.domain.Animal;
 import com.somagochi.pochakfarm.animal.infrastructure.persistence.AnimalRepository;
 import com.somagochi.pochakfarm.capture.domain.Capture;
-import com.somagochi.pochakfarm.capture.domain.CapturePaymentType;
 import com.somagochi.pochakfarm.capture.domain.GameStatus;
 import com.somagochi.pochakfarm.capture.domain.Tier;
 import com.somagochi.pochakfarm.capture.dto.CaptureAnimalPlacementRequest;
@@ -63,7 +62,7 @@ class CaptureAnimalServiceTest {
 
   @Test
   void presignsFixedPngKeyForPlaceableCapture() {
-    Capture capture = placeableCapture(USER_ID, CapturePaymentType.FREE);
+    Capture capture = placeableCapture(USER_ID);
     given(captureRepository.findById(CAPTURE_ID)).willReturn(Optional.of(capture));
     PresignResponse expected =
         new PresignResponse("https://upload.test/animal", ANIMAL_IMAGE_KEY, Instant.EPOCH);
@@ -77,7 +76,7 @@ class CaptureAnimalServiceTest {
 
   @Test
   void placesAnimalInEmptySelectedSlotAndRegistersImage() {
-    Capture capture = placeableCapture(USER_ID, CapturePaymentType.COIN);
+    Capture capture = placeableCapture(USER_ID);
     Animal animal = animal(ANIMAL_ID, CAPTURE_ID, 1, 2);
     given(captureRepository.findByIdForUpdate(CAPTURE_ID)).willReturn(Optional.of(capture));
     given(animalRepository.findByCaptureId(CAPTURE_ID)).willReturn(Optional.empty());
@@ -95,7 +94,7 @@ class CaptureAnimalServiceTest {
 
   @Test
   void replacesOnlyExplicitlySelectedAnimal() {
-    Capture capture = placeableCapture(USER_ID, CapturePaymentType.FREE);
+    Capture capture = placeableCapture(USER_ID);
     Animal animal = animal(ANIMAL_ID, CAPTURE_ID, 1, 2);
     given(captureRepository.findByIdForUpdate(CAPTURE_ID)).willReturn(Optional.of(capture));
     given(animalRepository.findByCaptureId(CAPTURE_ID)).willReturn(Optional.empty());
@@ -110,7 +109,7 @@ class CaptureAnimalServiceTest {
 
   @Test
   void returnsExistingAnimalForIdenticalRetry() {
-    Capture capture = placeableCapture(USER_ID, CapturePaymentType.FREE);
+    Capture capture = placeableCapture(USER_ID);
     capture.registerAnimalImage(ANIMAL_IMAGE_KEY);
     Animal animal = animal(ANIMAL_ID, CAPTURE_ID, 1, 2);
     given(captureRepository.findByIdForUpdate(CAPTURE_ID)).willReturn(Optional.of(capture));
@@ -126,7 +125,7 @@ class CaptureAnimalServiceTest {
 
   @Test
   void rejectsRetryThatTargetsDifferentSlot() {
-    Capture capture = placeableCapture(USER_ID, CapturePaymentType.FREE);
+    Capture capture = placeableCapture(USER_ID);
     capture.registerAnimalImage(ANIMAL_IMAGE_KEY);
     given(captureRepository.findByIdForUpdate(CAPTURE_ID)).willReturn(Optional.of(capture));
     given(animalRepository.findByCaptureId(CAPTURE_ID))
@@ -140,19 +139,8 @@ class CaptureAnimalServiceTest {
   }
 
   @Test
-  void rejectsCouponCapture() {
-    Capture capture = placeableCapture(USER_ID, CapturePaymentType.COUPON);
-    given(captureRepository.findById(CAPTURE_ID)).willReturn(Optional.of(capture));
-
-    BusinessException exception =
-        assertThrows(BusinessException.class, () -> service.presign(USER_ID, CAPTURE_ID));
-
-    assertEquals(ErrorCode.CAPTURE_NOT_PLACEABLE.getCode(), exception.getCode());
-  }
-
-  @Test
   void rejectsCaptureBeforeGameSucceeds() {
-    Capture capture = generatedCapture(USER_ID, CapturePaymentType.FREE);
+    Capture capture = generatedCapture(USER_ID);
     given(captureRepository.findById(CAPTURE_ID)).willReturn(Optional.of(capture));
 
     BusinessException exception =
@@ -163,8 +151,7 @@ class CaptureAnimalServiceTest {
 
   @Test
   void rejectsAnotherUsersCapture() {
-    given(captureRepository.findById(CAPTURE_ID))
-        .willReturn(Optional.of(placeableCapture(2L, CapturePaymentType.FREE)));
+    given(captureRepository.findById(CAPTURE_ID)).willReturn(Optional.of(placeableCapture(2L)));
 
     BusinessException exception =
         assertThrows(BusinessException.class, () -> service.presign(USER_ID, CAPTURE_ID));
@@ -176,13 +163,13 @@ class CaptureAnimalServiceTest {
     return new CaptureAnimalPlacementRequest(ANIMAL_IMAGE_KEY, floorNum, slotNum, replacedAnimalId);
   }
 
-  private Capture placeableCapture(Long userId, CapturePaymentType paymentType) {
-    Capture capture = generatedCapture(userId, paymentType);
+  private Capture placeableCapture(Long userId) {
+    Capture capture = generatedCapture(userId);
     capture.completeGame(GameStatus.SUCCEEDED, 10);
     return capture;
   }
 
-  private Capture generatedCapture(Long userId, CapturePaymentType paymentType) {
+  private Capture generatedCapture(Long userId) {
     Capture capture =
         Capture.create(
             userId,
@@ -195,8 +182,7 @@ class CaptureAnimalServiceTest {
             "123",
             "images/capture-original/1/original.jpg",
             "image/jpeg",
-            Instant.parse("2026-08-03T01:05:00Z"),
-            paymentType);
+            Instant.parse("2026-08-03T01:05:00Z"));
     ReflectionTestUtils.setField(capture, "id", CAPTURE_ID);
     capture.succeed("public/capture-scene/scene.png", "public/capture-card/card.png", 100);
     return capture;

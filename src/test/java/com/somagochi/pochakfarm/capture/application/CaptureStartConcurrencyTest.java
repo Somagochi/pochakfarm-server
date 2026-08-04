@@ -5,9 +5,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 import com.somagochi.pochakfarm.capture.domain.Capture;
+import com.somagochi.pochakfarm.capture.domain.DailyCaptureAttempt;
 import com.somagochi.pochakfarm.capture.domain.Tier;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartRequest;
 import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureRepository;
+import com.somagochi.pochakfarm.capture.infrastructure.persistence.DailyCaptureAttemptRepository;
 import com.somagochi.pochakfarm.characterization.domain.AnimalName;
 import com.somagochi.pochakfarm.characterization.domain.CardSkill;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
@@ -19,6 +21,8 @@ import com.somagochi.pochakfarm.storage.domain.PresignedUpload;
 import com.somagochi.pochakfarm.user.domain.User;
 import com.somagochi.pochakfarm.user.infrastructure.persistence.UserRepository;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -40,6 +44,7 @@ class CaptureStartConcurrencyTest {
 
   @Autowired private CaptureStartService captureStartService;
   @Autowired private CaptureRepository captureRepository;
+  @Autowired private DailyCaptureAttemptRepository attemptRepository;
   @Autowired private UserRepository userRepository;
 
   @MockitoBean private FileStorage fileStorage;
@@ -49,6 +54,7 @@ class CaptureStartConcurrencyTest {
 
   @BeforeEach
   void setUp() {
+    attemptRepository.deleteAll();
     captureRepository.deleteAll();
     userRepository.deleteAll();
     User user =
@@ -56,6 +62,8 @@ class CaptureStartConcurrencyTest {
             User.register(
                 SocialProvider.KAKAO, "concurrency-" + UUID.randomUUID(), "concurrency@test.com"));
     userId = user.getId();
+    attemptRepository.save(
+        DailyCaptureAttempt.create(userId, LocalDate.now(ZoneId.of("Asia/Seoul")), 1));
     for (int index = 0; index < 4; index++) {
       captureRepository.save(
           Capture.create(
@@ -85,7 +93,7 @@ class CaptureStartConcurrencyTest {
   }
 
   @Test
-  void requiresCoinPaymentForConcurrentRequestAfterLastFreeAttemptIsUsed() throws Exception {
+  void onlyOneConcurrentRequestConsumesTheLastAttempt() throws Exception {
     CountDownLatch ready = new CountDownLatch(2);
     CountDownLatch start = new CountDownLatch(1);
     List<Callable<String>> requests = new ArrayList<>();
@@ -119,46 +127,7 @@ class CaptureStartConcurrencyTest {
 
     assertEquals(1, outcomes.stream().filter("SUCCESS"::equals).count());
     assertEquals(
-        1, outcomes.stream().filter(ErrorCode.COIN_PAYMENT_REQUIRED.getCode()::equals).count());
+        1, outcomes.stream().filter(ErrorCode.CAPTURE_ATTEMPT_REQUIRED.getCode()::equals).count());
     assertEquals(5, captureRepository.count());
-  }
-
-  @Test
-  void chargesCoinForConcurrentRequestAfterLastFreeAttemptIsUsedWhenAllowed() throws Exception {
-    CountDownLatch ready = new CountDownLatch(2);
-    CountDownLatch start = new CountDownLatch(1);
-    List<Callable<String>> requests = new ArrayList<>();
-    for (int index = 0; index < 2; index++) {
-      requests.add(
-          () -> {
-            ready.countDown();
-            start.await(5, TimeUnit.SECONDS);
-            try {
-              captureStartService.startCapture(
-                  userId,
-                  new CaptureStartRequest(UUID.randomUUID().toString(), "image/jpeg", "두부", true));
-              return "SUCCESS";
-            } catch (BusinessException exception) {
-              return exception.getCode();
-            }
-          });
-    }
-
-    List<Future<String>> results = new ArrayList<>();
-    for (Callable<String> request : requests) {
-      results.add(executor.submit(request));
-    }
-    ready.await(5, TimeUnit.SECONDS);
-    start.countDown();
-
-    List<String> outcomes = new ArrayList<>();
-    for (Future<String> result : results) {
-      outcomes.add(result.get(10, TimeUnit.SECONDS));
-    }
-
-    User user = userRepository.findById(userId).orElseThrow();
-    assertEquals(2, outcomes.stream().filter("SUCCESS"::equals).count());
-    assertEquals(6, captureRepository.count());
-    assertEquals(800, user.getCoins());
   }
 }

@@ -2,6 +2,8 @@ package com.somagochi.pochakfarm.capture.presentation;
 
 import com.somagochi.pochakfarm.capture.dto.CaptureAnimalPlacementRequest;
 import com.somagochi.pochakfarm.capture.dto.CaptureAnimalPlacementResponse;
+import com.somagochi.pochakfarm.capture.dto.CaptureAttemptPurchaseRequest;
+import com.somagochi.pochakfarm.capture.dto.CaptureAttemptPurchaseResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureAvailabilityResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureCompleteResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureGameResultRequest;
@@ -26,7 +28,7 @@ public interface CaptureApiSpec {
   @Operation(
       summary = "포착 시작",
       description =
-          "일일 포착 횟수를 확인하고 사용자 레벨 기반 티어와 동물 타입을 결정한다. "
+          "오늘의 남은 포착 기회 1회를 사용하고 사용자 레벨 기반 티어와 동물 타입을 결정한다. "
               + "Capture와 원본 이미지 업로드용 presigned PUT URL을 반환한다.")
   @SecurityRequirement(name = "bearerAuth")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -48,18 +50,16 @@ public interface CaptureApiSpec {
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "409",
-      description = "동일 clientRequestId 요청 내용 충돌(CAPTURE_REQUEST_CONFLICT)",
-      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-  @io.swagger.v3.oas.annotations.responses.ApiResponse(
-      responseCode = "402",
-      description = "코인 결제 동의 필요(COIN_PAYMENT_REQUIRED) 또는 코인 부족(INSUFFICIENT_COINS)",
+      description =
+          "동일 clientRequestId 요청 내용 충돌(CAPTURE_REQUEST_CONFLICT) 또는 "
+              + "포착 기회 없음(CAPTURE_ATTEMPT_REQUIRED)",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   ApiResponse<CaptureStartResponse> startCapture(
       @Schema(hidden = true) UserPrincipal principal, CaptureStartRequest request);
 
   @Operation(
       summary = "포착 가능 상태 조회",
-      description = "오늘 남은 무료 포착 횟수, 다음 초기화 시각, 보유 코인, 추가 포착 비용과 시작 가능 여부를 조회한다.")
+      description = "오늘 남은 포착 기회, 다음 초기화 시각, 보유 코인, 포착 기회 구매 비용을 조회한다.")
   @SecurityRequirement(name = "bearerAuth")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -72,6 +72,27 @@ public interface CaptureApiSpec {
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   ApiResponse<CaptureAvailabilityResponse> getAvailability(
       @Schema(hidden = true) UserPrincipal principal);
+
+  @Operation(
+      summary = "포착 기회 1회 구매",
+      description =
+          "오늘의 남은 기회가 0회일 때 200코인을 사용해 1회를 추가한다. " + "동일 clientRequestId 재요청은 중복 차감하지 않는다.")
+  @SecurityRequirement(name = "bearerAuth")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "구매 성공")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "400",
+      description = "잘못된 clientRequestId(INVALID_CLIENT_REQUEST_ID)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "402",
+      description = "코인 부족(INSUFFICIENT_COINS)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "409",
+      description = "남은 포착 기회가 있음(CAPTURE_ATTEMPT_ALREADY_AVAILABLE)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  ApiResponse<CaptureAttemptPurchaseResponse> purchaseAttempt(
+      @Schema(hidden = true) UserPrincipal principal, CaptureAttemptPurchaseRequest request);
 
   @Operation(
       summary = "포착 정보 요약 조회",
