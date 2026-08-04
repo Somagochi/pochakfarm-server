@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.somagochi.pochakfarm.capture.application.CaptureAnimalService;
+import com.somagochi.pochakfarm.capture.application.CaptureAttemptPurchaseService;
 import com.somagochi.pochakfarm.capture.application.CaptureAvailabilityService;
 import com.somagochi.pochakfarm.capture.application.CaptureCompleteService;
 import com.somagochi.pochakfarm.capture.application.CaptureGameResultService;
@@ -17,15 +18,15 @@ import com.somagochi.pochakfarm.capture.application.CaptureOverviewService;
 import com.somagochi.pochakfarm.capture.application.CaptureQueryService;
 import com.somagochi.pochakfarm.capture.application.CaptureStartService;
 import com.somagochi.pochakfarm.capture.domain.CaptureDifficulty;
-import com.somagochi.pochakfarm.capture.domain.CapturePaymentType;
 import com.somagochi.pochakfarm.capture.domain.GameStatus;
 import com.somagochi.pochakfarm.capture.domain.GenerationStatus;
 import com.somagochi.pochakfarm.capture.domain.Tier;
 import com.somagochi.pochakfarm.capture.domain.TierProbability;
 import com.somagochi.pochakfarm.capture.dto.CaptureAnimalPlacementRequest;
 import com.somagochi.pochakfarm.capture.dto.CaptureAnimalPlacementResponse;
+import com.somagochi.pochakfarm.capture.dto.CaptureAttemptPurchaseRequest;
+import com.somagochi.pochakfarm.capture.dto.CaptureAttemptPurchaseResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureAvailabilityResponse;
-import com.somagochi.pochakfarm.capture.dto.CaptureAvailabilityResponse.FreeAttempts;
 import com.somagochi.pochakfarm.capture.dto.CaptureCompleteResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureGameResultRequest;
 import com.somagochi.pochakfarm.capture.dto.CaptureGameResultResponse;
@@ -37,7 +38,6 @@ import com.somagochi.pochakfarm.capture.dto.CaptureResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartRequest;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartResponse;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartResponse.Attempts;
-import com.somagochi.pochakfarm.capture.dto.CaptureStartResponse.Payment;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartResponse.Upload;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.config.SecurityConfig;
@@ -84,6 +84,7 @@ class CaptureControllerTest {
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private CaptureStartService captureStartService;
+  @MockitoBean private CaptureAttemptPurchaseService captureAttemptPurchaseService;
   @MockitoBean private CaptureAnimalService captureAnimalService;
   @MockitoBean private CaptureAvailabilityService captureAvailabilityService;
   @MockitoBean private CaptureCompleteService captureCompleteService;
@@ -107,8 +108,7 @@ class CaptureControllerTest {
                     "https://upload.example/original",
                     "images/capture-original/1/original.jpg",
                     expiresAt),
-                new Attempts(5, 1, 4),
-                new Payment(CapturePaymentType.FREE, 0, 1000),
+                new Attempts(4),
                 expiresAt));
 
     mockMvc
@@ -135,12 +135,7 @@ class CaptureControllerTest {
         .andExpect(jsonPath("$.data.difficulty.successWindowMs").doesNotExist())
         .andExpect(jsonPath("$.data.upload.url").value("https://upload.example/original"))
         .andExpect(jsonPath("$.data.upload.key").value("images/capture-original/1/original.jpg"))
-        .andExpect(jsonPath("$.data.attempts.dailyLimit").value(5))
-        .andExpect(jsonPath("$.data.attempts.used").value(1))
         .andExpect(jsonPath("$.data.attempts.remaining").value(4))
-        .andExpect(jsonPath("$.data.payment.type").value("FREE"))
-        .andExpect(jsonPath("$.data.payment.chargedCoins").value(0))
-        .andExpect(jsonPath("$.data.payment.currentCoins").value(1000))
         .andExpect(jsonPath("$.data.gameResultExpiresAt").value("2026-07-24T01:05:00Z"));
 
     verify(captureStartService)
@@ -168,11 +163,11 @@ class CaptureControllerTest {
   }
 
   @Test
-  void returnsPaymentRequiredWhenFreeAttemptsAreExhaustedWithoutConsent() throws Exception {
+  void returnsAttemptRequiredWhenAttemptsAreExhausted() throws Exception {
     given(
             captureStartService.startCapture(
                 1L, new CaptureStartRequest(CLIENT_REQUEST_ID, "image/jpeg", "두부")))
-        .willThrow(new BusinessException(ErrorCode.COIN_PAYMENT_REQUIRED));
+        .willThrow(new BusinessException(ErrorCode.CAPTURE_ATTEMPT_REQUIRED));
 
     mockMvc
         .perform(
@@ -188,8 +183,8 @@ class CaptureControllerTest {
                     }
                     """
                         .formatted(CLIENT_REQUEST_ID)))
-        .andExpect(status().isPaymentRequired())
-        .andExpect(jsonPath("$.code").value("COIN_PAYMENT_REQUIRED"));
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("CAPTURE_ATTEMPT_REQUIRED"));
   }
 
   @Test
@@ -197,18 +192,42 @@ class CaptureControllerTest {
     given(captureAvailabilityService.getAvailability(1L))
         .willReturn(
             new CaptureAvailabilityResponse(
-                new FreeAttempts(5, 5, 0, Instant.parse("2026-08-02T15:00:00Z")), 200, 1000, true));
+                new CaptureAvailabilityResponse.Attempts(0, Instant.parse("2026-08-02T15:00:00Z")),
+                200,
+                1000));
 
     mockMvc
         .perform(get("/api/captures/availability").with(authentication(authenticationFor(1L))))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data.freeAttempts.dailyLimit").value(5))
-        .andExpect(jsonPath("$.data.freeAttempts.used").value(5))
-        .andExpect(jsonPath("$.data.freeAttempts.remaining").value(0))
-        .andExpect(jsonPath("$.data.freeAttempts.resetsAt").value("2026-08-02T15:00:00Z"))
-        .andExpect(jsonPath("$.data.extraCaptureCost").value(200))
-        .andExpect(jsonPath("$.data.coins").value(1000))
-        .andExpect(jsonPath("$.data.canStartCapture").value(true));
+        .andExpect(jsonPath("$.data.attempts.remaining").value(0))
+        .andExpect(jsonPath("$.data.attempts.resetsAt").value("2026-08-02T15:00:00Z"))
+        .andExpect(jsonPath("$.data.attemptPurchaseCost").value(200))
+        .andExpect(jsonPath("$.data.coins").value(1000));
+  }
+
+  @Test
+  void purchasesCaptureAttempt() throws Exception {
+    given(
+            captureAttemptPurchaseService.purchase(
+                1L, new CaptureAttemptPurchaseRequest(CLIENT_REQUEST_ID)))
+        .willReturn(
+            new CaptureAttemptPurchaseResponse(1, 200, 800, Instant.parse("2026-08-02T15:00:00Z")));
+
+    mockMvc
+        .perform(
+            post("/api/captures/attempts/purchase")
+                .with(authentication(authenticationFor(1L)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"clientRequestId":"%s"}
+                    """
+                        .formatted(CLIENT_REQUEST_ID)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.remaining").value(1))
+        .andExpect(jsonPath("$.data.chargedCoins").value(200))
+        .andExpect(jsonPath("$.data.currentCoins").value(800))
+        .andExpect(jsonPath("$.data.resetsAt").value("2026-08-02T15:00:00Z"));
   }
 
   @Test

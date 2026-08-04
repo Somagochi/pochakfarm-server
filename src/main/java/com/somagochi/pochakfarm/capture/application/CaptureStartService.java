@@ -3,13 +3,14 @@ package com.somagochi.pochakfarm.capture.application;
 import com.somagochi.pochakfarm.capture.domain.Capture;
 import com.somagochi.pochakfarm.capture.domain.CaptureDifficulty;
 import com.somagochi.pochakfarm.capture.domain.CaptureDifficultyPolicy;
-import com.somagochi.pochakfarm.capture.domain.CapturePaymentType;
 import com.somagochi.pochakfarm.capture.domain.CardTypeSelectionPolicy;
+import com.somagochi.pochakfarm.capture.domain.DailyCaptureAttempt;
 import com.somagochi.pochakfarm.capture.domain.Tier;
 import com.somagochi.pochakfarm.capture.domain.TierSelectionPolicy;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartRequest;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartResponse;
 import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureRepository;
+import com.somagochi.pochakfarm.capture.infrastructure.persistence.DailyCaptureAttemptRepository;
 import com.somagochi.pochakfarm.characterization.domain.AnimalName;
 import com.somagochi.pochakfarm.characterization.domain.CardMetadata;
 import com.somagochi.pochakfarm.characterization.domain.CardMetadataGenerator;
@@ -33,14 +34,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class CaptureStartService {
 
-  private static final int DAILY_LIMIT = 5;
-  private static final long EXTRA_CAPTURE_COST = 200L;
   private static final Duration GAME_RESULT_SUBMISSION_WINDOW = Duration.ofMinutes(5);
   private static final ZoneId KOREA_ZONE = ZoneId.of("Asia/Seoul");
   private static final String ORIGINAL_IMAGE_PURPOSE = "capture-original";
   private static final String TEMPORARY_CARD_NO = "001";
 
   private final CaptureRepository captureRepository;
+  private final DailyCaptureAttemptRepository attemptRepository;
   private final UserRepository userRepository;
   private final TierSelectionPolicy tierSelectionPolicy;
   private final CardTypeSelectionPolicy cardTypeSelectionPolicy;
@@ -51,6 +51,7 @@ public class CaptureStartService {
 
   public CaptureStartService(
       CaptureRepository captureRepository,
+      DailyCaptureAttemptRepository attemptRepository,
       UserRepository userRepository,
       TierSelectionPolicy tierSelectionPolicy,
       CardTypeSelectionPolicy cardTypeSelectionPolicy,
@@ -59,6 +60,7 @@ public class CaptureStartService {
       ImageUploadService imageUploadService,
       Clock clock) {
     this.captureRepository = captureRepository;
+    this.attemptRepository = attemptRepository;
     this.userRepository = userRepository;
     this.tierSelectionPolicy = tierSelectionPolicy;
     this.cardTypeSelectionPolicy = cardTypeSelectionPolicy;
@@ -76,17 +78,14 @@ public class CaptureStartService {
         userRepository
             .findByIdForUpdate(userId)
             .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-    DailyRange dailyRange = currentDailyRange();
     Optional<Capture> existing =
         captureRepository.findByUserIdAndClientRequestId(userId, clientRequestId);
     if (existing.isPresent()) {
       validateExistingRequest(existing.get(), request.contentType(), animalName);
-      long used = countUsed(userId, dailyRange);
-      return existingResponse(existing.get(), used, user.getCoins());
+      return existingResponse(existing.get(), currentRemaining(userId));
     }
-
-    long used = countUsed(userId, dailyRange);
-    CapturePaymentType paymentType = decidePayment(user, used, request.allowCoinPayment());
+    DailyCaptureAttempt attempt = currentAttemptForUpdate(userId);
+    attempt.consume();
 
     Tier tier = tierSelectionPolicy.select(user.getLevel());
     CardType cardType = cardTypeSelectionPolicy.select();
@@ -94,9 +93,6 @@ public class CaptureStartService {
     CaptureDifficulty difficulty = captureDifficultyPolicy.forTier(tier);
     PresignResponse presign =
         imageUploadService.createPresign(userId, ORIGINAL_IMAGE_PURPOSE, request.contentType());
-    if (paymentType == CapturePaymentType.COIN) {
-      user.spendCoins(EXTRA_CAPTURE_COST);
-    }
     Instant gameResultExpiresAt = clock.instant().plus(GAME_RESULT_SUBMISSION_WINDOW);
     Capture capture =
         Capture.create(
@@ -110,37 +106,20 @@ public class CaptureStartService {
             TEMPORARY_CARD_NO,
             presign.key(),
             request.contentType(),
-            gameResultExpiresAt,
-            paymentType);
+            gameResultExpiresAt);
     Capture saved = captureRepository.save(capture);
     saved.cardNoAssigned(formatCardNo(saved.getId()));
-    long responseUsed = paymentType == CapturePaymentType.FREE ? used + 1 : used;
-    return CaptureStartResponse.from(
-        saved,
-        difficulty,
-        presign,
-        DAILY_LIMIT,
-        responseUsed,
-        paymentType,
-        chargedCoins(paymentType),
-        user.getCoins());
+    return CaptureStartResponse.from(saved, difficulty, presign, attempt.getRemaining());
   }
 
-  private CaptureStartResponse existingResponse(Capture capture, long used, long currentCoins) {
+  private CaptureStartResponse existingResponse(Capture capture, int remaining) {
     PresignResponse presign =
         imageUploadService.refreshPresign(
             capture.getUserId(),
             capture.getOriginalImageKey(),
             capture.getOriginalImageContentType());
     return CaptureStartResponse.from(
-        capture,
-        captureDifficultyPolicy.forTier(capture.getTier()),
-        presign,
-        DAILY_LIMIT,
-        used,
-        capture.getPaymentType(),
-        chargedCoins(capture.getPaymentType()),
-        currentCoins);
+        capture, captureDifficultyPolicy.forTier(capture.getTier()), presign, remaining);
   }
 
   private void validateExistingRequest(
@@ -151,33 +130,27 @@ public class CaptureStartService {
     }
   }
 
-  private CapturePaymentType decidePayment(User user, long used, boolean allowCoinPayment) {
-    if (used < DAILY_LIMIT) {
-      return CapturePaymentType.FREE;
-    }
-    if (!allowCoinPayment) {
-      throw new BusinessException(ErrorCode.COIN_PAYMENT_REQUIRED);
-    }
-    if (user.getCoins() < EXTRA_CAPTURE_COST) {
-      throw new BusinessException(ErrorCode.INSUFFICIENT_COINS);
-    }
-    return CapturePaymentType.COIN;
-  }
-
-  private long chargedCoins(CapturePaymentType paymentType) {
-    return paymentType == CapturePaymentType.COIN ? EXTRA_CAPTURE_COST : 0;
-  }
-
-  private long countUsed(Long userId, DailyRange range) {
-    return captureRepository.countFreeAttemptsByUserIdBetween(
-        userId, range.startInclusive(), range.endExclusive());
-  }
-
-  private DailyRange currentDailyRange() {
+  private LocalDate today() {
     LocalDate today = LocalDate.now(clock.withZone(KOREA_ZONE));
-    return new DailyRange(
-        today.atStartOfDay(KOREA_ZONE).toInstant(),
-        today.plusDays(1).atStartOfDay(KOREA_ZONE).toInstant());
+    return today;
+  }
+
+  private DailyCaptureAttempt currentAttemptForUpdate(Long userId) {
+    LocalDate today = today();
+    return attemptRepository
+        .findByUserIdAndAttemptDateForUpdate(userId, today)
+        .orElseGet(
+            () ->
+                attemptRepository.save(
+                    DailyCaptureAttempt.create(
+                        userId, today, CaptureAttemptPurchaseService.DAILY_ATTEMPTS)));
+  }
+
+  private int currentRemaining(Long userId) {
+    return attemptRepository
+        .findByUserIdAndAttemptDate(userId, today())
+        .map(DailyCaptureAttempt::getRemaining)
+        .orElse(CaptureAttemptPurchaseService.DAILY_ATTEMPTS);
   }
 
   private String normalizeClientRequestId(String clientRequestId) {
@@ -197,6 +170,4 @@ public class CaptureStartService {
     long displayNumber = Math.max(source, 1L) % 1000L;
     return "%03d".formatted(displayNumber);
   }
-
-  private record DailyRange(Instant startInclusive, Instant endExclusive) {}
 }
