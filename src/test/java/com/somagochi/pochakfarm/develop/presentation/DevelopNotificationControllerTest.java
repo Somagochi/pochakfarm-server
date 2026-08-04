@@ -13,8 +13,6 @@ import com.somagochi.pochakfarm.common.notification.SmsNotification;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationFilter;
 import com.somagochi.pochakfarm.common.security.SecurityAuthenticationEntryPoint;
 import com.somagochi.pochakfarm.develop.config.DevelopSecurityConfig;
-import com.somagochi.pochakfarm.preregistration.application.PreRegistrationCouponSmsService;
-import com.somagochi.pochakfarm.preregistration.dto.PreRegistrationCouponSmsResult;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,8 +48,6 @@ class DevelopNotificationControllerTest {
 
   @MockitoBean private NotificationService notificationService;
 
-  @MockitoBean private PreRegistrationCouponSmsService preRegistrationCouponSmsService;
-
   @Test
   void sendsSmsWithBasicAuth() throws Exception {
     mockMvc
@@ -63,38 +59,6 @@ class DevelopNotificationControllerTest {
         .andExpect(status().isOk());
 
     verify(notificationService).notify(new SmsNotification("01012345678", "테스트 메시지"));
-  }
-
-  @Test
-  void sendsPreRegistrationCouponSmsWithBasicAuth() throws Exception {
-    org.mockito.BDDMockito.given(preRegistrationCouponSmsService.send(false))
-        .willReturn(new PreRegistrationCouponSmsResult(10, 9, 1, 0, false));
-
-    mockMvc
-        .perform(
-            post("/api/dev/notifications/pre-registration-coupon-sms?dryRun=false")
-                .with(httpBasic("dev-admin", "dev-password")))
-        .andExpect(status().isOk())
-        .andExpect(
-            org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath(
-                    "$.data.sentCount")
-                .value(9));
-  }
-
-  @Test
-  void preRegistrationCouponSmsDefaultsToDryRun() throws Exception {
-    org.mockito.BDDMockito.given(preRegistrationCouponSmsService.send(true))
-        .willReturn(new PreRegistrationCouponSmsResult(10, 0, 0, 0, true));
-
-    mockMvc
-        .perform(
-            post("/api/dev/notifications/pre-registration-coupon-sms")
-                .with(httpBasic("dev-admin", "dev-password")))
-        .andExpect(status().isOk())
-        .andExpect(
-            org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath(
-                    "$.data.dryRun")
-                .value(true));
   }
 
   @Test

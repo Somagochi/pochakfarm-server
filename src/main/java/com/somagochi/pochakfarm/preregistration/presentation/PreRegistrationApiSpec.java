@@ -2,6 +2,7 @@ package com.somagochi.pochakfarm.preregistration.presentation;
 
 import com.somagochi.pochakfarm.common.exception.ErrorResponse;
 import com.somagochi.pochakfarm.common.response.ApiResponse;
+import com.somagochi.pochakfarm.preregistration.dto.PreRegistrationCouponSmsResult;
 import com.somagochi.pochakfarm.preregistration.dto.PreRegistrationRequest;
 import com.somagochi.pochakfarm.preregistration.dto.PreRegistrationResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -56,4 +57,18 @@ public interface PreRegistrationApiSpec {
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   @Deprecated
   ApiResponse<PreRegistrationResponse> cancel(String phoneNumber);
+
+  @Operation(
+      summary = "사전예약자 쿠폰 SMS 일괄 발송",
+      description =
+          "쿠폰이 발급된 사전예약자 중 아직 SMS를 받지 않은 대상 전원에게 쿠폰 코드를 문자로 발송한다. "
+              + "dryRun=true(기본값)면 발송 없이 대상 수만 집계한다. 발송 성공 건은 재호출해도 다시 발송되지 않는다.")
+  @Parameter(
+      in = ParameterIn.QUERY,
+      name = "dryRun",
+      description = "true면 발송하지 않고 대상 수만 반환 (기본값 true)")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "200",
+      description = "발송 결과 (targetCount/sentCount/failedCount/couponNotIssuedCount)")
+  ApiResponse<PreRegistrationCouponSmsResult> sendCouponSms(boolean dryRun);
 }

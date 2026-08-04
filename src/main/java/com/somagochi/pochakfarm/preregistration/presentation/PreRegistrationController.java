@@ -2,7 +2,9 @@ package com.somagochi.pochakfarm.preregistration.presentation;
 
 import com.somagochi.pochakfarm.common.response.ApiResponse;
 import com.somagochi.pochakfarm.preregistration.application.PreRegistrationCancelService;
+import com.somagochi.pochakfarm.preregistration.application.PreRegistrationCouponSmsService;
 import com.somagochi.pochakfarm.preregistration.application.PreRegistrationRegisterService;
+import com.somagochi.pochakfarm.preregistration.dto.PreRegistrationCouponSmsResult;
 import com.somagochi.pochakfarm.preregistration.dto.PreRegistrationRequest;
 import com.somagochi.pochakfarm.preregistration.dto.PreRegistrationResponse;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ public class PreRegistrationController implements PreRegistrationApiSpec {
 
   private final PreRegistrationRegisterService preRegistrationRegisterService;
   private final PreRegistrationCancelService preRegistrationCancelService;
+  private final PreRegistrationCouponSmsService preRegistrationCouponSmsService;
 
   @Override
   @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -40,5 +43,12 @@ public class PreRegistrationController implements PreRegistrationApiSpec {
   public ApiResponse<PreRegistrationResponse> cancel(
       @RequestParam("phoneNumber") String phoneNumber) {
     return ApiResponse.success(preRegistrationCancelService.cancel(phoneNumber));
+  }
+
+  @Override
+  @PostMapping("/coupon-sms")
+  public ApiResponse<PreRegistrationCouponSmsResult> sendCouponSms(
+      @RequestParam(defaultValue = "true") boolean dryRun) {
+    return ApiResponse.success(preRegistrationCouponSmsService.send(dryRun));
   }
 }
