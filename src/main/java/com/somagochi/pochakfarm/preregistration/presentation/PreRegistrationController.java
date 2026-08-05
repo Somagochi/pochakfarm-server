@@ -34,12 +34,14 @@ public class PreRegistrationController implements PreRegistrationApiSpec {
   private final AdminApiKeyValidator adminApiKeyValidator;
 
   @Override
+  @Deprecated
   public ApiResponse<PreRegistrationResponse> register(
       @RequestBody PreRegistrationRequest request) {
     return ApiResponse.success(preRegistrationRegisterService.register(request));
   }
 
   @Override
+  @Deprecated
   public ApiResponse<PreRegistrationResponse> cancel(
       @RequestParam("phoneNumber") String phoneNumber) {
     return ApiResponse.success(preRegistrationCancelService.cancel(phoneNumber));
