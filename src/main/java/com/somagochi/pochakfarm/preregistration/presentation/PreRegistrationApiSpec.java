@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Tag(name = "PreRegistration", description = "사전예약 API")
 public interface PreRegistrationApiSpec {
@@ -39,7 +40,8 @@ public interface PreRegistrationApiSpec {
       description = "캐릭터라이징 내역 없음(CHARACTERIZATION_NOT_FOUND)",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   @Deprecated
-  ApiResponse<PreRegistrationResponse> register(PreRegistrationRequest request);
+  ApiResponse<PreRegistrationResponse> register(PreRegistrationRequest request)
+      throws NoResourceFoundException;
 
   @Operation(
       summary = "사전예약 취소",
@@ -57,7 +59,7 @@ public interface PreRegistrationApiSpec {
       description = "사전예약 내역 없음(PRE_REGISTRATION_NOT_FOUND)",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   @Deprecated
-  ApiResponse<PreRegistrationResponse> cancel(String phoneNumber);
+  ApiResponse<PreRegistrationResponse> cancel(String phoneNumber) throws NoResourceFoundException;
 
   @Operation(
       summary = "사전예약자 쿠폰 SMS 일괄 발송",
