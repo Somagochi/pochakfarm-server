@@ -11,8 +11,6 @@ import com.somagochi.pochakfarm.preregistration.dto.PreRegistrationRequest;
 import com.somagochi.pochakfarm.preregistration.dto.PreRegistrationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -36,21 +34,21 @@ public class PreRegistrationController implements PreRegistrationApiSpec {
   private final AdminApiKeyValidator adminApiKeyValidator;
 
   @Override
-  @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+  @Deprecated
   public ApiResponse<PreRegistrationResponse> register(
       @RequestBody PreRegistrationRequest request) {
     return ApiResponse.success(preRegistrationRegisterService.register(request));
   }
 
   @Override
-  @DeleteMapping
+  @Deprecated
   public ApiResponse<PreRegistrationResponse> cancel(
       @RequestParam("phoneNumber") String phoneNumber) {
     return ApiResponse.success(preRegistrationCancelService.cancel(phoneNumber));
   }
 
   @Override
-  @PostMapping(value = "/coupon-sms", consumes = MediaType.APPLICATION_JSON_VALUE)
+  @PostMapping(value = "/coupon-sms")
   public ApiResponse<PreRegistrationCouponSmsResult> sendCouponSms(
       @RequestHeader(value = "X-Admin-Key", required = false) String adminKey,
       @RequestParam(defaultValue = "true") boolean dryRun,

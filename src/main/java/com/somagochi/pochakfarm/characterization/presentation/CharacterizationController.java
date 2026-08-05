@@ -38,6 +38,7 @@ public class CharacterizationController implements CharacterizationApiSpec {
   private final DeviceTokenCookieFactory deviceTokenCookieFactory;
 
   @Override
+  @Deprecated
   @PostMapping(value = "/public", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ApiResponse<CharacterizationStartResponse> characterize(
       @CookieValue(value = DeviceTokenCookieFactory.COOKIE_NAME, required = false)
@@ -56,6 +57,7 @@ public class CharacterizationController implements CharacterizationApiSpec {
   }
 
   @Override
+  @Deprecated
   @GetMapping("/public/{characterizationId}")
   public ApiResponse<CharacterizationResponse> getCharacterization(
       @PathVariable Long characterizationId) {
