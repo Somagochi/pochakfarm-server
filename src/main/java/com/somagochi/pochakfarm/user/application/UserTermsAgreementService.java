@@ -4,6 +4,8 @@ import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.user.domain.User;
 import com.somagochi.pochakfarm.user.dto.TermsAgreementRequest;
+import com.somagochi.pochakfarm.user.dto.TermsAgreementResponse;
+import com.somagochi.pochakfarm.user.dto.TermsAgreementUpdateRequest;
 import com.somagochi.pochakfarm.user.infrastructure.persistence.UserRepository;
 import java.time.Clock;
 import lombok.RequiredArgsConstructor;
@@ -30,5 +32,24 @@ public class UserTermsAgreementService {
         request.serviceQualityAgreed(),
         request.marketingAgreed(),
         clock.instant());
+  }
+
+  @Transactional(readOnly = true)
+  public TermsAgreementResponse get(Long userId) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    return TermsAgreementResponse.from(user);
+  }
+
+  @Transactional
+  public TermsAgreementResponse update(Long userId, TermsAgreementUpdateRequest request) {
+    User user =
+        userRepository
+            .findByIdForUpdate(userId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    user.updateMarketingAgreement(request.marketingAgreed(), clock.instant());
+    return TermsAgreementResponse.from(user);
   }
 }

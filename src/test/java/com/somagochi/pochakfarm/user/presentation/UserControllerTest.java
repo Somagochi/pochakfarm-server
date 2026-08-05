@@ -27,6 +27,8 @@ import com.somagochi.pochakfarm.user.application.UserTermsAgreementService;
 import com.somagochi.pochakfarm.user.application.WithdrawService;
 import com.somagochi.pochakfarm.user.domain.WithdrawalReason;
 import com.somagochi.pochakfarm.user.dto.NicknameResponse;
+import com.somagochi.pochakfarm.user.dto.TermsAgreementResponse;
+import com.somagochi.pochakfarm.user.dto.TermsAgreementUpdateRequest;
 import com.somagochi.pochakfarm.user.dto.UserProfileResponse;
 import com.somagochi.pochakfarm.user.dto.UserResponse;
 import jakarta.servlet.FilterChain;
@@ -172,6 +174,77 @@ class UserControllerTest {
             post("/api/users/me/terms-agreement")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void returnsTermsAgreementWhenAuthenticated() throws Exception {
+    given(userTermsAgreementService.get(1L))
+        .willReturn(
+            new TermsAgreementResponse(
+                true,
+                Instant.parse("2026-08-01T10:00:00Z"),
+                false,
+                null,
+                true,
+                Instant.parse("2026-08-05T10:30:00Z")));
+
+    mockMvc
+        .perform(get("/api/users/me/terms-agreement").with(authentication(authenticationFor(1L))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.requiredTermsAgreed").value(true))
+        .andExpect(jsonPath("$.data.requiredTermsAgreedAt").value("2026-08-01T10:00:00Z"))
+        .andExpect(jsonPath("$.data.serviceQualityAgreed").value(false))
+        .andExpect(jsonPath("$.data.serviceQualityAgreedAt").doesNotExist())
+        .andExpect(jsonPath("$.data.marketingAgreed").value(true))
+        .andExpect(jsonPath("$.data.marketingAgreedAt").value("2026-08-05T10:30:00Z"));
+  }
+
+  @Test
+  void updatesMarketingAgreementWhenAuthenticated() throws Exception {
+    TermsAgreementUpdateRequest request = new TermsAgreementUpdateRequest(false);
+    given(userTermsAgreementService.update(1L, request))
+        .willReturn(
+            new TermsAgreementResponse(
+                true, Instant.parse("2026-08-01T10:00:00Z"), false, null, false, null));
+
+    mockMvc
+        .perform(
+            patch("/api/users/me/terms-agreement")
+                .with(authentication(authenticationFor(1L)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"marketingAgreed\":false}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.marketingAgreed").value(false))
+        .andExpect(jsonPath("$.data.marketingAgreedAt").doesNotExist());
+
+    verify(userTermsAgreementService).update(1L, request);
+  }
+
+  @Test
+  void returnsBadRequestWhenMarketingAgreementIsNull() throws Exception {
+    TermsAgreementUpdateRequest request = new TermsAgreementUpdateRequest(null);
+    given(userTermsAgreementService.update(1L, request))
+        .willThrow(new BusinessException(ErrorCode.INVALID_PARAMETER));
+
+    mockMvc
+        .perform(
+            patch("/api/users/me/terms-agreement")
+                .with(authentication(authenticationFor(1L)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("INVALID_PARAMETER"));
+  }
+
+  @Test
+  void returnsUnauthorizedWhenAccessingTermsAgreementWithoutAuthentication() throws Exception {
+    mockMvc.perform(get("/api/users/me/terms-agreement")).andExpect(status().isUnauthorized());
+    mockMvc
+        .perform(
+            patch("/api/users/me/terms-agreement")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"marketingAgreed\":true}"))
         .andExpect(status().isUnauthorized());
   }
 

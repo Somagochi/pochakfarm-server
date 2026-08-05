@@ -83,6 +83,61 @@ class UserTest {
   }
 
   @Test
+  void agreesToMarketingWhenCurrentlyNotAgreed() {
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    Instant initialAgreedAt = Instant.parse("2026-08-04T01:02:03Z");
+    Instant marketingAgreedAt = Instant.parse("2026-08-05T01:02:03Z");
+    user.agreeToTerms(true, true, true, false, false, initialAgreedAt);
+
+    user.updateMarketingAgreement(true, marketingAgreedAt);
+
+    assertEquals(marketingAgreedAt, user.getMarketingAgreedAt());
+  }
+
+  @Test
+  void keepsOriginalMarketingAgreementTimeWhenAlreadyAgreed() {
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    Instant firstAgreedAt = Instant.parse("2026-08-04T01:02:03Z");
+    user.agreeToTerms(true, true, true, false, true, firstAgreedAt);
+
+    user.updateMarketingAgreement(true, Instant.parse("2026-08-05T01:02:03Z"));
+
+    assertEquals(firstAgreedAt, user.getMarketingAgreedAt());
+  }
+
+  @Test
+  void withdrawsMarketingAgreement() {
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    user.agreeToTerms(true, true, true, false, true, Instant.parse("2026-08-04T01:02:03Z"));
+
+    user.updateMarketingAgreement(false, Instant.parse("2026-08-05T01:02:03Z"));
+
+    assertNull(user.getMarketingAgreedAt());
+  }
+
+  @Test
+  void keepsMarketingAgreementEmptyWhenAlreadyNotAgreed() {
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    user.agreeToTerms(true, true, true, false, false, Instant.parse("2026-08-04T01:02:03Z"));
+
+    user.updateMarketingAgreement(false, Instant.parse("2026-08-05T01:02:03Z"));
+
+    assertNull(user.getMarketingAgreedAt());
+  }
+
+  @Test
+  void rejectsNullMarketingAgreement() {
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () -> user.updateMarketingAgreement(null, Instant.parse("2026-08-05T01:02:03Z")));
+
+    assertEquals(ErrorCode.INVALID_PARAMETER.getCode(), exception.getCode());
+  }
+
+  @Test
   void changeNicknameUpdatesTrimmedNickname() {
     User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
 
