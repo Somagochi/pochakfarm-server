@@ -80,7 +80,7 @@ public record AchievementResponse(
     return new AchievementResponse(
         achievement.getId(),
         achievement.getCode(),
-        null,
+        achievement.getTitle(),
         null,
         achievement.getCategory(),
         true,
