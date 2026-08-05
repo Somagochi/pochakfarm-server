@@ -150,7 +150,7 @@ class AchievementQueryServiceIntegrationTest {
     assertTrue(locked.hidden());
     assertFalse(locked.achieved());
     assertNull(locked.achievedInfo());
-    assertNull(locked.title());
+    assertNotNull(locked.title());
     assertNull(locked.description());
     assertNull(locked.progress());
     assertNull(locked.imageUrl());
