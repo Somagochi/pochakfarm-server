@@ -41,6 +41,10 @@ public interface CouponApiSpec {
       responseCode = "409",
       description = "이미 사용된 쿠폰 또는 이미 쿠폰을 사용한 유저",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "419",
+      description = "농장 공간이 가득 참 (FARM_SPACE_FULL)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   ApiResponse<CouponRedeemResponse> redeem(UserPrincipal principal, CouponRedeemRequest request);
 
   @Operation(
@@ -66,6 +70,10 @@ public interface CouponApiSpec {
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "409",
       description = "이미 사용된 쿠폰 또는 이관이 시작되지 않은 쿠폰",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "419",
+      description = "농장 공간이 가득 참 (FARM_SPACE_FULL)",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   ApiResponse<CouponCompleteResponse> complete(
       UserPrincipal principal, CouponCompleteRequest request);
