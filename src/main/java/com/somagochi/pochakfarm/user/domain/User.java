@@ -104,6 +104,17 @@ public class User extends BaseEntity {
     this.marketingAgreedAt = Boolean.TRUE.equals(marketingAgreed) ? agreedAt : null;
   }
 
+  public void updateMarketingAgreement(Boolean marketingAgreed, Instant agreedAt) {
+    if (marketingAgreed == null) {
+      throw new BusinessException(ErrorCode.INVALID_PARAMETER);
+    }
+    if (marketingAgreed && marketingAgreedAt == null) {
+      marketingAgreedAt = agreedAt;
+    } else if (!marketingAgreed) {
+      marketingAgreedAt = null;
+    }
+  }
+
   public void changeNickname(String nickname) {
     if (nickname == null) {
       throw new BusinessException(ErrorCode.INVALID_NICKNAME);

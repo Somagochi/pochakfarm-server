@@ -9,6 +9,8 @@ import com.somagochi.pochakfarm.user.application.WithdrawService;
 import com.somagochi.pochakfarm.user.dto.NicknameResponse;
 import com.somagochi.pochakfarm.user.dto.NicknameUpdateRequest;
 import com.somagochi.pochakfarm.user.dto.TermsAgreementRequest;
+import com.somagochi.pochakfarm.user.dto.TermsAgreementResponse;
+import com.somagochi.pochakfarm.user.dto.TermsAgreementUpdateRequest;
 import com.somagochi.pochakfarm.user.dto.UserProfileResponse;
 import com.somagochi.pochakfarm.user.dto.UserResponse;
 import com.somagochi.pochakfarm.user.dto.WithdrawRequest;
@@ -56,6 +58,21 @@ public class UserController implements UserApiSpec {
       @RequestBody TermsAgreementRequest request) {
     userTermsAgreementService.agree(principal.id(), request);
     return ApiResponse.empty();
+  }
+
+  @Override
+  @GetMapping("/me/terms-agreement")
+  public ApiResponse<TermsAgreementResponse> getTermsAgreement(
+      @AuthenticationPrincipal UserPrincipal principal) {
+    return ApiResponse.success(userTermsAgreementService.get(principal.id()));
+  }
+
+  @Override
+  @PatchMapping("/me/terms-agreement")
+  public ApiResponse<TermsAgreementResponse> updateTermsAgreement(
+      @AuthenticationPrincipal UserPrincipal principal,
+      @RequestBody TermsAgreementUpdateRequest request) {
+    return ApiResponse.success(userTermsAgreementService.update(principal.id(), request));
   }
 
   @Override
