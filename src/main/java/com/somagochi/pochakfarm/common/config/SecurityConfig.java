@@ -39,6 +39,7 @@ public class SecurityConfig {
     "/api/auth/login",
     "/api/characterizations/public",
     "/api/pre-registrations",
+    "/api/pre-registrations/coupon-sms",
     "/api/auth/refresh"
   };
 

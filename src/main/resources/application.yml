@@ -106,6 +106,8 @@ logbook:
     form-request-mode: parameter
 
 app:
+  admin:
+    api-key: ${secret.admin.api-key:}
   discord:
     webhook-url: ${secret.discord.webhook-url:}
   jwt:
@@ -142,6 +144,11 @@ app:
   coupon:
     pre-registration:
       enabled: ${secret.coupon.pre-registration.enabled:true}
+  solapi:
+    base-url: ${secret.solapi.base-url:https://api.solapi.com}
+    api-key: ${secret.solapi.api-key:}
+    api-secret: ${secret.solapi.api-secret:}
+    from: ${secret.solapi.from:}
   promotion:
     base-url: ${secret.promotion.base-url}
   develop:

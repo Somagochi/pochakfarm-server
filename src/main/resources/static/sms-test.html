@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SMS 발송 테스트 (dev)</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; margin: 32px auto; max-width: 560px; padding: 0 16px; background: #f6f7f9; color: #1f2328; }
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    .sub { color: #57606a; font-size: 13px; margin-bottom: 20px; }
+    .flash { padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+    .flash.ok { background: #dafbe1; color: #116329; }
+    .flash.fail { background: #ffebe9; color: #cf222e; }
+    .card { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); padding: 18px; }
+    label { display: block; font-size: 12px; color: #57606a; font-weight: 700; margin: 12px 0 6px; }
+    input[type="tel"], input[type="text"], input[type="password"], textarea { width: 100%; box-sizing: border-box; padding: 9px 10px; border: 1px solid #c4ccd4; border-radius: 6px; font-size: 14px; font-family: inherit; }
+    .row { display: flex; gap: 10px; }
+    .row > div { flex: 1; }
+    textarea { min-height: 110px; resize: vertical; }
+    .hint { font-size: 12px; color: #8b949e; margin-top: 4px; }
+    .count { text-align: right; }
+    button { margin-top: 16px; width: 100%; background: #1f883d; color: #fff; border: none; border-radius: 6px; padding: 10px 14px; font-size: 14px; cursor: pointer; }
+    button:hover { background: #1a7f37; }
+    button:disabled { background: #8b949e; cursor: progress; }
+  </style>
+</head>
+<body>
+<h1>SMS 발송 테스트 (dev)</h1>
+<p class="sub">Solapi로 단건 SMS를 발송한다. 실제 문자가 발송되므로 주의.</p>
+
+<div class="flash ok" id="result-ok" hidden></div>
+<div class="flash fail" id="result-fail" hidden></div>
+
+<div class="card">
+  <form id="sms-form">
+    <label for="base">서버 Base URL</label>
+    <input type="text" id="base">
+
+    <div class="row">
+      <div>
+        <label for="auth-username">Basic 계정 (선택)</label>
+        <input type="text" id="auth-username" placeholder="다른 호스트로 보낼 때만">
+      </div>
+      <div>
+        <label for="auth-password">Basic 비밀번호</label>
+        <input type="password" id="auth-password">
+      </div>
+    </div>
+
+    <label for="to">수신번호</label>
+    <input type="tel" id="to" name="to" placeholder="01012345678" pattern="[0-9]{9,11}" required>
+    <div class="hint">숫자만 입력 (하이픈 없이)</div>
+
+    <label for="text">메시지</label>
+    <textarea id="text" name="text" maxlength="90" placeholder="보낼 내용을 입력하세요" required></textarea>
+    <div class="hint count"><span id="text-count">0</span>/90자 (SMS 기준)</div>
+
+    <button type="submit" id="send-button">발송</button>
+  </form>
+</div>
+
+<script>
+  const form = document.getElementById('sms-form');
+  const okBox = document.getElementById('result-ok');
+  const failBox = document.getElementById('result-fail');
+  const button = document.getElementById('send-button');
+  const textInput = document.getElementById('text');
+  const textCount = document.getElementById('text-count');
+  const baseInput = document.getElementById('base');
+  const usernameInput = document.getElementById('auth-username');
+  const passwordInput = document.getElementById('auth-password');
+
+  baseInput.value = location.origin.startsWith('http')
+    ? location.origin
+    : 'http://localhost:8080';
+
+  textInput.addEventListener('input', () => {
+    textCount.textContent = textInput.value.length;
+  });
+
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    okBox.hidden = true;
+    failBox.hidden = true;
+    button.disabled = true;
+    button.textContent = '발송 중…';
+    try {
+      const base = baseInput.value.replace(/\/+$/, '');
+      const headers = {'Content-Type': 'application/json'};
+      if (usernameInput.value) {
+        headers['Authorization'] =
+          'Basic ' + btoa(usernameInput.value + ':' + passwordInput.value);
+      }
+      const response = await fetch(base + '/api/dev/notifications/sms', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+          to: document.getElementById('to').value.trim(),
+          text: textInput.value
+        })
+      });
+      if (response.ok) {
+        okBox.textContent = '발송했습니다.';
+        okBox.hidden = false;
+      } else {
+        let detail = 'HTTP ' + response.status;
+        try {
+          const body = await response.json();
+          if (body.code) {
+            detail = body.code + (body.message ? ': ' + body.message : '');
+          }
+        } catch (ignored) {
+        }
+        failBox.textContent = '발송 실패 — ' + detail;
+        failBox.hidden = false;
+      }
+    } catch (e) {
+      failBox.textContent = '발송 실패 — ' + e.message;
+      failBox.hidden = false;
+    } finally {
+      button.disabled = false;
+      button.textContent = '발송';
+    }
+  });
+</script>
+</body>
+</html>

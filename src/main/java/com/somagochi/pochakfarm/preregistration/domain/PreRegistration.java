@@ -12,6 +12,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -79,6 +80,10 @@ public class PreRegistration extends BaseEntity {
 
   public void cancel() {
     this.status = PreRegistrationStatus.CANCELED;
+  }
+
+  public void markCouponSmsSent(Instant sentAt) {
+    this.messageSentAt = Objects.requireNonNull(sentAt);
   }
 
   public void reactivate(

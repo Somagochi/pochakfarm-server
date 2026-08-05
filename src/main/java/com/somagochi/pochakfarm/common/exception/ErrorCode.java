@@ -78,6 +78,7 @@ public enum ErrorCode {
   COUPON_ALREADY_REDEEMED(409, "COUPON_ALREADY_REDEEMED", "User already redeemed a coupon"),
   COUPON_REDEEM_NOT_STARTED(409, "COUPON_REDEEM_NOT_STARTED", "Coupon redeem not started"),
   FORBIDDEN_COUPON_ACCESS(403, "FORBIDDEN_COUPON_ACCESS", "Forbidden coupon access"),
+  FORBIDDEN_ADMIN_ACCESS(403, "FORBIDDEN_ADMIN_ACCESS", "Forbidden admin access"),
   ;
 
   private final int status;
