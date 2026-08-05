@@ -66,7 +66,7 @@ public enum ErrorCode {
   CONCURRENCY_CONFLICT(409, "CONCURRENCY_CONFLICT", "Concurrent modification conflict"),
   FORBIDDEN_FARM_SLOT_ACCESS(403, "FORBIDDEN_FARM_SLOT_ACCESS", "Forbidden farm slot access"),
   FARM_SLOT_TYPE_MISMATCH(400, "FARM_SLOT_TYPE_MISMATCH", "Farm slot type mismatch"),
-  FARM_SPACE_FULL(409, "FARM_SPACE_FULL", "Farm space is full"),
+  FARM_SPACE_FULL(419, "FARM_SPACE_FULL", "Farm space is full"),
   ACHIEVEMENT_NOT_FOUND(404, "ACHIEVEMENT_NOT_FOUND", "Achievement not found"),
   ACHIEVEMENT_NOT_ACHIEVED(400, "ACHIEVEMENT_NOT_ACHIEVED", "Achievement is not achieved yet"),
   ACHIEVEMENT_REWARD_ALREADY_CLAIMED(
