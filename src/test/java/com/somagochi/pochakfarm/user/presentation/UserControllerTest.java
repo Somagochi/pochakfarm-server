@@ -25,6 +25,7 @@ import com.somagochi.pochakfarm.user.application.UserNicknameService;
 import com.somagochi.pochakfarm.user.application.UserQueryService;
 import com.somagochi.pochakfarm.user.application.UserTermsAgreementService;
 import com.somagochi.pochakfarm.user.application.WithdrawService;
+import com.somagochi.pochakfarm.user.domain.WithdrawalReason;
 import com.somagochi.pochakfarm.user.dto.NicknameResponse;
 import com.somagochi.pochakfarm.user.dto.UserProfileResponse;
 import com.somagochi.pochakfarm.user.dto.UserResponse;
@@ -181,10 +182,48 @@ class UserControllerTest {
             delete("/api/users/me")
                 .with(authentication(authenticationFor(1L)))
                 .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "refreshToken": "refresh-token",
+                      "withdrawalReason": "LOW_USAGE"
+                    }
+                    """))
+        .andExpect(status().isOk());
+
+    verify(withdrawService)
+        .withdraw(1L, "access-token", "refresh-token", WithdrawalReason.LOW_USAGE);
+  }
+
+  @Test
+  void withdrawsWithoutOptionalReason() throws Exception {
+    mockMvc
+        .perform(
+            delete("/api/users/me")
+                .with(authentication(authenticationFor(1L)))
+                .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"refreshToken\":\"refresh-token\"}"))
         .andExpect(status().isOk());
 
-    verify(withdrawService).withdraw(1L, "access-token", "refresh-token");
+    verify(withdrawService).withdraw(1L, "access-token", "refresh-token", null);
+  }
+
+  @Test
+  void rejectsUnsupportedWithdrawalReason() throws Exception {
+    mockMvc
+        .perform(
+            delete("/api/users/me")
+                .with(authentication(authenticationFor(1L)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "refreshToken": "refresh-token",
+                      "withdrawalReason": "UNKNOWN"
+                    }
+                    """))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("INVALID_PARAMETER"));
   }
 
   @Test

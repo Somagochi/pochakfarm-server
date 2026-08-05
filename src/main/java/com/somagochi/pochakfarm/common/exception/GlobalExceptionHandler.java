@@ -9,6 +9,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -48,6 +49,16 @@ public class GlobalExceptionHandler {
         ErrorCode.INVALID_PARAMETER.getStatus(),
         ErrorCode.INVALID_PARAMETER.getCode(),
         invalidParameterMessage(exception));
+  }
+
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(
+      HttpMessageNotReadableException exception) {
+    logClientError(exception);
+    return buildResponse(
+        ErrorCode.INVALID_PARAMETER.getStatus(),
+        ErrorCode.INVALID_PARAMETER.getCode(),
+        ErrorCode.INVALID_PARAMETER.getMessage());
   }
 
   @ExceptionHandler(JwtAuthenticationException.class)

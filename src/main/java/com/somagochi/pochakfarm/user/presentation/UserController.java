@@ -71,7 +71,10 @@ public class UserController implements UserApiSpec {
       Authentication authentication, @RequestBody WithdrawRequest request) {
     UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
     withdrawService.withdraw(
-        principal.id(), (String) authentication.getCredentials(), request.refreshToken());
+        principal.id(),
+        (String) authentication.getCredentials(),
+        request.refreshToken(),
+        request.withdrawalReason());
     return ApiResponse.empty();
   }
 

@@ -158,9 +158,10 @@ class UserTest {
     User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
     user.changeNickname("포착이");
 
-    user.withdraw();
+    user.withdraw(WithdrawalReason.INCONVENIENT);
 
     assertTrue(user.isDeleted());
+    assertEquals(WithdrawalReason.INCONVENIENT, user.getWithdrawalReason());
     assertNull(user.getNickname());
     assertEquals(SocialProvider.KAKAO, user.getSocialAccount().getProvider());
     assertNotEquals("provider-id-1", user.getSocialAccount().getProviderId());
@@ -174,23 +175,25 @@ class UserTest {
   void withdrawIsIdempotent() {
     User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
 
-    user.withdraw();
+    user.withdraw(WithdrawalReason.LOW_USAGE);
     String providerIdAfterFirst = user.getSocialAccount().getProviderId();
     String emailAfterFirst = user.getEmail();
 
-    user.withdraw();
+    user.withdraw(WithdrawalReason.OTHER);
 
     assertEquals(providerIdAfterFirst, user.getSocialAccount().getProviderId());
     assertEquals(emailAfterFirst, user.getEmail());
+    assertEquals(WithdrawalReason.LOW_USAGE, user.getWithdrawalReason());
   }
 
   @Test
   void withdrawHandlesNullEmail() {
     User user = User.register(SocialProvider.KAKAO, "provider-id-1", null);
 
-    user.withdraw();
+    user.withdraw(null);
 
     assertTrue(user.isDeleted());
+    assertNull(user.getWithdrawalReason());
     assertFalse(user.getSocialAccount().getProviderId().equals("provider-id-1"));
   }
 }

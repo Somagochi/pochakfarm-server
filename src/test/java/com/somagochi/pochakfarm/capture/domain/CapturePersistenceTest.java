@@ -92,7 +92,7 @@ class CapturePersistenceTest {
     entityManager.persist(capture);
     entityManager.flush();
 
-    user.withdraw();
+    user.withdraw(null);
     entityManager.flush();
     entityManager.clear();
 
