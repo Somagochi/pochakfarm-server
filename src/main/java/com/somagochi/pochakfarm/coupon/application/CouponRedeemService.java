@@ -28,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class CouponRedeemService {
 
   private static final Tier REWARD_TIER = Tier.S;
-  private static final String ANIMAL_IMAGE_UPLOAD_PURPOSE = "coupon-animal";
   private static final String ANIMAL_IMAGE_CONTENT_TYPE = "image/png";
 
   private final CouponRepository couponRepository;
@@ -102,7 +101,11 @@ public class CouponRedeemService {
     return CouponRedeemResponse.of(
         capture,
         fileStorage.buildUrl(capture.getCardImage()),
-        imageUploadService.createPresign(
-            userId, ANIMAL_IMAGE_UPLOAD_PURPOSE, ANIMAL_IMAGE_CONTENT_TYPE));
+        imageUploadService.refreshPresign(
+            userId, animalImageKey(userId, capture.getId()), ANIMAL_IMAGE_CONTENT_TYPE));
+  }
+
+  private String animalImageKey(Long userId, Long captureId) {
+    return "public/capture-animal/%d/%d.png".formatted(userId, captureId);
   }
 }
