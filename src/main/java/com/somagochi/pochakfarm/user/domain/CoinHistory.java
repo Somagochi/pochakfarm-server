@@ -72,4 +72,13 @@ public class CoinHistory extends BaseEntity {
     return new CoinHistory(
         userId, CoinTransactionType.SPEND, reason, amount, balanceAfter, referenceId);
   }
+
+  public static CoinHistory earn(
+      Long userId, long amount, long balanceAfter, CoinTransactionReason reason, Long referenceId) {
+    if (amount <= 0) {
+      throw new BusinessException(ErrorCode.INVALID_PARAMETER);
+    }
+    return new CoinHistory(
+        userId, CoinTransactionType.EARN, reason, amount, balanceAfter, referenceId);
+  }
 }

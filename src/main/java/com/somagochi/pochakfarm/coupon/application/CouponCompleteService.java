@@ -11,7 +11,9 @@ import com.somagochi.pochakfarm.coupon.dto.CouponCompleteResponse;
 import com.somagochi.pochakfarm.coupon.infrastructure.persistence.CouponRepository;
 import com.somagochi.pochakfarm.coupon.infrastructure.persistence.PreRegistrationCouponRecipientRepository;
 import com.somagochi.pochakfarm.storage.application.ImageUploadService;
+import com.somagochi.pochakfarm.user.application.UserCoinService;
 import com.somagochi.pochakfarm.user.application.UserQueryService;
+import com.somagochi.pochakfarm.user.domain.CoinTransactionReason;
 import com.somagochi.pochakfarm.user.domain.User;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ public class CouponCompleteService {
   private final CouponRepository couponRepository;
   private final PreRegistrationCouponRecipientRepository recipientRepository;
   private final UserQueryService userQueryService;
+  private final UserCoinService userCoinService;
   private final CaptureGrantService captureGrantService;
   private final AnimalPlacementService animalPlacementService;
   private final ImageUploadService imageUploadService;
@@ -45,7 +48,8 @@ public class CouponCompleteService {
         userId, capture.getCardType(), capture.getId());
 
     User user = userQueryService.getForUpdate(userId);
-    user.addCoins(REWARD_COINS);
+    userCoinService.earn(
+        user, REWARD_COINS, CoinTransactionReason.COUPON_COMPLETE_REWARD, coupon.getId());
     coupon.use();
     recipient.convert(Instant.now());
     return new CouponCompleteResponse(REWARD_COINS, user.getCoins());

@@ -105,7 +105,8 @@ class AchievementQueryServiceIntegrationTest {
 
     AchievementResponse firstHome = find(response, "TEST_FIRST_HOME");
     assertTrue(firstHome.achieved());
-    assertEquals(3L, firstHome.progress().current());
+    assertEquals(1L, firstHome.progress().current());
+    assertEquals(1L, firstHome.progress().target());
 
     assertEquals(2L, find(response, "TEST_ONE_TYPE").progress().current());
     assertEquals(2L, find(response, "TEST_COLLECTOR").progress().current());

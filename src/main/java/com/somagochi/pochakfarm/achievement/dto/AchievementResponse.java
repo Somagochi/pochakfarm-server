@@ -48,7 +48,7 @@ public record AchievementResponse(
         achievement.getCategory(),
         achievement.isHidden(),
         achievedImageUrl,
-        new Progress(current, achievement.getTargetValue()),
+        Progress.achieved(current, achievement.getTargetValue()),
         true,
         new AchievedInfo(record.getAchievedAt(), record.isRewardClaimed()),
         rewards);
@@ -70,7 +70,7 @@ public record AchievementResponse(
         achievement.getCategory(),
         false,
         unachievedImageUrl,
-        new Progress(current, achievement.getTargetValue()),
+        Progress.unachieved(current, achievement.getTargetValue()),
         false,
         null,
         rewards);
@@ -91,7 +91,16 @@ public record AchievementResponse(
         null);
   }
 
-  public record Progress(long current, long target) {}
+  public record Progress(long current, long target) {
+
+    public static Progress unachieved(long current, long target) {
+      return new Progress(current, target);
+    }
+
+    public static Progress achieved(long current, long target) {
+      return new Progress(Math.min(current, target), target);
+    }
+  }
 
   public record AchievedInfo(Instant achievedAt, boolean rewardClaimed) {}
 }

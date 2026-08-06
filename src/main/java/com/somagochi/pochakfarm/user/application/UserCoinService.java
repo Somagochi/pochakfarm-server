@@ -1,36 +1,48 @@
 package com.somagochi.pochakfarm.user.application;
 
-import com.somagochi.pochakfarm.common.exception.BusinessException;
-import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.user.domain.CoinHistory;
 import com.somagochi.pochakfarm.user.domain.CoinTransactionReason;
 import com.somagochi.pochakfarm.user.domain.User;
 import com.somagochi.pochakfarm.user.infrastructure.persistence.CoinHistoryRepository;
-import com.somagochi.pochakfarm.user.infrastructure.persistence.UserRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserCoinService {
 
-  private final UserRepository userRepository;
+  private final EntityManager entityManager;
   private final CoinHistoryRepository coinHistoryRepository;
 
-  public UserCoinService(
-      UserRepository userRepository, CoinHistoryRepository coinHistoryRepository) {
-    this.userRepository = userRepository;
+  public UserCoinService(EntityManager entityManager, CoinHistoryRepository coinHistoryRepository) {
+    this.entityManager = entityManager;
     this.coinHistoryRepository = coinHistoryRepository;
   }
 
-  @Transactional
-  public User spend(Long userId, long amount, CoinTransactionReason reason, Long referenceId) {
-    User user =
-        userRepository
-            .findByIdForUpdate(userId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+  @Transactional(propagation = Propagation.MANDATORY)
+  public User spend(User user, long amount, CoinTransactionReason reason, Long referenceId) {
+    validateLocked(user);
     user.spendCoins(amount);
     coinHistoryRepository.save(
-        CoinHistory.spend(userId, amount, user.getCoins(), reason, referenceId));
+        CoinHistory.spend(user.getId(), amount, user.getCoins(), reason, referenceId));
     return user;
+  }
+
+  @Transactional(propagation = Propagation.MANDATORY)
+  public User earn(User user, long amount, CoinTransactionReason reason, Long referenceId) {
+    validateLocked(user);
+    user.addCoins(amount);
+    coinHistoryRepository.save(
+        CoinHistory.earn(user.getId(), amount, user.getCoins(), reason, referenceId));
+    return user;
+  }
+
+  private void validateLocked(User user) {
+    if (entityManager.getLockMode(user) != LockModeType.PESSIMISTIC_WRITE) {
+      throw new IllegalStateException(
+          "User must be locked with PESSIMISTIC_WRITE before coin transaction");
+    }
   }
 }

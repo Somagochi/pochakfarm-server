@@ -10,6 +10,8 @@ import com.somagochi.pochakfarm.capture.dto.CaptureGameResultResponse.Progressio
 import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureRepository;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
+import com.somagochi.pochakfarm.user.application.UserCoinService;
+import com.somagochi.pochakfarm.user.domain.CoinTransactionReason;
 import com.somagochi.pochakfarm.user.domain.LevelReward;
 import com.somagochi.pochakfarm.user.domain.LevelRewardPolicy;
 import com.somagochi.pochakfarm.user.domain.User;
@@ -29,6 +31,7 @@ public class CaptureGameResultService {
   private final CaptureGameResultPolicy gameResultPolicy;
   private final CaptureExperiencePolicy experiencePolicy;
   private final LevelRewardPolicy levelRewardPolicy;
+  private final UserCoinService userCoinService;
   private final Clock clock;
 
   @Transactional
@@ -62,6 +65,10 @@ public class CaptureGameResultService {
     long experience = experiencePolicy.experienceFor(capture.getTier(), result);
     ProgressionState before = progressionState(user);
     LevelReward levelReward = user.gainExperience(experience, levelRewardPolicy);
+    if (levelReward.coinReward() > 0) {
+      userCoinService.earn(
+          user, levelReward.coinReward(), CoinTransactionReason.LEVEL_UP_REWARD, capture.getId());
+    }
     capture.completeGame(result, levelReward.experienceReward());
     return response(capture, before, progressionState(user), levelReward.coinReward());
   }

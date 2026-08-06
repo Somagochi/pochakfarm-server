@@ -64,10 +64,7 @@ public class CaptureAttemptPurchaseService {
         purchaseRepository.saveAndFlush(CaptureAttemptPurchase.create(userId, clientRequestId));
     User charged =
         userCoinService.spend(
-            userId,
-            PURCHASE_COST,
-            CoinTransactionReason.CAPTURE_ATTEMPT_PURCHASE,
-            purchase.getId());
+            user, PURCHASE_COST, CoinTransactionReason.CAPTURE_ATTEMPT_PURCHASE, purchase.getId());
     return response(attempt, charged);
   }
 

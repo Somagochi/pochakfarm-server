@@ -75,7 +75,7 @@ class AchievementControllerTest {
                         AchievementCategory.COLLECTION,
                         false,
                         "https://cdn.example.com/achievements/done.png",
-                        new AchievementResponse.Progress(12, 10),
+                        AchievementResponse.Progress.achieved(12, 10),
                         true,
                         new AchievementResponse.AchievedInfo(ACHIEVED_AT, false),
                         List.of(
@@ -113,7 +113,7 @@ class AchievementControllerTest {
         .andExpect(
             jsonPath("$.data.content[0].imageUrl")
                 .value("https://cdn.example.com/achievements/done.png"))
-        .andExpect(jsonPath("$.data.content[0].progress.current").value(12))
+        .andExpect(jsonPath("$.data.content[0].progress.current").value(10))
         .andExpect(jsonPath("$.data.content[0].progress.target").value(10))
         .andExpect(jsonPath("$.data.content[0].achieved").value(true))
         .andExpect(jsonPath("$.data.content[0].achievedInfo.achievedAt").exists())

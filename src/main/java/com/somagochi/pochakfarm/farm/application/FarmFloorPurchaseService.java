@@ -7,6 +7,7 @@ import com.somagochi.pochakfarm.farm.domain.FarmSpace;
 import com.somagochi.pochakfarm.farm.dto.FarmFloorPurchaseResponse;
 import com.somagochi.pochakfarm.farm.infrastructure.persistence.FarmSpaceRepository;
 import com.somagochi.pochakfarm.user.application.UserCoinService;
+import com.somagochi.pochakfarm.user.application.UserQueryService;
 import com.somagochi.pochakfarm.user.domain.CoinTransactionReason;
 import com.somagochi.pochakfarm.user.domain.User;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class FarmFloorPurchaseService {
 
   private final FarmSpaceRepository farmSpaceRepository;
+  private final UserQueryService userQueryService;
   private final UserCoinService userCoinService;
 
   @Transactional
@@ -29,7 +31,7 @@ public class FarmFloorPurchaseService {
     int unlockedFloor = space.unlockNextFloor();
     User user =
         userCoinService.spend(
-            userId,
+            userQueryService.getForUpdate(userId),
             FarmSpace.FLOOR_UNLOCK_PRICE,
             CoinTransactionReason.FARM_FLOOR_PURCHASE,
             space.getId());

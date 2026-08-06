@@ -183,9 +183,10 @@ class UserTest {
     LevelReward reward = user.gainExperience(40, new LevelRewardPolicy());
 
     assertEquals(40, reward.experienceReward());
+    assertEquals(500, reward.coinReward());
     assertEquals(2, user.getLevel());
     assertEquals(0, user.getExperience());
-    assertEquals(1500, user.getCoins());
+    assertEquals(1000, user.getCoins());
   }
 
   @Test
