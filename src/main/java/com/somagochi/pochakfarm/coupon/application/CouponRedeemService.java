@@ -101,8 +101,8 @@ public class CouponRedeemService {
     return CouponRedeemResponse.of(
         capture,
         fileStorage.buildUrl(capture.getCardImage()),
-        imageUploadService.createPublicPresign(
-            animalImageKey(userId, capture.getId()), ANIMAL_IMAGE_CONTENT_TYPE));
+        imageUploadService.refreshPresign(
+            userId, animalImageKey(userId, capture.getId()), ANIMAL_IMAGE_CONTENT_TYPE));
   }
 
   private String animalImageKey(Long userId, Long captureId) {
