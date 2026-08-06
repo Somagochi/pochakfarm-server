@@ -142,9 +142,6 @@ public class User extends BaseEntity {
     LevelReward reward = levelRewardPolicy.calculate(level, experience, experienceReward);
     this.level = reward.levelAfter();
     this.experience = reward.experienceAfter();
-    if (reward.coinReward() > 0) {
-      this.coins = coins.add(reward.coinReward());
-    }
     return reward;
   }
 

@@ -3,6 +3,8 @@ package com.somagochi.pochakfarm.capture.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -22,10 +24,14 @@ import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
+import com.somagochi.pochakfarm.user.application.UserCoinService;
 import com.somagochi.pochakfarm.user.domain.Coin;
 import com.somagochi.pochakfarm.user.domain.LevelRewardPolicy;
 import com.somagochi.pochakfarm.user.domain.User;
+import com.somagochi.pochakfarm.user.infrastructure.persistence.CoinHistoryRepository;
 import com.somagochi.pochakfarm.user.infrastructure.persistence.UserRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -49,11 +55,16 @@ class CaptureGameResultServiceTest {
 
   @Mock private CaptureRepository captureRepository;
   @Mock private UserRepository userRepository;
+  @Mock private CoinHistoryRepository coinHistoryRepository;
+  @Mock private EntityManager entityManager;
 
   private CaptureGameResultService service;
 
   @BeforeEach
   void setUp() {
+    lenient()
+        .when(entityManager.getLockMode(any(User.class)))
+        .thenReturn(LockModeType.PESSIMISTIC_WRITE);
     service =
         new CaptureGameResultService(
             captureRepository,
@@ -61,6 +72,7 @@ class CaptureGameResultServiceTest {
             new CaptureGameResultPolicy(),
             new CaptureExperiencePolicy(),
             new LevelRewardPolicy(),
+            new UserCoinService(entityManager, coinHistoryRepository),
             Clock.fixed(NOW, ZoneOffset.UTC));
   }
 
@@ -167,6 +179,7 @@ class CaptureGameResultServiceTest {
             new CaptureGameResultPolicy(),
             new CaptureExperiencePolicy(),
             new LevelRewardPolicy(),
+            new UserCoinService(entityManager, coinHistoryRepository),
             Clock.tick(
                 new Clock() {
                   @Override

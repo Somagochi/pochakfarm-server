@@ -15,6 +15,7 @@ import com.somagochi.pochakfarm.farm.domain.FarmSpace;
 import com.somagochi.pochakfarm.farm.dto.FarmFloorPurchaseResponse;
 import com.somagochi.pochakfarm.farm.infrastructure.persistence.FarmSpaceRepository;
 import com.somagochi.pochakfarm.user.application.UserCoinService;
+import com.somagochi.pochakfarm.user.application.UserQueryService;
 import com.somagochi.pochakfarm.user.domain.Coin;
 import com.somagochi.pochakfarm.user.domain.CoinTransactionReason;
 import com.somagochi.pochakfarm.user.domain.User;
@@ -27,16 +28,18 @@ class FarmFloorPurchaseServiceTest {
   private static final Long SPACE_ID = 100L;
 
   private final FarmSpaceRepository farmSpaceRepository = mock(FarmSpaceRepository.class);
+  private final UserQueryService userQueryService = mock(UserQueryService.class);
   private final UserCoinService userCoinService = mock(UserCoinService.class);
   private final FarmFloorPurchaseService service =
-      new FarmFloorPurchaseService(farmSpaceRepository, userCoinService);
+      new FarmFloorPurchaseService(farmSpaceRepository, userQueryService, userCoinService);
 
   @Test
   void unlocksNextFloorAndSpendsCoins() {
     FarmSpace space = givenSpace(FarmSpace.FIRST_FLOOR);
+    User user = givenLockedUser(1_500L);
     given(
             userCoinService.spend(
-                USER_ID,
+                user,
                 FarmSpace.FLOOR_UNLOCK_PRICE,
                 CoinTransactionReason.FARM_FLOOR_PURCHASE,
                 SPACE_ID))
@@ -78,9 +81,10 @@ class FarmFloorPurchaseServiceTest {
   @Test
   void propagatesInsufficientCoins() {
     givenSpace(FarmSpace.FIRST_FLOOR);
+    User user = givenLockedUser(500L);
     given(
             userCoinService.spend(
-                USER_ID,
+                user,
                 FarmSpace.FLOOR_UNLOCK_PRICE,
                 CoinTransactionReason.FARM_FLOOR_PURCHASE,
                 SPACE_ID))
@@ -100,6 +104,12 @@ class FarmFloorPurchaseServiceTest {
     given(farmSpaceRepository.findByUserIdAndType(USER_ID, CardType.SEA))
         .willReturn(Optional.of(space));
     return space;
+  }
+
+  private User givenLockedUser(long coins) {
+    User user = userWithCoins(coins);
+    given(userQueryService.getForUpdate(USER_ID)).willReturn(user);
+    return user;
   }
 
   private User userWithCoins(long coins) {
