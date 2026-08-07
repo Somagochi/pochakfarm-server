@@ -54,6 +54,9 @@ public class Characterization extends BaseEntity {
   @Column(name = "result_image_key")
   private String resultImageKey;
 
+  @Column(name = "animal_image_key")
+  private String animalImageKey;
+
   @Column(name = "provider")
   private String provider;
 

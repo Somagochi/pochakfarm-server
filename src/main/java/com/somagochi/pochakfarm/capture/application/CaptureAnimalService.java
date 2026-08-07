@@ -39,7 +39,7 @@ public class CaptureAnimalService {
         || animalRepository.findByCaptureId(captureId).isPresent()) {
       throw new BusinessException(ErrorCode.CAPTURE_ALREADY_PLACED);
     }
-    String key = animalImageKey(userId, captureId);
+    String key = CaptureAnimalImageKeys.of(userId, captureId);
     return imageUploadService.refreshPresign(userId, key, ANIMAL_IMAGE_CONTENT_TYPE);
   }
 
@@ -58,7 +58,7 @@ public class CaptureAnimalService {
       return existingResponse(capture, existing.get(), request);
     }
 
-    String expectedKey = animalImageKey(userId, captureId);
+    String expectedKey = CaptureAnimalImageKeys.of(userId, captureId);
     if (!expectedKey.equals(request.animalImageKey())) {
       throw new BusinessException(ErrorCode.CAPTURE_PLACEMENT_CONFLICT);
     }
@@ -121,9 +121,5 @@ public class CaptureAnimalService {
     if (!capture.isPlaceableInFarm()) {
       throw new BusinessException(ErrorCode.CAPTURE_NOT_PLACEABLE);
     }
-  }
-
-  private String animalImageKey(Long userId, Long captureId) {
-    return "public/capture-animal/%d/%d.png".formatted(userId, captureId);
   }
 }
