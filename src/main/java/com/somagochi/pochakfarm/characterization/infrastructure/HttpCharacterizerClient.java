@@ -111,7 +111,7 @@ public class HttpCharacterizerClient implements CharacterizerClient, CaptureChar
               .body(HttpCaptureCharacterizerResponse.class);
       if (response == null
           || !"success".equals(response.status())
-          || response.sceneContentType() == null
+          || response.animalContentType() == null
           || response.cardContentType() == null) {
         throw new BusinessException(ErrorCode.CHARACTERIZATION_FAILED);
       }
@@ -187,7 +187,7 @@ public class HttpCharacterizerClient implements CharacterizerClient, CaptureChar
   private HttpCaptureCharacterizerRequest createRequestBody(CaptureCharacterizerRequest request) {
     return new HttpCaptureCharacterizerRequest(
         request.originalImageDownloadUrl(),
-        request.sceneImageUploadUrl(),
+        request.animalImageUploadUrl(),
         request.cardImageUploadUrl(),
         request.animalName(),
         request.cardType().name(),

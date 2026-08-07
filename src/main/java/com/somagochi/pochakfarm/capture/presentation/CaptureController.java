@@ -22,7 +22,6 @@ import com.somagochi.pochakfarm.capture.dto.CaptureStartRequest;
 import com.somagochi.pochakfarm.capture.dto.CaptureStartResponse;
 import com.somagochi.pochakfarm.common.response.ApiResponse;
 import com.somagochi.pochakfarm.common.security.UserPrincipal;
-import com.somagochi.pochakfarm.storage.dto.PresignResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -100,13 +99,6 @@ public class CaptureController implements CaptureApiSpec {
   public ApiResponse<CaptureResponse> getCapture(
       @AuthenticationPrincipal UserPrincipal principal, @PathVariable Long captureId) {
     return ApiResponse.success(captureQueryService.getCapture(principal.id(), captureId));
-  }
-
-  @Override
-  @PostMapping("/{captureId}/animal-image/presign")
-  public ApiResponse<PresignResponse> presignAnimalImage(
-      @AuthenticationPrincipal UserPrincipal principal, @PathVariable Long captureId) {
-    return ApiResponse.success(captureAnimalService.presign(principal.id(), captureId));
   }
 
   @Override

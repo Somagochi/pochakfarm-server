@@ -54,11 +54,13 @@ class CaptureGenerationWorkerTest {
     ArgumentCaptor<CaptureCharacterizerRequest> captor =
         ArgumentCaptor.forClass(CaptureCharacterizerRequest.class);
     verify(captureCharacterizerClient).characterize(captor.capture());
-    verify(imageUploadService).validatePublicObject("public/capture-scene/scene.png", "image/png");
+    assertEquals("https://upload.test/animal", captor.getValue().animalImageUploadUrl());
+    assertEquals("https://upload.test/card", captor.getValue().cardImageUploadUrl());
+    verify(imageUploadService)
+        .validatePublicObject("public/capture-animal/animal.png", "image/png");
     verify(imageUploadService).validatePublicObject("public/capture-card/card.png", "image/png");
     assertEquals(GenerationStatus.SUCCEEDED, capture.getGenerationStatus());
-    assertEquals("public/capture-scene/scene.png", capture.getSceneImage());
-    assertEquals(null, capture.getAnimalImage());
+    assertEquals("public/capture-animal/animal.png", capture.getAnimalImage());
     assertEquals("public/capture-card/card.png", capture.getCardImage());
     assertEquals(100, capture.getElapsedMs());
   }
@@ -73,7 +75,7 @@ class CaptureGenerationWorkerTest {
             new CaptureCharacterizerResult("success", "openai", "image/png", "image/png", 100));
     org.mockito.Mockito.doThrow(new BusinessException(ErrorCode.FILE_NOT_FOUND))
         .when(imageUploadService)
-        .validatePublicObject("public/capture-scene/scene.png", "image/png");
+        .validatePublicObject("public/capture-animal/animal.png", "image/png");
 
     worker.generate(command());
 
@@ -102,10 +104,10 @@ class CaptureGenerationWorkerTest {
                 "https://download.test/original",
                 "images/capture-original/1/original.jpg",
                 Instant.EPOCH));
-    when(imageUploadService.createPublicPresign("capture-scene", "image/png"))
+    when(imageUploadService.createPublicPresign("capture-animal", "image/png"))
         .thenReturn(
             new PresignResponse(
-                "https://upload.test/scene", "public/capture-scene/scene.png", Instant.EPOCH));
+                "https://upload.test/animal", "public/capture-animal/animal.png", Instant.EPOCH));
     when(imageUploadService.createPublicPresign("capture-card", "image/png"))
         .thenReturn(
             new PresignResponse(

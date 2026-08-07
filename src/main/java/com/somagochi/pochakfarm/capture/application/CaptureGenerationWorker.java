@@ -37,8 +37,8 @@ public class CaptureGenerationWorker {
     try {
       PresignResponse originalDownload =
           imageUploadService.createDownloadPresign(command.userId(), command.originalImageKey());
-      PresignResponse sceneUpload =
-          imageUploadService.createPublicPresign("capture-scene", "image/png");
+      PresignResponse animalUpload =
+          imageUploadService.createPublicPresign("capture-animal", "image/png");
       PresignResponse cardUpload =
           imageUploadService.createPublicPresign("capture-card", "image/png");
 
@@ -46,7 +46,7 @@ public class CaptureGenerationWorker {
           captureCharacterizerClient.characterize(
               new CaptureCharacterizerRequest(
                   originalDownload.uploadUrl(),
-                  sceneUpload.uploadUrl(),
+                  animalUpload.uploadUrl(),
                   cardUpload.uploadUrl(),
                   command.animalName(),
                   command.cardType(),
@@ -55,8 +55,8 @@ public class CaptureGenerationWorker {
                   command.skill2(),
                   command.cardNo()));
 
-      validateResult(sceneUpload.key(), cardUpload.key(), result);
-      succeed(command.captureId(), sceneUpload.key(), cardUpload.key(), result.elapsedMs());
+      validateResult(animalUpload.key(), cardUpload.key(), result);
+      succeed(command.captureId(), animalUpload.key(), cardUpload.key(), result.elapsedMs());
     } catch (BusinessException exception) {
       fail(command.captureId(), exception.getCode());
       log.warn(
@@ -76,20 +76,20 @@ public class CaptureGenerationWorker {
   }
 
   private void validateResult(
-      String sceneImageKey, String cardImageKey, CaptureCharacterizerResult result) {
+      String animalImageKey, String cardImageKey, CaptureCharacterizerResult result) {
     if (result == null || !"success".equals(result.status())) {
       throw new BusinessException(ErrorCode.CHARACTERIZATION_FAILED);
     }
-    imageUploadService.validatePublicObject(sceneImageKey, result.sceneContentType());
+    imageUploadService.validatePublicObject(animalImageKey, result.animalContentType());
     imageUploadService.validatePublicObject(cardImageKey, result.cardContentType());
   }
 
   private void succeed(
-      Long captureId, String sceneImageKey, String cardImageKey, Integer elapsedMs) {
+      Long captureId, String animalImageKey, String cardImageKey, Integer elapsedMs) {
     transactionTemplate.executeWithoutResult(
         status -> {
           Capture capture = find(captureId);
-          capture.succeed(sceneImageKey, cardImageKey, elapsedMs);
+          capture.succeed(animalImageKey, cardImageKey, elapsedMs);
         });
   }
 

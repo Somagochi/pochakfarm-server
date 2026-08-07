@@ -76,9 +76,6 @@ public class Capture extends BaseEntity {
   @Column(name = "card_image")
   private String cardImage;
 
-  @Column(name = "scene_image")
-  private String sceneImage;
-
   @Column(name = "animal_image")
   private String animalImage;
 
@@ -242,8 +239,8 @@ public class Capture extends BaseEntity {
     this.cardNo = Objects.requireNonNull(cardNo);
   }
 
-  public void succeed(String sceneImageKey, String cardImageKey, Integer elapsedMs) {
-    this.sceneImage = Objects.requireNonNull(sceneImageKey);
+  public void succeed(String animalImageKey, String cardImageKey, Integer elapsedMs) {
+    this.animalImage = Objects.requireNonNull(animalImageKey);
     this.cardImage = Objects.requireNonNull(cardImageKey);
     this.elapsedMs = elapsedMs;
     this.generationStatus = GenerationStatus.SUCCEEDED;
@@ -251,13 +248,9 @@ public class Capture extends BaseEntity {
   }
 
   public void fail(String failureReason) {
-    this.sceneImage = null;
+    this.animalImage = null;
     this.cardImage = null;
     this.generationStatus = GenerationStatus.FAILED;
     this.failureReason = failureReason;
-  }
-
-  public void registerAnimalImage(String animalImageKey) {
-    this.animalImage = Objects.requireNonNull(animalImageKey);
   }
 }

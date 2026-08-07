@@ -33,7 +33,6 @@ public class CaptureQueryService {
     return CaptureResponse.from(
         capture,
         capture.gameStatusAt(clock.instant()),
-        buildUrlWhenSucceeded(capture, capture.getSceneImage()),
         buildUrlWhenSucceeded(capture, capture.getCardImage()),
         buildUrlWhenSucceeded(capture, capture.getAnimalImage()));
   }

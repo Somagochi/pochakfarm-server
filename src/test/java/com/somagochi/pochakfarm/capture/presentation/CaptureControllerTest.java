@@ -296,9 +296,8 @@ class CaptureControllerTest {
                 CardType.GROUND,
                 GenerationStatus.SUCCEEDED,
                 GameStatus.PENDING,
-                "https://cdn.test/public/capture-scene/scene.png",
                 "https://cdn.test/public/capture-card/card.png",
-                null,
+                "https://cdn.test/public/capture-animal/animal.png",
                 18420,
                 null));
 
@@ -308,33 +307,15 @@ class CaptureControllerTest {
         .andExpect(jsonPath("$.data.captureId").value(123))
         .andExpect(jsonPath("$.data.generationStatus").value("SUCCEEDED"))
         .andExpect(
-            jsonPath("$.data.sceneImageUrl")
-                .value("https://cdn.test/public/capture-scene/scene.png"))
+            jsonPath("$.data.cardImageUrl").value("https://cdn.test/public/capture-card/card.png"))
         .andExpect(
-            jsonPath("$.data.cardImageUrl").value("https://cdn.test/public/capture-card/card.png"));
-  }
-
-  @Test
-  void presignsCaptureAnimalImageUpload() throws Exception {
-    Instant expiresAt = Instant.parse("2026-08-03T01:05:00Z");
-    given(captureAnimalService.presign(1L, 123L))
-        .willReturn(
-            new com.somagochi.pochakfarm.storage.dto.PresignResponse(
-                "https://upload.test/animal", "public/capture-animal/1/123.png", expiresAt));
-
-    mockMvc
-        .perform(
-            post("/api/captures/123/animal-image/presign")
-                .with(authentication(authenticationFor(1L))))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data.uploadUrl").value("https://upload.test/animal"))
-        .andExpect(jsonPath("$.data.key").value("public/capture-animal/1/123.png"));
+            jsonPath("$.data.animalImageUrl")
+                .value("https://cdn.test/public/capture-animal/animal.png"));
   }
 
   @Test
   void savesCapturedAnimalAtSelectedSlot() throws Exception {
-    CaptureAnimalPlacementRequest request =
-        new CaptureAnimalPlacementRequest("public/capture-animal/1/123.png", 1, 2, null);
+    CaptureAnimalPlacementRequest request = new CaptureAnimalPlacementRequest(1, 2, null);
     given(captureAnimalService.place(1L, 123L, request))
         .willReturn(
             new CaptureAnimalPlacementResponse(
@@ -353,7 +334,6 @@ class CaptureControllerTest {
                 .content(
                     """
                     {
-                      "animalImageKey": "public/capture-animal/1/123.png",
                       "floorNum": 1,
                       "slotNum": 2
                     }

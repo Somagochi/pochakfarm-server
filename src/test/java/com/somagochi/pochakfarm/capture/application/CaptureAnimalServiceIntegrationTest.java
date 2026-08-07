@@ -59,7 +59,6 @@ class CaptureAnimalServiceIntegrationTest {
   @Autowired private FarmSpaceRepository farmSpaceRepository;
   @Autowired private FarmInitializationService farmInitializationService;
   @Autowired private UserRepository userRepository;
-  @Autowired private FileStorage fileStorage;
   @Autowired private JdbcTemplate jdbcTemplate;
 
   private Long userId;
@@ -86,10 +85,9 @@ class CaptureAnimalServiceIntegrationTest {
   void storesImageAndAnimalTogetherAtSelectedEmptySlot() {
     Capture capture = persistPlaceableCapture();
     String key = key(capture.getId());
-    upload(key, "image/png");
 
     CaptureAnimalPlacementResponse response =
-        service.place(userId, capture.getId(), new CaptureAnimalPlacementRequest(key, 1, 2, null));
+        service.place(userId, capture.getId(), new CaptureAnimalPlacementRequest(1, 2, null));
 
     Capture savedCapture = captureRepository.findById(capture.getId()).orElseThrow();
     Animal savedAnimal = animalRepository.findByCaptureId(capture.getId()).orElseThrow();
@@ -102,20 +100,13 @@ class CaptureAnimalServiceIntegrationTest {
   @Test
   void replacesAnimalAndRetainsItsCaptureHistory() {
     Capture oldCapture = persistPlaceableCapture();
-    oldCapture.registerAnimalImage(key(oldCapture.getId()));
-    captureRepository.save(oldCapture);
     FarmSpace space =
         farmSpaceRepository.findByUserIdAndType(userId, CardType.GROUND).orElseThrow();
     Animal oldAnimal =
         animalRepository.save(Animal.create(oldCapture.getId(), space.getId(), 1, 1));
     Capture newCapture = persistPlaceableCapture();
-    String newKey = key(newCapture.getId());
-    upload(newKey, "image/png");
-
     service.place(
-        userId,
-        newCapture.getId(),
-        new CaptureAnimalPlacementRequest(newKey, 1, 1, oldAnimal.getId()));
+        userId, newCapture.getId(), new CaptureAnimalPlacementRequest(1, 1, oldAnimal.getId()));
 
     assertFalse(animalRepository.findById(oldAnimal.getId()).isPresent());
     assertTrue(captureRepository.findById(oldCapture.getId()).isPresent());
@@ -127,9 +118,7 @@ class CaptureAnimalServiceIntegrationTest {
   @Test
   void returnsSameAnimalForIdenticalRetry() {
     Capture capture = persistPlaceableCapture();
-    String key = key(capture.getId());
-    upload(key, "image/png");
-    CaptureAnimalPlacementRequest request = new CaptureAnimalPlacementRequest(key, 1, 2, null);
+    CaptureAnimalPlacementRequest request = new CaptureAnimalPlacementRequest(1, 2, null);
 
     CaptureAnimalPlacementResponse first = service.place(userId, capture.getId(), request);
     CaptureAnimalPlacementResponse second = service.place(userId, capture.getId(), request);
@@ -139,19 +128,18 @@ class CaptureAnimalServiceIntegrationTest {
   }
 
   @Test
-  void rollsBackWithoutAnimalWhenUploadedObjectIsNotPng() {
+  void rejectsLegacyCaptureWithoutGeneratedAnimalImage() {
     Capture capture = persistPlaceableCapture();
-    String key = key(capture.getId());
-    upload(key, "image/jpeg");
+    jdbcTemplate.update("update captures set animal_image = null where id = ?", capture.getId());
 
     BusinessException exception =
         assertThrows(
             BusinessException.class,
             () ->
                 service.place(
-                    userId, capture.getId(), new CaptureAnimalPlacementRequest(key, 1, 2, null)));
+                    userId, capture.getId(), new CaptureAnimalPlacementRequest(1, 2, null)));
 
-    assertEquals(ErrorCode.UNSUPPORTED_CONTENT_TYPE.getCode(), exception.getCode());
+    assertEquals(ErrorCode.CAPTURE_NOT_PLACEABLE.getCode(), exception.getCode());
     assertFalse(animalRepository.findByCaptureId(capture.getId()).isPresent());
     assertEquals(null, captureRepository.findById(capture.getId()).orElseThrow().getAnimalImage());
   }
@@ -182,17 +170,14 @@ class CaptureAnimalServiceIntegrationTest {
             "images/capture-original/%d/%s.jpg".formatted(userId, UUID.randomUUID()),
             "image/jpeg",
             Instant.parse("2026-08-03T01:05:00Z"));
-    capture.succeed("public/capture-scene/scene.png", "public/capture-card/card.png", 100);
+    capture = captureRepository.saveAndFlush(capture);
+    capture.succeed(key(capture.getId()), "public/capture-card/card.png", 100);
     capture.completeGame(GameStatus.SUCCEEDED, 10);
     return captureRepository.saveAndFlush(capture);
   }
 
   private String key(Long captureId) {
     return "public/capture-animal/%d/%d.png".formatted(userId, captureId);
-  }
-
-  private void upload(String key, String contentType) {
-    ((InMemoryFileStorage) fileStorage).put(key, 1024, contentType);
   }
 
   private void cleanUp() {
