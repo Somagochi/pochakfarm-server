@@ -7,6 +7,7 @@ import com.somagochi.pochakfarm.characterization.domain.AnimalName;
 import com.somagochi.pochakfarm.characterization.domain.Characterization;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
+import com.somagochi.pochakfarm.storage.domain.FileStorage;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ public class CaptureGrantService {
   private static final String CARD_IMAGE_CONTENT_TYPE = "image/png";
 
   private final CaptureRepository captureRepository;
+  private final FileStorage fileStorage;
 
   @Transactional
   public Capture grant(Long userId, Characterization characterization, Tier tier, Instant now) {
@@ -37,7 +39,7 @@ public class CaptureGrantService {
   }
 
   @Transactional
-  public Capture completeGrant(Long userId, Long captureId, String animalImageKey) {
+  public Capture completeGrant(Long userId, Long captureId, String sourceAnimalImageKey) {
     Capture capture =
         captureRepository
             .findById(captureId)
@@ -45,6 +47,11 @@ public class CaptureGrantService {
     if (!capture.isOwnedBy(userId)) {
       throw new BusinessException(ErrorCode.FORBIDDEN_CAPTURE_ACCESS);
     }
+    if (sourceAnimalImageKey == null || sourceAnimalImageKey.isBlank()) {
+      throw new BusinessException(ErrorCode.FILE_NOT_FOUND);
+    }
+    String animalImageKey = CaptureAnimalImageKeys.of(userId, captureId);
+    fileStorage.copy(sourceAnimalImageKey, animalImageKey);
     capture.completeGrant(animalImageKey);
     return capture;
   }

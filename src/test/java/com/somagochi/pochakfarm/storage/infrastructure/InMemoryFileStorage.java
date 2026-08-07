@@ -45,6 +45,15 @@ public class InMemoryFileStorage implements FileStorage {
   }
 
   @Override
+  public void copy(String sourceKey, String targetKey) {
+    StoredObject source = objects.get(sourceKey);
+    if (source == null) {
+      throw new BusinessException(ErrorCode.FILE_NOT_FOUND);
+    }
+    objects.put(targetKey, new StoredObject(targetKey, source.size(), source.contentType()));
+  }
+
+  @Override
   public String buildUrl(String key) {
     return "https://cdn.test/" + key;
   }

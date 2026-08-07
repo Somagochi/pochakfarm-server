@@ -86,6 +86,21 @@ public class S3FileStorage implements FileStorage {
   }
 
   @Override
+  public void copy(String sourceKey, String targetKey) {
+    try {
+      s3Client.copyObject(
+          builder ->
+              builder
+                  .sourceBucket(properties.bucket())
+                  .sourceKey(sourceKey)
+                  .destinationBucket(properties.bucket())
+                  .destinationKey(targetKey));
+    } catch (NoSuchKeyException exception) {
+      throw new BusinessException(ErrorCode.FILE_NOT_FOUND);
+    }
+  }
+
+  @Override
   public String buildUrl(String key) {
     return s3Client
         .utilities()

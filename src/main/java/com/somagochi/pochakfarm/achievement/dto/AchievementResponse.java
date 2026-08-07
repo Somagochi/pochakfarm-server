@@ -3,9 +3,11 @@ package com.somagochi.pochakfarm.achievement.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.somagochi.pochakfarm.achievement.domain.Achievement;
 import com.somagochi.pochakfarm.achievement.domain.AchievementCategory;
+import com.somagochi.pochakfarm.achievement.domain.RewardType;
 import com.somagochi.pochakfarm.achievement.domain.UserAchievement;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record AchievementResponse(
@@ -47,11 +49,24 @@ public record AchievementResponse(
         achievement.getDescription(),
         achievement.getCategory(),
         achievement.isHidden(),
-        achievedImageUrl,
+        resolveAchievedImageUrl(achievedImageUrl, record, rewards),
         Progress.achieved(current, achievement.getTargetValue()),
         true,
         new AchievedInfo(record.getAchievedAt(), record.isRewardClaimed()),
         rewards);
+  }
+
+  private static String resolveAchievedImageUrl(
+      String achievedImageUrl, UserAchievement record, List<AchievementRewardResponse> rewards) {
+    if (!record.isRewardClaimed()) {
+      return achievedImageUrl;
+    }
+    return rewards.stream()
+        .filter(reward -> reward.type() == RewardType.BADGE)
+        .map(AchievementRewardResponse::badgeImageUrl)
+        .filter(Objects::nonNull)
+        .findFirst()
+        .orElse(achievedImageUrl);
   }
 
   private static AchievementResponse unachievedResponse(

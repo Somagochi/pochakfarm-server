@@ -16,6 +16,9 @@ public interface FileStorage {
   /** 오브젝트 메타데이터를 조회한다. 존재하지 않으면 예외를 던진다. */
   StoredObject head(String key);
 
+  /** 같은 버킷 안에서 오브젝트를 복사한다. 원본이 존재하지 않으면 예외를 던진다. */
+  void copy(String sourceKey, String targetKey);
+
   /** 오브젝트에 접근 가능한 URL 을 구성한다. */
   String buildUrl(String key);
 }
