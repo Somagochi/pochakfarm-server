@@ -41,9 +41,12 @@ public class AchievementQueryService {
     List<Achievement> definitions = findValidDefinitions();
     Map<Long, UserAchievement> records = findRecords(userId);
 
-    achievementRecorder
-        .record(userId, findNewlyAchieved(definitions, records, stats))
-        .forEach(record -> records.put(record.getAchievementId(), record));
+    List<Long> newlyAchieved = findNewlyAchieved(definitions, records, stats);
+    if (!newlyAchieved.isEmpty()) {
+      achievementRecorder
+          .record(userId, newlyAchieved)
+          .forEach(record -> records.put(record.getAchievementId(), record));
+    }
 
     List<Achievement> fetched = fetchPage(definitions, records, category, cursor);
     boolean hasNext = fetched.size() > PAGE_SIZE;
