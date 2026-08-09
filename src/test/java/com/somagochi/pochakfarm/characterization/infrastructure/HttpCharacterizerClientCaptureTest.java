@@ -40,7 +40,7 @@ class HttpCharacterizerClientCaptureTest {
         {
           "status": "success",
           "provider": "openai",
-          "scene_content_type": "image/png",
+          "animal_content_type": "image/png",
           "card_content_type": "image/png",
           "elapsed_ms": 18420
         }
@@ -52,11 +52,11 @@ class HttpCharacterizerClientCaptureTest {
 
     assertEquals("success", result.status());
     assertEquals("openai", result.provider());
-    assertEquals("image/png", result.sceneContentType());
+    assertEquals("image/png", result.animalContentType());
     assertEquals("image/png", result.cardContentType());
     assertEquals(18420, result.elapsedMs());
     assertTrue(requestBody.contains("\"original_image_download_url\":\"https://download.test/o\""));
-    assertTrue(requestBody.contains("\"scene_image_upload_url\":\"https://upload.test/scene\""));
+    assertTrue(requestBody.contains("\"animal_image_upload_url\":\"https://upload.test/animal\""));
     assertTrue(requestBody.contains("\"card_image_upload_url\":\"https://upload.test/card\""));
     assertTrue(requestBody.contains("\"animal_name\":\"두부\""));
     assertTrue(requestBody.contains("\"card_type\":\"GROUND\""));
@@ -113,7 +113,7 @@ class HttpCharacterizerClientCaptureTest {
   private CaptureCharacterizerRequest request() {
     return new CaptureCharacterizerRequest(
         "https://download.test/o",
-        "https://upload.test/scene",
+        "https://upload.test/animal",
         "https://upload.test/card",
         "두부",
         CardType.GROUND,

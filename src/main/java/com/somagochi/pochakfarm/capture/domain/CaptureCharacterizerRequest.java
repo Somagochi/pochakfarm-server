@@ -5,7 +5,7 @@ import com.somagochi.pochakfarm.characterization.domain.CardType;
 
 public record CaptureCharacterizerRequest(
     String originalImageDownloadUrl,
-    String sceneImageUploadUrl,
+    String animalImageUploadUrl,
     String cardImageUploadUrl,
     String animalName,
     CardType cardType,

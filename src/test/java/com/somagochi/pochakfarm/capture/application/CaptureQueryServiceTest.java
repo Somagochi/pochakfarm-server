@@ -39,7 +39,6 @@ class CaptureQueryServiceTest {
 
     CaptureResponse response = service.getCapture(1L, 123L);
 
-    assertNull(response.sceneImageUrl());
     assertNull(response.cardImageUrl());
     assertNull(response.animalImageUrl());
   }
@@ -47,11 +46,8 @@ class CaptureQueryServiceTest {
   @Test
   void returnsImageUrlsWhenGenerationSucceeds() {
     Capture capture = capture();
-    capture.succeed("public/capture-scene/scene.png", "public/capture-card/card.png", 100);
-    capture.registerAnimalImage("public/capture-animal/1/123.png");
+    capture.succeed("public/capture-animal/1/123.png", "public/capture-card/card.png", 100);
     when(captureRepository.findById(123L)).thenReturn(Optional.of(capture));
-    when(fileStorage.buildUrl("public/capture-scene/scene.png"))
-        .thenReturn("https://cdn.test/scene.png");
     when(fileStorage.buildUrl("public/capture-card/card.png"))
         .thenReturn("https://cdn.test/card.png");
     when(fileStorage.buildUrl("public/capture-animal/1/123.png"))
@@ -59,7 +55,6 @@ class CaptureQueryServiceTest {
 
     CaptureResponse response = service.getCapture(1L, 123L);
 
-    assertEquals("https://cdn.test/scene.png", response.sceneImageUrl());
     assertEquals("https://cdn.test/card.png", response.cardImageUrl());
     assertEquals("https://cdn.test/animal.png", response.animalImageUrl());
   }

@@ -9,10 +9,7 @@ import com.somagochi.pochakfarm.capture.dto.CaptureAnimalPlacementResponse;
 import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureRepository;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
-import com.somagochi.pochakfarm.storage.application.ImageUploadService;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
-import com.somagochi.pochakfarm.storage.dto.PresignResponse;
-import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,26 +19,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CaptureAnimalService {
 
-  private static final String ANIMAL_IMAGE_CONTENT_TYPE = "image/png";
-
   private final CaptureRepository captureRepository;
   private final AnimalRepository animalRepository;
   private final AnimalPlacementService animalPlacementService;
-  private final ImageUploadService imageUploadService;
   private final FileStorage fileStorage;
-
-  @Transactional(readOnly = true)
-  public PresignResponse presign(Long userId, Long captureId) {
-    Capture capture = findCapture(captureId);
-    validateOwner(capture, userId);
-    validatePlaceable(capture);
-    if (capture.getAnimalImage() != null
-        || animalRepository.findByCaptureId(captureId).isPresent()) {
-      throw new BusinessException(ErrorCode.CAPTURE_ALREADY_PLACED);
-    }
-    String key = CaptureAnimalImageKeys.of(userId, captureId);
-    return imageUploadService.refreshPresign(userId, key, ANIMAL_IMAGE_CONTENT_TYPE);
-  }
 
   @Transactional
   public CaptureAnimalPlacementResponse place(
@@ -58,13 +39,6 @@ public class CaptureAnimalService {
       return existingResponse(capture, existing.get(), request);
     }
 
-    String expectedKey = CaptureAnimalImageKeys.of(userId, captureId);
-    if (!expectedKey.equals(request.animalImageKey())) {
-      throw new BusinessException(ErrorCode.CAPTURE_PLACEMENT_CONFLICT);
-    }
-    imageUploadService.validateUploadedObject(
-        userId, request.animalImageKey(), ANIMAL_IMAGE_CONTENT_TYPE);
-
     Animal animal =
         request.replacedAnimalId() == null
             ? animalPlacementService.placeAt(
@@ -76,14 +50,12 @@ public class CaptureAnimalService {
                 request.replacedAnimalId(),
                 request.floorNum(),
                 request.slotNum());
-    capture.registerAnimalImage(request.animalImageKey());
     return response(capture, animal);
   }
 
   private CaptureAnimalPlacementResponse existingResponse(
       Capture capture, Animal animal, CaptureAnimalPlacementRequest request) {
-    if (!Objects.equals(request.animalImageKey(), capture.getAnimalImage())
-        || !animal.isAt(animal.getSpaceId(), request.floorNum(), request.slotNum())) {
+    if (!animal.isAt(animal.getSpaceId(), request.floorNum(), request.slotNum())) {
       throw new BusinessException(ErrorCode.CAPTURE_PLACEMENT_CONFLICT);
     }
     return response(capture, animal);
@@ -99,12 +71,6 @@ public class CaptureAnimalService {
         fileStorage.buildUrl(capture.getAnimalImage()));
   }
 
-  private Capture findCapture(Long captureId) {
-    return captureRepository
-        .findById(captureId)
-        .orElseThrow(() -> new BusinessException(ErrorCode.CAPTURE_NOT_FOUND));
-  }
-
   private Capture findCaptureForUpdate(Long captureId) {
     return captureRepository
         .findByIdForUpdate(captureId)
@@ -118,7 +84,7 @@ public class CaptureAnimalService {
   }
 
   private void validatePlaceable(Capture capture) {
-    if (!capture.isPlaceableInFarm()) {
+    if (!capture.isPlaceableInFarm() || capture.getAnimalImage() == null) {
       throw new BusinessException(ErrorCode.CAPTURE_NOT_PLACEABLE);
     }
   }

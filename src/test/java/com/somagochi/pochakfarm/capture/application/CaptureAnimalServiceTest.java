@@ -3,7 +3,6 @@ package com.somagochi.pochakfarm.capture.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import com.somagochi.pochakfarm.animal.application.AnimalPlacementService;
@@ -20,9 +19,7 @@ import com.somagochi.pochakfarm.characterization.domain.CardSkill;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
-import com.somagochi.pochakfarm.storage.application.ImageUploadService;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
-import com.somagochi.pochakfarm.storage.dto.PresignResponse;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -44,7 +41,6 @@ class CaptureAnimalServiceTest {
   @Mock private CaptureRepository captureRepository;
   @Mock private AnimalRepository animalRepository;
   @Mock private AnimalPlacementService animalPlacementService;
-  @Mock private ImageUploadService imageUploadService;
   @Mock private FileStorage fileStorage;
 
   private CaptureAnimalService service;
@@ -53,29 +49,11 @@ class CaptureAnimalServiceTest {
   void setUp() {
     service =
         new CaptureAnimalService(
-            captureRepository,
-            animalRepository,
-            animalPlacementService,
-            imageUploadService,
-            fileStorage);
+            captureRepository, animalRepository, animalPlacementService, fileStorage);
   }
 
   @Test
-  void presignsFixedPngKeyForPlaceableCapture() {
-    Capture capture = placeableCapture(USER_ID);
-    given(captureRepository.findById(CAPTURE_ID)).willReturn(Optional.of(capture));
-    PresignResponse expected =
-        new PresignResponse("https://upload.test/animal", ANIMAL_IMAGE_KEY, Instant.EPOCH);
-    given(imageUploadService.refreshPresign(USER_ID, ANIMAL_IMAGE_KEY, "image/png"))
-        .willReturn(expected);
-
-    PresignResponse response = service.presign(USER_ID, CAPTURE_ID);
-
-    assertEquals(expected, response);
-  }
-
-  @Test
-  void placesAnimalInEmptySelectedSlotAndRegistersImage() {
+  void placesAnimalInEmptySelectedSlotUsingGeneratedImage() {
     Capture capture = placeableCapture(USER_ID);
     Animal animal = animal(ANIMAL_ID, CAPTURE_ID, 1, 2);
     given(captureRepository.findByIdForUpdate(CAPTURE_ID)).willReturn(Optional.of(capture));
@@ -89,7 +67,6 @@ class CaptureAnimalServiceTest {
 
     assertEquals(ANIMAL_IMAGE_KEY, capture.getAnimalImage());
     assertEquals(ANIMAL_ID, response.animalId());
-    verify(imageUploadService).validateUploadedObject(USER_ID, ANIMAL_IMAGE_KEY, "image/png");
   }
 
   @Test
@@ -110,7 +87,6 @@ class CaptureAnimalServiceTest {
   @Test
   void returnsExistingAnimalForIdenticalRetry() {
     Capture capture = placeableCapture(USER_ID);
-    capture.registerAnimalImage(ANIMAL_IMAGE_KEY);
     Animal animal = animal(ANIMAL_ID, CAPTURE_ID, 1, 2);
     given(captureRepository.findByIdForUpdate(CAPTURE_ID)).willReturn(Optional.of(capture));
     given(animalRepository.findByCaptureId(CAPTURE_ID)).willReturn(Optional.of(animal));
@@ -119,14 +95,11 @@ class CaptureAnimalServiceTest {
         service.place(USER_ID, CAPTURE_ID, request(1, 2, 99L));
 
     assertEquals(ANIMAL_ID, response.animalId());
-    verify(imageUploadService, never())
-        .validateUploadedObject(USER_ID, ANIMAL_IMAGE_KEY, "image/png");
   }
 
   @Test
   void rejectsRetryThatTargetsDifferentSlot() {
     Capture capture = placeableCapture(USER_ID);
-    capture.registerAnimalImage(ANIMAL_IMAGE_KEY);
     given(captureRepository.findByIdForUpdate(CAPTURE_ID)).willReturn(Optional.of(capture));
     given(animalRepository.findByCaptureId(CAPTURE_ID))
         .willReturn(Optional.of(animal(ANIMAL_ID, CAPTURE_ID, 1, 2)));
@@ -141,26 +114,29 @@ class CaptureAnimalServiceTest {
   @Test
   void rejectsCaptureBeforeGameSucceeds() {
     Capture capture = generatedCapture(USER_ID);
-    given(captureRepository.findById(CAPTURE_ID)).willReturn(Optional.of(capture));
+    given(captureRepository.findByIdForUpdate(CAPTURE_ID)).willReturn(Optional.of(capture));
 
     BusinessException exception =
-        assertThrows(BusinessException.class, () -> service.presign(USER_ID, CAPTURE_ID));
+        assertThrows(
+            BusinessException.class, () -> service.place(USER_ID, CAPTURE_ID, request(1, 2, null)));
 
     assertEquals(ErrorCode.CAPTURE_NOT_PLACEABLE.getCode(), exception.getCode());
   }
 
   @Test
   void rejectsAnotherUsersCapture() {
-    given(captureRepository.findById(CAPTURE_ID)).willReturn(Optional.of(placeableCapture(2L)));
+    given(captureRepository.findByIdForUpdate(CAPTURE_ID))
+        .willReturn(Optional.of(placeableCapture(2L)));
 
     BusinessException exception =
-        assertThrows(BusinessException.class, () -> service.presign(USER_ID, CAPTURE_ID));
+        assertThrows(
+            BusinessException.class, () -> service.place(USER_ID, CAPTURE_ID, request(1, 2, null)));
 
     assertEquals(ErrorCode.FORBIDDEN_CAPTURE_ACCESS.getCode(), exception.getCode());
   }
 
   private CaptureAnimalPlacementRequest request(int floorNum, int slotNum, Long replacedAnimalId) {
-    return new CaptureAnimalPlacementRequest(ANIMAL_IMAGE_KEY, floorNum, slotNum, replacedAnimalId);
+    return new CaptureAnimalPlacementRequest(floorNum, slotNum, replacedAnimalId);
   }
 
   private Capture placeableCapture(Long userId) {
@@ -184,7 +160,7 @@ class CaptureAnimalServiceTest {
             "image/jpeg",
             Instant.parse("2026-08-03T01:05:00Z"));
     ReflectionTestUtils.setField(capture, "id", CAPTURE_ID);
-    capture.succeed("public/capture-scene/scene.png", "public/capture-card/card.png", 100);
+    capture.succeed(ANIMAL_IMAGE_KEY, "public/capture-card/card.png", 100);
     return capture;
   }
 

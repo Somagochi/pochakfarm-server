@@ -12,25 +12,19 @@ public record CaptureResponse(
     CardType cardType,
     GenerationStatus generationStatus,
     GameStatus gameStatus,
-    String sceneImageUrl,
     String cardImageUrl,
     String animalImageUrl,
     Integer elapsedMs,
     String failureReason) {
 
   public static CaptureResponse from(
-      Capture capture,
-      GameStatus gameStatus,
-      String sceneImageUrl,
-      String cardImageUrl,
-      String animalImageUrl) {
+      Capture capture, GameStatus gameStatus, String cardImageUrl, String animalImageUrl) {
     return new CaptureResponse(
         capture.getId(),
         capture.getTier(),
         capture.getCardType(),
         capture.getGenerationStatus(),
         gameStatus,
-        sceneImageUrl,
         cardImageUrl,
         animalImageUrl,
         capture.getElapsedMs(),

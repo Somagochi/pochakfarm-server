@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record HttpCaptureCharacterizerRequest(
     @JsonProperty("original_image_download_url") String originalImageDownloadUrl,
-    @JsonProperty("scene_image_upload_url") String sceneImageUploadUrl,
+    @JsonProperty("animal_image_upload_url") String animalImageUploadUrl,
     @JsonProperty("card_image_upload_url") String cardImageUploadUrl,
     @JsonProperty("animal_name") String animalName,
     @JsonProperty("card_type") String cardType,
