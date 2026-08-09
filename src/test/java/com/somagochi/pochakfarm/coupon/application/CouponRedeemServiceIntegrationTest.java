@@ -57,6 +57,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 @Import(CouponRedeemServiceIntegrationTest.TestFileStorageConfig.class)
 class CouponRedeemServiceIntegrationTest {
 
+  private static final String SOURCE_ANIMAL_IMAGE_KEY_FORMAT =
+      "public/characterization-result/animal/%d.png";
+  private static final String ANIMAL_IMAGE_KEY_FORMAT = "public/capture-animal/%d/%d.png";
+
   @TestConfiguration
   static class TestFileStorageConfig {
 
@@ -109,8 +113,6 @@ class CouponRedeemServiceIntegrationTest {
     assertEquals(Tier.S, response.tier());
     assertEquals("123", response.cardNo());
     assertNotNull(response.cardImageUrl());
-    assertNotNull(response.animalImageUpload().uploadUrl());
-    assertTrue(response.animalImageUpload().key().contains("/" + userId + "/"));
 
     Capture capture = captureRepository.findById(response.captureId()).orElseThrow();
     assertTrue(capture.isOwnedBy(userId));
@@ -199,11 +201,8 @@ class CouponRedeemServiceIntegrationTest {
     Coupon coupon =
         persistCouponWithRecipient("TEST-COMPLETE", Instant.now().plus(Duration.ofDays(1)));
     CouponRedeemResponse redeemed = couponRedeemService.redeem(userId, "TEST-COMPLETE");
-    String animalImageKey = redeemed.animalImageUpload().key();
-    simulateUpload(animalImageKey);
 
-    CouponCompleteResponse response =
-        couponCompleteService.complete(userId, "TEST-COMPLETE", animalImageKey);
+    CouponCompleteResponse response = couponCompleteService.complete(userId, "TEST-COMPLETE");
 
     assertEquals(3000L, response.grantedCoins());
     assertEquals(initialCoins + 3000L, response.coins());
@@ -212,7 +211,9 @@ class CouponRedeemServiceIntegrationTest {
     Capture capture = captureRepository.findById(redeemed.captureId()).orElseThrow();
     assertEquals(GenerationStatus.SUCCEEDED, capture.getGenerationStatus());
     assertEquals(GameStatus.SUCCEEDED, capture.getGameStatus());
-    assertEquals(animalImageKey, capture.getAnimalImage());
+    String expectedAnimalImageKey = ANIMAL_IMAGE_KEY_FORMAT.formatted(userId, redeemed.captureId());
+    assertEquals(expectedAnimalImageKey, capture.getAnimalImage());
+    assertNotNull(fileStorage.head(expectedAnimalImageKey));
 
     assertEquals(
         CouponStatus.USED, couponRepository.findById(coupon.getId()).orElseThrow().getStatus());
@@ -246,15 +247,13 @@ class CouponRedeemServiceIntegrationTest {
   void rejectsCompleteWhenFarmSpaceBecameFull() {
     Coupon coupon =
         persistCouponWithRecipient("TEST-FULL-LATE", Instant.now().plus(Duration.ofDays(1)));
-    CouponRedeemResponse redeemed = couponRedeemService.redeem(userId, "TEST-FULL-LATE");
-    String animalImageKey = redeemed.animalImageUpload().key();
-    simulateUpload(animalImageKey);
+    couponRedeemService.redeem(userId, "TEST-FULL-LATE");
     fillGroundFarm(userId);
 
     BusinessException exception =
         assertThrows(
             BusinessException.class,
-            () -> couponCompleteService.complete(userId, "TEST-FULL-LATE", animalImageKey));
+            () -> couponCompleteService.complete(userId, "TEST-FULL-LATE"));
 
     assertEquals(ErrorCode.FARM_SPACE_FULL.getCode(), exception.getCode());
     assertEquals(initialCoins, userRepository.findById(userId).orElseThrow().getCoins());
@@ -269,7 +268,7 @@ class CouponRedeemServiceIntegrationTest {
     BusinessException exception =
         assertThrows(
             BusinessException.class,
-            () -> couponCompleteService.complete(userId, "TEST-NOT-STARTED", "images/x/1/a.png"));
+            () -> couponCompleteService.complete(userId, "TEST-NOT-STARTED"));
 
     assertEquals(ErrorCode.COUPON_REDEEM_NOT_STARTED.getCode(), exception.getCode());
   }
@@ -277,15 +276,13 @@ class CouponRedeemServiceIntegrationTest {
   @Test
   void rejectsCompleteByAnotherUser() {
     persistCouponWithRecipient("TEST-OTHERS", Instant.now().plus(Duration.ofDays(1)));
-    CouponRedeemResponse redeemed = couponRedeemService.redeem(userId, "TEST-OTHERS");
+    couponRedeemService.redeem(userId, "TEST-OTHERS");
     Long otherUserId = persistUser().getId();
 
     BusinessException exception =
         assertThrows(
             BusinessException.class,
-            () ->
-                couponCompleteService.complete(
-                    otherUserId, "TEST-OTHERS", redeemed.animalImageUpload().key()));
+            () -> couponCompleteService.complete(otherUserId, "TEST-OTHERS"));
 
     assertEquals(ErrorCode.FORBIDDEN_COUPON_ACCESS.getCode(), exception.getCode());
   }
@@ -293,31 +290,26 @@ class CouponRedeemServiceIntegrationTest {
   @Test
   void rejectsSecondComplete() {
     persistCouponWithRecipient("TEST-TWICE", Instant.now().plus(Duration.ofDays(1)));
-    CouponRedeemResponse redeemed = couponRedeemService.redeem(userId, "TEST-TWICE");
-    String animalImageKey = redeemed.animalImageUpload().key();
-    simulateUpload(animalImageKey);
-    couponCompleteService.complete(userId, "TEST-TWICE", animalImageKey);
+    couponRedeemService.redeem(userId, "TEST-TWICE");
+    couponCompleteService.complete(userId, "TEST-TWICE");
 
     BusinessException exception =
         assertThrows(
-            BusinessException.class,
-            () -> couponCompleteService.complete(userId, "TEST-TWICE", animalImageKey));
+            BusinessException.class, () -> couponCompleteService.complete(userId, "TEST-TWICE"));
 
     assertEquals(ErrorCode.COUPON_ALREADY_USED.getCode(), exception.getCode());
     assertEquals(initialCoins + 3000L, userRepository.findById(userId).orElseThrow().getCoins());
   }
 
   @Test
-  void rejectsCompleteWhenAnimalImageIsNotUploaded() {
-    persistCouponWithRecipient("TEST-NO-UPLOAD", Instant.now().plus(Duration.ofDays(1)));
-    CouponRedeemResponse redeemed = couponRedeemService.redeem(userId, "TEST-NO-UPLOAD");
+  void rejectsCompleteWhenAnimalImageSourceIsMissing() {
+    persistCouponWithRecipient("TEST-NO-SOURCE", Instant.now().plus(Duration.ofDays(1)), false);
+    couponRedeemService.redeem(userId, "TEST-NO-SOURCE");
 
     BusinessException exception =
         assertThrows(
             BusinessException.class,
-            () ->
-                couponCompleteService.complete(
-                    userId, "TEST-NO-UPLOAD", redeemed.animalImageUpload().key()));
+            () -> couponCompleteService.complete(userId, "TEST-NO-SOURCE"));
 
     assertEquals(ErrorCode.FILE_NOT_FOUND.getCode(), exception.getCode());
     assertEquals(initialCoins, userRepository.findById(userId).orElseThrow().getCoins());
@@ -359,12 +351,13 @@ class CouponRedeemServiceIntegrationTest {
         Instant.now());
   }
 
-  private void simulateUpload(String key) {
-    ((InMemoryFileStorage) fileStorage).put(key, 1024L, "image/png");
+  private Coupon persistCouponWithRecipient(String couponCode, Instant expiresAt) {
+    return persistCouponWithRecipient(couponCode, expiresAt, true);
   }
 
-  private Coupon persistCouponWithRecipient(String couponCode, Instant expiresAt) {
-    Characterization characterization = persistSucceededCharacterization();
+  private Coupon persistCouponWithRecipient(
+      String couponCode, Instant expiresAt, boolean sourceImageUploaded) {
+    Characterization characterization = persistSucceededCharacterization(sourceImageUploaded);
     PreRegistration preRegistration =
         preRegistrationRepository.save(
             PreRegistration.create(
@@ -378,7 +371,7 @@ class CouponRedeemServiceIntegrationTest {
     return coupon;
   }
 
-  private Characterization persistSucceededCharacterization() {
+  private Characterization persistSucceededCharacterization(boolean sourceImageUploaded) {
     Characterization characterization =
         Characterization.start(
             1L,
@@ -390,7 +383,14 @@ class CouponRedeemServiceIntegrationTest {
                 CardSkill.GROUND_LEAF_GUARD,
                 "123"));
     characterization.succeed("characterizations/result.png", "test-provider", 100);
-    return characterizationRepository.save(characterization);
+    Characterization saved = characterizationRepository.save(characterization);
+    String sourceKey = SOURCE_ANIMAL_IMAGE_KEY_FORMAT.formatted(saved.getId());
+    jdbcTemplate.update(
+        "update characterizations set animal_image_key = ? where id = ?", sourceKey, saved.getId());
+    if (sourceImageUploaded) {
+      ((InMemoryFileStorage) fileStorage).put(sourceKey, 1024L, "image/png");
+    }
+    return saved;
   }
 
   private void cleanUp() {

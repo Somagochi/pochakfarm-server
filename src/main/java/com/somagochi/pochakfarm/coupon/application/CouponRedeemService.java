@@ -15,7 +15,6 @@ import com.somagochi.pochakfarm.coupon.infrastructure.persistence.CouponReposito
 import com.somagochi.pochakfarm.coupon.infrastructure.persistence.PreRegistrationCouponRecipientRepository;
 import com.somagochi.pochakfarm.preregistration.application.PreRegistrationQueryService;
 import com.somagochi.pochakfarm.preregistration.domain.PreRegistration;
-import com.somagochi.pochakfarm.storage.application.ImageUploadService;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
 import com.somagochi.pochakfarm.user.application.UserQueryService;
 import java.time.Instant;
@@ -38,7 +37,6 @@ public class CouponRedeemService {
   private final CaptureGrantService captureGrantService;
   private final AnimalPlacementService animalPlacementService;
   private final FileStorage fileStorage;
-  private final ImageUploadService imageUploadService;
 
   @Transactional
   public CouponRedeemResponse redeem(Long userId, String couponCode) {
@@ -49,7 +47,7 @@ public class CouponRedeemService {
       throw new BusinessException(ErrorCode.COUPON_ALREADY_USED);
     }
     if (recipient.isAssignedTo(userId)) {
-      return toResponse(userId, captureGrantService.getById(recipient.getCaptureId()));
+      return toResponse(captureGrantService.getById(recipient.getCaptureId()));
     }
     validateAssignable(recipient, coupon, userId, now);
 
@@ -57,7 +55,7 @@ public class CouponRedeemService {
     animalPlacementService.validateHasEmptySlot(userId, characterization.getCardType());
     Capture capture = captureGrantService.grant(userId, characterization, REWARD_TIER, now);
     recipient.assign(userId, capture.getId());
-    return toResponse(userId, capture);
+    return toResponse(capture);
   }
 
   private Coupon findCoupon(String couponCode) {
@@ -97,15 +95,7 @@ public class CouponRedeemService {
     return characterization;
   }
 
-  private CouponRedeemResponse toResponse(Long userId, Capture capture) {
-    return CouponRedeemResponse.of(
-        capture,
-        fileStorage.buildUrl(capture.getCardImage()),
-        imageUploadService.refreshPresign(
-            userId, animalImageKey(userId, capture.getId()), ANIMAL_IMAGE_CONTENT_TYPE));
-  }
-
-  private String animalImageKey(Long userId, Long captureId) {
-    return "public/capture-animal/%d/%d.png".formatted(userId, captureId);
+  private CouponRedeemResponse toResponse(Capture capture) {
+    return CouponRedeemResponse.of(capture, fileStorage.buildUrl(capture.getCardImage()));
   }
 }

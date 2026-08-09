@@ -3,6 +3,8 @@ package com.somagochi.pochakfarm.coupon.application;
 import com.somagochi.pochakfarm.animal.application.AnimalPlacementService;
 import com.somagochi.pochakfarm.capture.application.CaptureGrantService;
 import com.somagochi.pochakfarm.capture.domain.Capture;
+import com.somagochi.pochakfarm.characterization.application.CharacterizationReadService;
+import com.somagochi.pochakfarm.characterization.domain.Characterization;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.coupon.domain.Coupon;
@@ -10,7 +12,8 @@ import com.somagochi.pochakfarm.coupon.domain.PreRegistrationCouponRecipient;
 import com.somagochi.pochakfarm.coupon.dto.CouponCompleteResponse;
 import com.somagochi.pochakfarm.coupon.infrastructure.persistence.CouponRepository;
 import com.somagochi.pochakfarm.coupon.infrastructure.persistence.PreRegistrationCouponRecipientRepository;
-import com.somagochi.pochakfarm.storage.application.ImageUploadService;
+import com.somagochi.pochakfarm.preregistration.application.PreRegistrationQueryService;
+import com.somagochi.pochakfarm.preregistration.domain.PreRegistration;
 import com.somagochi.pochakfarm.user.application.UserCoinService;
 import com.somagochi.pochakfarm.user.application.UserQueryService;
 import com.somagochi.pochakfarm.user.domain.CoinTransactionReason;
@@ -33,17 +36,22 @@ public class CouponCompleteService {
   private final UserCoinService userCoinService;
   private final CaptureGrantService captureGrantService;
   private final AnimalPlacementService animalPlacementService;
-  private final ImageUploadService imageUploadService;
+  private final CharacterizationReadService characterizationReadService;
+  private final PreRegistrationQueryService preRegistrationQueryService;
 
   @Transactional
-  public CouponCompleteResponse complete(Long userId, String couponCode, String animalImageKey) {
+  public CouponCompleteResponse complete(Long userId, String couponCode) {
     Coupon coupon = findCoupon(couponCode);
     PreRegistrationCouponRecipient recipient = findRecipient(coupon);
     validateCompletable(coupon, recipient, userId);
 
-    imageUploadService.validateUploadedObject(userId, animalImageKey, ANIMAL_IMAGE_CONTENT_TYPE);
+    PreRegistration preRegistration =
+        preRegistrationQueryService.getById(recipient.getPreRegistrationId());
+    Characterization characterization =
+        characterizationReadService.getById(preRegistration.getCharacterizationId());
     Capture capture =
-        captureGrantService.completeGrant(userId, recipient.getCaptureId(), animalImageKey);
+        captureGrantService.completeGrant(
+            userId, recipient.getCaptureId(), characterization.getAnimalImageKey());
     animalPlacementService.placeInFirstAvailableSlot(
         userId, capture.getCardType(), capture.getId());
 

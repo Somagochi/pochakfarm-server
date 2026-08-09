@@ -36,7 +36,6 @@ public class CouponController implements CouponApiSpec {
       @AuthenticationPrincipal UserPrincipal principal,
       @RequestBody CouponCompleteRequest request) {
     return ApiResponse.success(
-        couponCompleteService.complete(
-            principal.id(), request.couponCode(), request.animalImageKey()));
+        couponCompleteService.complete(principal.id(), request.couponCode()));
   }
 }
