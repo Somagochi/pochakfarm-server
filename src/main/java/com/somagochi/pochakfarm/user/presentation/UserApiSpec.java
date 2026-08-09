@@ -3,6 +3,12 @@ package com.somagochi.pochakfarm.user.presentation;
 import com.somagochi.pochakfarm.common.exception.ErrorResponse;
 import com.somagochi.pochakfarm.common.response.ApiResponse;
 import com.somagochi.pochakfarm.common.security.UserPrincipal;
+import com.somagochi.pochakfarm.user.dto.NicknameResponse;
+import com.somagochi.pochakfarm.user.dto.NicknameUpdateRequest;
+import com.somagochi.pochakfarm.user.dto.TermsAgreementRequest;
+import com.somagochi.pochakfarm.user.dto.TermsAgreementResponse;
+import com.somagochi.pochakfarm.user.dto.TermsAgreementUpdateRequest;
+import com.somagochi.pochakfarm.user.dto.UserProfileResponse;
 import com.somagochi.pochakfarm.user.dto.UserResponse;
 import com.somagochi.pochakfarm.user.dto.WithdrawRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,7 +21,7 @@ import org.springframework.security.core.Authentication;
 @Tag(name = "User", description = "회원 관련 API")
 public interface UserApiSpec {
 
-  @Operation(summary = "내 정보 조회", description = "액세스 토큰으로 인증된 사용자의 프로필을 조회한다.")
+  @Operation(summary = "내 가입정보 조회", description = "액세스 토큰으로 인증된 사용자의 가입정보(이메일, 소셜 연동, 닉네임)를 조회한다.")
   @SecurityRequirement(name = "bearerAuth")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -28,9 +34,129 @@ public interface UserApiSpec {
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   ApiResponse<UserResponse> getMe(UserPrincipal principal);
 
-  @Operation(summary = "회원 탈퇴", description = "현재 로그인한 회원을 탈퇴(소프트 삭제)하고 액세스/리프레시 토큰을 무효화한다.")
+  @Operation(
+      summary = "내 프로필 조회",
+      description =
+          "액세스 토큰으로 인증된 사용자의 게임 프로필(닉네임, 레벨, 코인, " + "현재 경험치, 다음 레벨 요구 경험치, 남은 경험치)을 조회한다.")
+  @SecurityRequirement(name = "bearerAuth")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "401",
+      description = "인증 실패 (토큰 만료/무효)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "404",
+      description = "회원을 찾을 수 없음",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  ApiResponse<UserProfileResponse> getProfile(UserPrincipal principal);
+
+  @Operation(summary = "닉네임 변경", description = "현재 로그인한 회원의 닉네임을 변경한다.")
+  @SecurityRequirement(name = "bearerAuth")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "변경 성공")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "400",
+      description = "유효하지 않은 닉네임",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "401",
+      description = "인증 실패 (토큰 만료/무효)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "404",
+      description = "회원을 찾을 수 없음",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "409",
+      description = "이미 사용 중인 닉네임",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  ApiResponse<NicknameResponse> changeNickname(
+      UserPrincipal principal, NicknameUpdateRequest request);
+
+  @Operation(
+      summary = "약관 동의",
+      description =
+          "신규 사용자의 필수 약관 동의와 선택 동의 시각을 저장한다. "
+              + "필수 동의 3개는 모두 true여야 하며, 이미 완료한 사용자의 재요청은 기존 동의 시각을 유지한다.")
+  @SecurityRequirement(name = "bearerAuth")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "200",
+      description = "약관 동의 저장 성공 또는 기존 결과 재반환")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "400",
+      description = "필수 동의 누락(REQUIRED_CONSENT_REQUIRED)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "401",
+      description = "인증 실패 (토큰 만료/무효)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "404",
+      description = "회원을 찾을 수 없음(USER_NOT_FOUND)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  ApiResponse<Void> agreeToTerms(UserPrincipal principal, TermsAgreementRequest request);
+
+  @Operation(
+      summary = "내 약관 동의 상태 조회",
+      description = "현재 로그인한 회원의 필수 약관 및 선택 약관 동의 여부와 동의 일시를 조회한다.")
+  @SecurityRequirement(name = "bearerAuth")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "401",
+      description = "인증 실패 (토큰 만료/무효)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "404",
+      description = "회원을 찾을 수 없음(USER_NOT_FOUND)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  ApiResponse<TermsAgreementResponse> getTermsAgreement(UserPrincipal principal);
+
+  @Operation(
+      summary = "내 선택 약관 동의 상태 변경",
+      description =
+          "현재 로그인한 회원의 이벤트 및 혜택 알림 수신 선택 동의를 변경한다. "
+              + "동의 시 서버 현재 시각을 기록하고, 철회 시 동의 일시를 제거한다. "
+              + "동일한 상태로 재요청하면 기존 동의 일시를 유지한다.")
+  @SecurityRequirement(name = "bearerAuth")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "변경 성공")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "400",
+      description = "marketingAgreed 누락 또는 null(INVALID_PARAMETER)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "401",
+      description = "인증 실패 (토큰 만료/무효)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "404",
+      description = "회원을 찾을 수 없음(USER_NOT_FOUND)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  ApiResponse<TermsAgreementResponse> updateTermsAgreement(
+      UserPrincipal principal, TermsAgreementUpdateRequest request);
+
+  @Operation(summary = "닉네임 중복 확인", description = "해당 닉네임이 이미 사용 중인지 확인한다.")
+  @SecurityRequirement(name = "bearerAuth")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "200",
+      description = "사용 가능한 닉네임")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "401",
+      description = "인증 실패 (토큰 만료/무효)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "409",
+      description = "이미 사용 중인 닉네임",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  ApiResponse<Void> checkNickname(String nickname);
+
+  @Operation(
+      summary = "회원 탈퇴",
+      description = "선택적으로 탈퇴 사유를 저장하고 현재 로그인한 회원을 탈퇴(소프트 삭제)한 뒤 " + "액세스/리프레시 토큰을 무효화한다.")
   @SecurityRequirement(name = "bearerAuth")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "탈퇴 성공")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "400",
+      description = "지원하지 않는 탈퇴 사유(INVALID_PARAMETER)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
       responseCode = "401",
       description = "인증 실패 (토큰 만료/무효 또는 토큰 소유자 불일치)",

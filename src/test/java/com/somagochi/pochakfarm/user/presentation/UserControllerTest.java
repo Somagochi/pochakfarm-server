@@ -5,6 +5,8 @@ import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -19,8 +21,15 @@ import com.somagochi.pochakfarm.common.security.SecurityAccessDeniedHandler;
 import com.somagochi.pochakfarm.common.security.SecurityAuthenticationEntryPoint;
 import com.somagochi.pochakfarm.common.security.UserPrincipal;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
-import com.somagochi.pochakfarm.user.application.UserService;
+import com.somagochi.pochakfarm.user.application.UserNicknameService;
+import com.somagochi.pochakfarm.user.application.UserQueryService;
+import com.somagochi.pochakfarm.user.application.UserTermsAgreementService;
 import com.somagochi.pochakfarm.user.application.WithdrawService;
+import com.somagochi.pochakfarm.user.domain.WithdrawalReason;
+import com.somagochi.pochakfarm.user.dto.NicknameResponse;
+import com.somagochi.pochakfarm.user.dto.TermsAgreementResponse;
+import com.somagochi.pochakfarm.user.dto.TermsAgreementUpdateRequest;
+import com.somagochi.pochakfarm.user.dto.UserProfileResponse;
 import com.somagochi.pochakfarm.user.dto.UserResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -51,24 +60,48 @@ class UserControllerTest {
 
   @Autowired private MockMvc mockMvc;
 
-  @MockitoBean private UserService userService;
+  @MockitoBean private UserQueryService userQueryService;
+  @MockitoBean private UserNicknameService userNicknameService;
+  @MockitoBean private UserTermsAgreementService userTermsAgreementService;
   @MockitoBean private WithdrawService withdrawService;
 
   @Test
   void returnsCurrentUserWhenAuthenticated() throws Exception {
-    given(userService.getProfile(1L))
-        .willReturn(new UserResponse(1L, "user@example.com", SocialProvider.KAKAO));
+    given(userQueryService.getMe(1L))
+        .willReturn(new UserResponse("user@example.com", SocialProvider.KAKAO, "포착이"));
 
     mockMvc
         .perform(get("/api/users/me").with(authentication(authenticationFor(1L))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.email").value("user@example.com"))
-        .andExpect(jsonPath("$.data.provider").value("KAKAO"));
+        .andExpect(jsonPath("$.data.provider").value("KAKAO"))
+        .andExpect(jsonPath("$.data.nickname").value("포착이"));
+  }
+
+  @Test
+  void returnsProfileWhenAuthenticated() throws Exception {
+    given(userQueryService.getProfile(1L))
+        .willReturn(new UserProfileResponse("포착이", 3, 1200L, 54L, 60L, 6L));
+
+    mockMvc
+        .perform(get("/api/users/profile").with(authentication(authenticationFor(1L))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.nickname").value("포착이"))
+        .andExpect(jsonPath("$.data.level").value(3))
+        .andExpect(jsonPath("$.data.coins").value(1200))
+        .andExpect(jsonPath("$.data.currentExperience").value(54))
+        .andExpect(jsonPath("$.data.requiredExperience").value(60))
+        .andExpect(jsonPath("$.data.remainingExperience").value(6));
+  }
+
+  @Test
+  void returnsUnauthorizedWhenGettingProfileWithoutAuthentication() throws Exception {
+    mockMvc.perform(get("/api/users/profile")).andExpect(status().isUnauthorized());
   }
 
   @Test
   void mapsBusinessExceptionToErrorResponse() throws Exception {
-    given(userService.getProfile(1L)).willThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
+    given(userQueryService.getMe(1L)).willThrow(new BusinessException(ErrorCode.USER_NOT_FOUND));
 
     mockMvc
         .perform(get("/api/users/me").with(authentication(authenticationFor(1L))))
@@ -82,7 +115,161 @@ class UserControllerTest {
   }
 
   @Test
+  void changesNicknameWhenAuthenticated() throws Exception {
+    given(userNicknameService.changeNickname(1L, "포착이")).willReturn(new NicknameResponse("포착이"));
+
+    mockMvc
+        .perform(
+            patch("/api/users/me/nickname")
+                .with(authentication(authenticationFor(1L)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nickname\":\"포착이\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.nickname").value("포착이"));
+
+    verify(userNicknameService).changeNickname(1L, "포착이");
+  }
+
+  @Test
+  void returnsUnauthorizedWhenChangingNicknameWithoutAuthentication() throws Exception {
+    mockMvc
+        .perform(
+            patch("/api/users/me/nickname")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nickname\":\"포착이\"}"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void agreesToTermsWhenAuthenticated() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/users/me/terms-agreement")
+                .with(authentication(authenticationFor(1L)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "ageRequirementAgreed": true,
+                      "termsOfServiceAgreed": true,
+                      "privacyPolicyAgreed": true,
+                      "serviceQualityAgreed": false,
+                      "marketingAgreed": true
+                    }
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data").doesNotExist());
+
+    verify(userTermsAgreementService)
+        .agree(
+            1L,
+            new com.somagochi.pochakfarm.user.dto.TermsAgreementRequest(
+                true, true, true, false, true));
+  }
+
+  @Test
+  void returnsUnauthorizedWhenAgreeingToTermsWithoutAuthentication() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/users/me/terms-agreement")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void returnsTermsAgreementWhenAuthenticated() throws Exception {
+    given(userTermsAgreementService.get(1L))
+        .willReturn(
+            new TermsAgreementResponse(
+                true,
+                Instant.parse("2026-08-01T10:00:00Z"),
+                false,
+                null,
+                true,
+                Instant.parse("2026-08-05T10:30:00Z")));
+
+    mockMvc
+        .perform(get("/api/users/me/terms-agreement").with(authentication(authenticationFor(1L))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.requiredTermsAgreed").value(true))
+        .andExpect(jsonPath("$.data.requiredTermsAgreedAt").value("2026-08-01T10:00:00Z"))
+        .andExpect(jsonPath("$.data.serviceQualityAgreed").value(false))
+        .andExpect(jsonPath("$.data.serviceQualityAgreedAt").doesNotExist())
+        .andExpect(jsonPath("$.data.marketingAgreed").value(true))
+        .andExpect(jsonPath("$.data.marketingAgreedAt").value("2026-08-05T10:30:00Z"));
+  }
+
+  @Test
+  void updatesMarketingAgreementWhenAuthenticated() throws Exception {
+    TermsAgreementUpdateRequest request = new TermsAgreementUpdateRequest(false);
+    given(userTermsAgreementService.update(1L, request))
+        .willReturn(
+            new TermsAgreementResponse(
+                true, Instant.parse("2026-08-01T10:00:00Z"), false, null, false, null));
+
+    mockMvc
+        .perform(
+            patch("/api/users/me/terms-agreement")
+                .with(authentication(authenticationFor(1L)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"marketingAgreed\":false}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.marketingAgreed").value(false))
+        .andExpect(jsonPath("$.data.marketingAgreedAt").doesNotExist());
+
+    verify(userTermsAgreementService).update(1L, request);
+  }
+
+  @Test
+  void returnsBadRequestWhenMarketingAgreementIsNull() throws Exception {
+    TermsAgreementUpdateRequest request = new TermsAgreementUpdateRequest(null);
+    given(userTermsAgreementService.update(1L, request))
+        .willThrow(new BusinessException(ErrorCode.INVALID_PARAMETER));
+
+    mockMvc
+        .perform(
+            patch("/api/users/me/terms-agreement")
+                .with(authentication(authenticationFor(1L)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("INVALID_PARAMETER"));
+  }
+
+  @Test
+  void returnsUnauthorizedWhenAccessingTermsAgreementWithoutAuthentication() throws Exception {
+    mockMvc.perform(get("/api/users/me/terms-agreement")).andExpect(status().isUnauthorized());
+    mockMvc
+        .perform(
+            patch("/api/users/me/terms-agreement")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"marketingAgreed\":true}"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
   void withdrawsWhenAuthenticated() throws Exception {
+    mockMvc
+        .perform(
+            delete("/api/users/me")
+                .with(authentication(authenticationFor(1L)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "refreshToken": "refresh-token",
+                      "withdrawalReason": "LOW_USAGE"
+                    }
+                    """))
+        .andExpect(status().isOk());
+
+    verify(withdrawService)
+        .withdraw(1L, "access-token", "refresh-token", WithdrawalReason.LOW_USAGE);
+  }
+
+  @Test
+  void withdrawsWithoutOptionalReason() throws Exception {
     mockMvc
         .perform(
             delete("/api/users/me")
@@ -91,7 +278,25 @@ class UserControllerTest {
                 .content("{\"refreshToken\":\"refresh-token\"}"))
         .andExpect(status().isOk());
 
-    verify(withdrawService).withdraw(1L, "access-token", "refresh-token");
+    verify(withdrawService).withdraw(1L, "access-token", "refresh-token", null);
+  }
+
+  @Test
+  void rejectsUnsupportedWithdrawalReason() throws Exception {
+    mockMvc
+        .perform(
+            delete("/api/users/me")
+                .with(authentication(authenticationFor(1L)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "refreshToken": "refresh-token",
+                      "withdrawalReason": "UNKNOWN"
+                    }
+                    """))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("INVALID_PARAMETER"));
   }
 
   @Test

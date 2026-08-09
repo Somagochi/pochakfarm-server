@@ -15,7 +15,7 @@ import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.social.SocialLoginResolver;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
 import com.somagochi.pochakfarm.common.social.SocialUserInfo;
-import com.somagochi.pochakfarm.user.application.UserService;
+import com.somagochi.pochakfarm.user.application.UserRegistrationService;
 import com.somagochi.pochakfarm.user.domain.User;
 import com.somagochi.pochakfarm.user.dto.UserRegistration;
 import org.junit.jupiter.api.Test;
@@ -23,10 +23,11 @@ import org.junit.jupiter.api.Test;
 class SocialLoginServiceTest {
 
   private final SocialLoginResolver socialLoginResolver = mock(SocialLoginResolver.class);
-  private final UserService userService = mock(UserService.class);
+  private final UserRegistrationService userRegistrationService =
+      mock(UserRegistrationService.class);
   private final TokenService tokenService = mock(TokenService.class);
   private final SocialLoginService socialLoginService =
-      new SocialLoginService(socialLoginResolver, userService, tokenService);
+      new SocialLoginService(socialLoginResolver, userRegistrationService, tokenService);
 
   @Test
   void issuesTokenPairForUserIdentifiedBySocialProvider() {
@@ -35,9 +36,11 @@ class SocialLoginServiceTest {
         new SocialUserInfo(SocialProvider.KAKAO, "kakao-123", "user@kakao.com");
     User user = mock(User.class);
     given(user.getId()).willReturn(1L);
+    given(user.isTermsAgreementRequired()).willReturn(true);
     given(socialLoginResolver.fetchUserInfo(SocialProvider.KAKAO, "social-token"))
         .willReturn(userInfo);
-    given(userService.getOrRegister(userInfo)).willReturn(new UserRegistration(user, true));
+    given(userRegistrationService.getOrRegister(userInfo))
+        .willReturn(new UserRegistration(user, true));
     given(tokenService.generateTokenPair("1")).willReturn(new TokenResponse("access", "refresh"));
 
     SocialLoginResponse response = socialLoginService.login(request);
@@ -45,7 +48,28 @@ class SocialLoginServiceTest {
     assertEquals("access", response.token().accessToken());
     assertEquals("refresh", response.token().refreshToken());
     assertEquals(true, response.isNew());
+    assertEquals(true, response.termsAgreementRequired());
     verify(tokenService).generateTokenPair("1");
+  }
+
+  @Test
+  void requiresTermsAgreementOnSubsequentLoginUntilAgreementIsCompleted() {
+    SocialLoginRequest request = new SocialLoginRequest("kakao", "social-token");
+    SocialUserInfo userInfo =
+        new SocialUserInfo(SocialProvider.KAKAO, "kakao-123", "user@kakao.com");
+    User user = mock(User.class);
+    given(user.getId()).willReturn(1L);
+    given(user.isTermsAgreementRequired()).willReturn(true);
+    given(socialLoginResolver.fetchUserInfo(SocialProvider.KAKAO, "social-token"))
+        .willReturn(userInfo);
+    given(userRegistrationService.getOrRegister(userInfo))
+        .willReturn(new UserRegistration(user, false));
+    given(tokenService.generateTokenPair("1")).willReturn(new TokenResponse("access", "refresh"));
+
+    SocialLoginResponse response = socialLoginService.login(request);
+
+    assertEquals(false, response.isNew());
+    assertEquals(true, response.termsAgreementRequired());
   }
 
   @Test
@@ -56,7 +80,7 @@ class SocialLoginServiceTest {
         assertThrows(BusinessException.class, () -> socialLoginService.login(request));
 
     assertEquals(ErrorCode.UNSUPPORTED_SOCIAL_PROVIDER.getCode(), exception.getCode());
-    verifyNoInteractions(socialLoginResolver, userService, tokenService);
+    verifyNoInteractions(socialLoginResolver, userRegistrationService, tokenService);
   }
 
   @Test
@@ -67,7 +91,7 @@ class SocialLoginServiceTest {
         assertThrows(BusinessException.class, () -> socialLoginService.login(request));
 
     assertEquals(ErrorCode.INVALID_SOCIAL_TOKEN.getCode(), exception.getCode());
-    verifyNoInteractions(socialLoginResolver, userService, tokenService);
+    verifyNoInteractions(socialLoginResolver, userRegistrationService, tokenService);
   }
 
   @Test
@@ -78,6 +102,6 @@ class SocialLoginServiceTest {
         assertThrows(BusinessException.class, () -> socialLoginService.login(request));
 
     assertEquals(ErrorCode.INVALID_SOCIAL_TOKEN.getCode(), exception.getCode());
-    verifyNoInteractions(socialLoginResolver, userService, tokenService);
+    verifyNoInteractions(socialLoginResolver, userRegistrationService, tokenService);
   }
 }

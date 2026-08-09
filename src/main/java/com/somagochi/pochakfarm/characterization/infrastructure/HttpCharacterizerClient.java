@@ -1,8 +1,13 @@
 package com.somagochi.pochakfarm.characterization.infrastructure;
 
+import com.somagochi.pochakfarm.capture.domain.CaptureCharacterizerClient;
+import com.somagochi.pochakfarm.capture.domain.CaptureCharacterizerRequest;
+import com.somagochi.pochakfarm.capture.domain.CaptureCharacterizerResult;
 import com.somagochi.pochakfarm.characterization.domain.CardMetadata;
 import com.somagochi.pochakfarm.characterization.domain.CharacterizerClient;
 import com.somagochi.pochakfarm.characterization.domain.CharacterizerResult;
+import com.somagochi.pochakfarm.characterization.infrastructure.dto.HttpCaptureCharacterizerRequest;
+import com.somagochi.pochakfarm.characterization.infrastructure.dto.HttpCaptureCharacterizerResponse;
 import com.somagochi.pochakfarm.characterization.infrastructure.dto.HttpCharacterizerErrorResponse;
 import com.somagochi.pochakfarm.characterization.infrastructure.dto.HttpCharacterizerRequest;
 import com.somagochi.pochakfarm.characterization.infrastructure.dto.HttpCharacterizerResponse;
@@ -20,7 +25,7 @@ import org.springframework.web.client.RestClientResponseException;
 
 @Component
 @Slf4j
-public class HttpCharacterizerClient implements CharacterizerClient {
+public class HttpCharacterizerClient implements CharacterizerClient, CaptureCharacterizerClient {
 
   private final RestClient restClient;
   private final String baseUrl;
@@ -92,6 +97,51 @@ public class HttpCharacterizerClient implements CharacterizerClient {
     }
   }
 
+  @Override
+  public CaptureCharacterizerResult characterize(CaptureCharacterizerRequest request) {
+    long startedAt = System.nanoTime();
+    try {
+      HttpCaptureCharacterizerResponse response =
+          restClient
+              .post()
+              .uri("/internal/captures/characterize")
+              .contentType(MediaType.APPLICATION_JSON)
+              .body(createRequestBody(request))
+              .retrieve()
+              .body(HttpCaptureCharacterizerResponse.class);
+      if (response == null
+          || !"success".equals(response.status())
+          || response.animalContentType() == null
+          || response.cardContentType() == null) {
+        throw new BusinessException(ErrorCode.CHARACTERIZATION_FAILED);
+      }
+      log.info(
+          "capture_characterizer_request_succeeded provider={} elapsedMs={} clientElapsedMs={}",
+          response.provider(),
+          response.elapsedMs(),
+          elapsedMsSince(startedAt));
+      return response.toResult();
+    } catch (RestClientResponseException exception) {
+      ErrorCode errorCode = resolveCharacterizerError(exception);
+      log.warn(
+          "capture_characterizer_request_failed baseUrl={} elapsedMs={} status={} errorCode={}",
+          baseUrl,
+          elapsedMsSince(startedAt),
+          exception.getStatusCode().value(),
+          errorCode.getCode(),
+          exception);
+      throw new BusinessException(errorCode);
+    } catch (RestClientException exception) {
+      log.warn(
+          "capture_characterizer_request_failed baseUrl={} elapsedMs={} exception={}",
+          baseUrl,
+          elapsedMsSince(startedAt),
+          exception.getClass().getSimpleName(),
+          exception);
+      throw new BusinessException(ErrorCode.CHARACTERIZATION_FAILED);
+    }
+  }
+
   private long elapsedMsSince(long startedAtNanos) {
     return (System.nanoTime() - startedAtNanos) / 1_000_000;
   }
@@ -132,5 +182,21 @@ public class HttpCharacterizerClient implements CharacterizerClient {
         metadata.skill2().displayName(),
         metadata.skill2().description(),
         metadata.cardNo());
+  }
+
+  private HttpCaptureCharacterizerRequest createRequestBody(CaptureCharacterizerRequest request) {
+    return new HttpCaptureCharacterizerRequest(
+        request.originalImageDownloadUrl(),
+        request.animalImageUploadUrl(),
+        request.cardImageUploadUrl(),
+        request.animalName(),
+        request.cardType().name(),
+        request.cardType().label(),
+        request.tier().name(),
+        request.skill1().displayName(),
+        request.skill1().description(),
+        request.skill2().displayName(),
+        request.skill2().description(),
+        request.cardNo());
   }
 }

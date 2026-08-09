@@ -10,10 +10,13 @@ import java.time.Duration;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
@@ -48,6 +51,19 @@ public class S3FileStorage implements FileStorage {
   }
 
   @Override
+  public PresignedUpload presignGet(String key, Duration ttl) {
+    GetObjectRequest objectRequest =
+        GetObjectRequest.builder().bucket(properties.bucket()).key(key).build();
+    GetObjectPresignRequest presignRequest =
+        GetObjectPresignRequest.builder()
+            .signatureDuration(ttl)
+            .getObjectRequest(objectRequest)
+            .build();
+    PresignedGetObjectRequest presigned = s3Presigner.presignGetObject(presignRequest);
+    return new PresignedUpload(presigned.url().toString(), presigned.expiration());
+  }
+
+  @Override
   public void upload(String key, String contentType, byte[] content) {
     PutObjectRequest objectRequest =
         PutObjectRequest.builder()
@@ -64,6 +80,21 @@ public class S3FileStorage implements FileStorage {
       HeadObjectResponse response =
           s3Client.headObject(builder -> builder.bucket(properties.bucket()).key(key));
       return new StoredObject(key, response.contentLength(), response.contentType());
+    } catch (NoSuchKeyException exception) {
+      throw new BusinessException(ErrorCode.FILE_NOT_FOUND);
+    }
+  }
+
+  @Override
+  public void copy(String sourceKey, String targetKey) {
+    try {
+      s3Client.copyObject(
+          builder ->
+              builder
+                  .sourceBucket(properties.bucket())
+                  .sourceKey(sourceKey)
+                  .destinationBucket(properties.bucket())
+                  .destinationKey(targetKey));
     } catch (NoSuchKeyException exception) {
       throw new BusinessException(ErrorCode.FILE_NOT_FOUND);
     }

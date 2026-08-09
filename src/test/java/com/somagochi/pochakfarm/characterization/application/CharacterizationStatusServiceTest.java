@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
+import com.somagochi.pochakfarm.characterization.domain.AnimalName;
 import com.somagochi.pochakfarm.characterization.domain.CardMetadata;
 import com.somagochi.pochakfarm.characterization.domain.CardSkill;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
@@ -59,7 +60,8 @@ class CharacterizationStatusServiceTest {
   }
 
   private static Characterization processing() {
-    Characterization characterization = Characterization.start(1L, "솜구름", metadata());
+    Characterization characterization =
+        Characterization.start(1L, AnimalName.from("솜구름"), metadata());
     ReflectionTestUtils.setField(characterization, "id", 1L);
     return characterization;
   }

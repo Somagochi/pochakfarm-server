@@ -41,3 +41,8 @@ app:
     crypto:
       encryption-key: 01234567890123456789012345678901
       hash-key: hash-key-for-pre-registration-phone-number
+  solapi:
+    base-url: https://api.solapi.com
+    api-key: ""
+    api-secret: ""
+    from: ""

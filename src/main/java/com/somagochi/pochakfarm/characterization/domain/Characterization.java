@@ -2,6 +2,7 @@ package com.somagochi.pochakfarm.characterization.domain;
 
 import com.somagochi.pochakfarm.common.entity.BaseEntity;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -30,8 +31,7 @@ public class Characterization extends BaseEntity {
   @Column(name = "device_id", nullable = false, updatable = false)
   private Long deviceId;
 
-  @Column(name = "animal_name", nullable = false)
-  private String animalName;
+  @Embedded private AnimalName animalName;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "card_type")
@@ -54,6 +54,9 @@ public class Characterization extends BaseEntity {
   @Column(name = "result_image_key")
   private String resultImageKey;
 
+  @Column(name = "animal_image_key")
+  private String animalImageKey;
+
   @Column(name = "provider")
   private String provider;
 
@@ -67,7 +70,7 @@ public class Characterization extends BaseEntity {
   @Column(name = "failure_reason")
   private String failureReason;
 
-  private Characterization(Long deviceId, String animalName, CardMetadata metadata) {
+  private Characterization(Long deviceId, AnimalName animalName, CardMetadata metadata) {
     this.deviceId = deviceId;
     this.animalName = animalName;
     this.cardType = metadata.cardType();
@@ -78,8 +81,13 @@ public class Characterization extends BaseEntity {
     this.status = CharacterizationStatus.PROCESSING;
   }
 
-  public static Characterization start(Long deviceId, String animalName, CardMetadata metadata) {
+  public static Characterization start(
+      Long deviceId, AnimalName animalName, CardMetadata metadata) {
     return new Characterization(deviceId, animalName, metadata);
+  }
+
+  public String getAnimalName() {
+    return animalName.value();
   }
 
   public void cardNoAssigned(String cardNo) {

@@ -50,6 +50,46 @@ class ImageUploadServiceTest {
   }
 
   @Test
+  void refreshesPresignForExistingOwnerScopedKey() {
+    String key = "images/capture-source/42/source.jpg";
+
+    PresignResponse response = service.refreshPresign(42L, key, "image/jpeg");
+
+    assertEquals(key, response.key());
+    assertEquals("https://upload.test/" + key, response.uploadUrl());
+  }
+
+  @Test
+  void refreshesPresignForPublicOwnerScopedKey() {
+    String key = "public/capture-animal/42/123.png";
+
+    PresignResponse response = service.refreshPresign(42L, key, "image/png");
+
+    assertEquals(key, response.key());
+    assertEquals("https://upload.test/" + key, response.uploadUrl());
+  }
+
+  @Test
+  void rejectsPresignRefreshForAnotherUsersKey() {
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () -> service.refreshPresign(42L, "images/capture-source/99/source.jpg", "image/jpeg"));
+
+    assertEquals(ErrorCode.FORBIDDEN_FILE_ACCESS.getCode(), exception.getCode());
+  }
+
+  @Test
+  void rejectsPublicPresignRefreshForAnotherUsersKey() {
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () -> service.refreshPresign(42L, "public/capture-animal/99/123.png", "image/png"));
+
+    assertEquals(ErrorCode.FORBIDDEN_FILE_ACCESS.getCode(), exception.getCode());
+  }
+
+  @Test
   void rejectsUnsupportedContentTypeOnPresign() {
     BusinessException exception =
         assertThrows(
@@ -108,6 +148,18 @@ class ImageUploadServiceTest {
         assertThrows(BusinessException.class, () -> service.confirm(42L, key));
 
     assertEquals(ErrorCode.UNSUPPORTED_CONTENT_TYPE.getCode(), exception.getCode());
+  }
+
+  @Test
+  void validateUploadedObjectRejectsEmptyObject() {
+    String key = "images/capture-original/42/photo.png";
+    fileStorage.put(key, 0, "image/png");
+
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class, () -> service.validateUploadedObject(42L, key, "image/png"));
+
+    assertEquals(ErrorCode.EMPTY_FILE.getCode(), exception.getCode());
   }
 
   @Test

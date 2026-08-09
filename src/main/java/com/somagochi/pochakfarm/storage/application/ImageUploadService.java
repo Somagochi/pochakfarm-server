@@ -32,9 +32,53 @@ public class ImageUploadService {
   public PresignResponse createPresign(Long userId, String purpose, String contentType) {
     validateContentType(contentType);
     String key = buildKey(userId, purpose, contentType);
+    return presign(key, contentType);
+  }
+
+  public PresignResponse refreshPresign(Long userId, String key, String contentType) {
+    validateOwnership(userId, key);
+    validateContentType(contentType);
+    return presign(key, contentType);
+  }
+
+  public PresignResponse createPublicPresign(String purpose, String contentType) {
+    validateContentType(contentType);
+    String key = buildPublicKey(purpose, contentType);
+    return presign(key, contentType);
+  }
+
+  public PresignResponse createDownloadPresign(Long userId, String key) {
+    validateOwnership(userId, key);
+    PresignedUpload download = fileStorage.presignGet(key, properties.presignExpiration());
+    return new PresignResponse(download.url(), key, download.expiresAt());
+  }
+
+  private PresignResponse presign(String key, String contentType) {
     PresignedUpload upload =
         fileStorage.presignPut(key, contentType, properties.presignExpiration());
     return new PresignResponse(upload.url(), key, upload.expiresAt());
+  }
+
+  public void validateUploadedObject(Long userId, String key, String expectedContentType) {
+    validateOwnership(userId, key);
+    validateContentType(expectedContentType);
+    StoredObject object = fileStorage.head(key);
+    validateContentType(object.contentType());
+    validateSize(object.size());
+    if (!expectedContentType.equals(object.contentType())) {
+      throw new BusinessException(ErrorCode.UNSUPPORTED_CONTENT_TYPE);
+    }
+  }
+
+  public void validatePublicObject(String key, String expectedContentType) {
+    validatePublicKey(key);
+    validateContentType(expectedContentType);
+    StoredObject object = fileStorage.head(key);
+    validateContentType(object.contentType());
+    validateSize(object.size());
+    if (!expectedContentType.equals(object.contentType())) {
+      throw new BusinessException(ErrorCode.UNSUPPORTED_CONTENT_TYPE);
+    }
   }
 
   public ConfirmResponse confirm(Long userId, String key) {
@@ -61,6 +105,9 @@ public class ImageUploadService {
   }
 
   private void validateSize(long size) {
+    if (size <= 0) {
+      throw new BusinessException(ErrorCode.EMPTY_FILE);
+    }
     if (size > properties.maxFileSize()) {
       throw new BusinessException(ErrorCode.FILE_TOO_LARGE);
     }
@@ -81,8 +128,14 @@ public class ImageUploadService {
   private boolean isOwnedBy(Long userId, String key) {
     String[] segments = key.split("/");
     return segments.length == 4
-        && segments[0].equals("images")
+        && (segments[0].equals("images") || segments[0].equals("public"))
         && segments[2].equals(String.valueOf(userId));
+  }
+
+  private void validatePublicKey(String key) {
+    if (key == null || !key.startsWith("public/")) {
+      throw new BusinessException(ErrorCode.FORBIDDEN_FILE_ACCESS);
+    }
   }
 
   private String buildKey(Long userId, String purpose, String contentType) {

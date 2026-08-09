@@ -1,0 +1,87 @@
+package com.somagochi.pochakfarm.capture.application;
+
+import com.somagochi.pochakfarm.capture.domain.Capture;
+import com.somagochi.pochakfarm.capture.domain.CaptureExperiencePolicy;
+import com.somagochi.pochakfarm.capture.domain.CaptureGameResultPolicy;
+import com.somagochi.pochakfarm.capture.domain.GameStatus;
+import com.somagochi.pochakfarm.capture.dto.CaptureGameResultRequest;
+import com.somagochi.pochakfarm.capture.dto.CaptureGameResultResponse;
+import com.somagochi.pochakfarm.capture.dto.CaptureGameResultResponse.ProgressionState;
+import com.somagochi.pochakfarm.capture.infrastructure.persistence.CaptureRepository;
+import com.somagochi.pochakfarm.common.exception.BusinessException;
+import com.somagochi.pochakfarm.common.exception.ErrorCode;
+import com.somagochi.pochakfarm.user.application.UserCoinService;
+import com.somagochi.pochakfarm.user.domain.CoinTransactionReason;
+import com.somagochi.pochakfarm.user.domain.LevelReward;
+import com.somagochi.pochakfarm.user.domain.LevelRewardPolicy;
+import com.somagochi.pochakfarm.user.domain.User;
+import com.somagochi.pochakfarm.user.infrastructure.persistence.UserRepository;
+import java.time.Clock;
+import java.time.Instant;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class CaptureGameResultService {
+
+  private final CaptureRepository captureRepository;
+  private final UserRepository userRepository;
+  private final CaptureGameResultPolicy gameResultPolicy;
+  private final CaptureExperiencePolicy experiencePolicy;
+  private final LevelRewardPolicy levelRewardPolicy;
+  private final UserCoinService userCoinService;
+  private final Clock clock;
+
+  @Transactional
+  public CaptureGameResultResponse submit(
+      Long userId, Long captureId, CaptureGameResultRequest request) {
+    Instant receivedAt = clock.instant();
+    Capture capture =
+        captureRepository
+            .findByIdForUpdate(captureId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.CAPTURE_NOT_FOUND));
+    if (!capture.isOwnedBy(userId)) {
+      throw new BusinessException(ErrorCode.FORBIDDEN_CAPTURE_ACCESS);
+    }
+    if (!capture.isGamePending()) {
+      User user =
+          userRepository
+              .findById(userId)
+              .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+      return response(capture, null, progressionState(user), null);
+    }
+    User user =
+        userRepository
+            .findByIdForUpdate(userId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    if (capture.isGameResultExpired(receivedAt)) {
+      capture.expireGame();
+      return response(capture, null, progressionState(user), null);
+    }
+
+    GameStatus result = gameResultPolicy.resolve(request == null ? null : request.toDomain());
+    long experience = experiencePolicy.experienceFor(capture.getTier(), result);
+    ProgressionState before = progressionState(user);
+    LevelReward levelReward = user.gainExperience(experience, levelRewardPolicy);
+    if (levelReward.coinReward() > 0) {
+      userCoinService.earn(
+          user, levelReward.coinReward(), CoinTransactionReason.LEVEL_UP_REWARD, capture.getId());
+    }
+    capture.completeGame(result, levelReward.experienceReward());
+    return response(capture, before, progressionState(user), levelReward.coinReward());
+  }
+
+  private CaptureGameResultResponse response(
+      Capture capture, ProgressionState before, ProgressionState after, Long levelUpCoinReward) {
+    return CaptureGameResultResponse.from(capture, before, after, levelUpCoinReward);
+  }
+
+  private ProgressionState progressionState(User user) {
+    return new ProgressionState(
+        user.getLevel(),
+        user.getExperience(),
+        levelRewardPolicy.requiredExperienceForNextLevel(user.getLevel()));
+  }
+}

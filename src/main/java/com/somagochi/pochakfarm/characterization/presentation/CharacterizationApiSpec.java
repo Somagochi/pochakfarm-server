@@ -72,6 +72,7 @@ public interface CharacterizationApiSpec {
       responseCode = "503",
       description = "변환 처리 큐가 가득 차 요청을 접수할 수 없음. 잠시 후 재시도 필요 (CHARACTERIZATION_BUSY)",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @Deprecated
   ApiResponse<CharacterizationStartResponse> characterize(
       String deviceToken,
       @Parameter(hidden = true) MultipartFile image,
@@ -100,5 +101,6 @@ public interface CharacterizationApiSpec {
       responseCode = "404",
       description = "해당 ID의 캐릭터라이징이 없음 (CHARACTERIZATION_NOT_FOUND)",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @Deprecated
   ApiResponse<CharacterizationResponse> getCharacterization(Long characterizationId);
 }

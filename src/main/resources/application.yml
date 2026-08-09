@@ -40,7 +40,7 @@ spring:
             authorization-grant-type: authorization_code
             client-authentication-method: client_secret_post
             scope:
-              - profile_nickname
+              - account_email
             client-name: Kakao
           naver:
             client-id: ${secret.social.naver.client-id}
@@ -101,7 +101,13 @@ springdoc:
   swagger-ui:
     enabled: ${secret.springdoc.swagger-ui.enabled}
 
+logbook:
+  filter:
+    form-request-mode: parameter
+
 app:
+  admin:
+    api-key: ${secret.admin.api-key:}
   discord:
     webhook-url: ${secret.discord.webhook-url:}
   jwt:
@@ -124,18 +130,31 @@ app:
         ttl: ${secret.social.oidc.jwks-cache.ttl}
         min-refresh-interval: ${secret.social.oidc.jwks-cache.min-refresh-interval}
   pre-registration:
-    enabled: ${secret.pre-registration.enabled:true}
+    enabled: ${secret.pre-registration.enabled:false}
     crypto:
       encryption-key: ${secret.pre-registration.crypto.encryption-key}
       hash-key: ${secret.pre-registration.crypto.hash-key}
   characterization:
+    enabled: ${secret.characterization.enabled:false}
     device-limit-enabled: ${secret.characterization.device-limit-enabled:false}
     reaper:
       enabled: ${secret.characterization.reaper.enabled:true}
       interval: ${secret.characterization.reaper.interval:PT1M}
       stale-threshold: ${secret.characterization.reaper.stale-threshold:PT15M}
+  coupon:
+    pre-registration:
+      enabled: ${secret.coupon.pre-registration.enabled:true}
+  solapi:
+    base-url: ${secret.solapi.base-url:https://api.solapi.com}
+    api-key: ${secret.solapi.api-key:}
+    api-secret: ${secret.solapi.api-secret:}
+    from: ${secret.solapi.from:}
   promotion:
     base-url: ${secret.promotion.base-url}
+  develop:
+    admin:
+      username: ${secret.develop.admin.username:}
+      password: ${secret.develop.admin.password:}
   characterizer:
     base-url: ${secret.characterizer.base-url:http://localhost:8000}
     connect-timeout: ${secret.characterizer.connect-timeout:PT5S}

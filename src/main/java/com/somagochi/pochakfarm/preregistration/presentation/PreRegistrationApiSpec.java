@@ -2,6 +2,8 @@ package com.somagochi.pochakfarm.preregistration.presentation;
 
 import com.somagochi.pochakfarm.common.exception.ErrorResponse;
 import com.somagochi.pochakfarm.common.response.ApiResponse;
+import com.somagochi.pochakfarm.preregistration.dto.PreRegistrationCouponSmsRequest;
+import com.somagochi.pochakfarm.preregistration.dto.PreRegistrationCouponSmsResult;
 import com.somagochi.pochakfarm.preregistration.dto.PreRegistrationRequest;
 import com.somagochi.pochakfarm.preregistration.dto.PreRegistrationResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,6 +38,7 @@ public interface PreRegistrationApiSpec {
       responseCode = "404",
       description = "캐릭터라이징 내역 없음(CHARACTERIZATION_NOT_FOUND)",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @Deprecated
   ApiResponse<PreRegistrationResponse> register(PreRegistrationRequest request);
 
   @Operation(
@@ -53,5 +56,35 @@ public interface PreRegistrationApiSpec {
       responseCode = "404",
       description = "사전예약 내역 없음(PRE_REGISTRATION_NOT_FOUND)",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @Deprecated
   ApiResponse<PreRegistrationResponse> cancel(String phoneNumber);
+
+  @Operation(
+      summary = "사전예약자 쿠폰 SMS 일괄 발송",
+      description =
+          "쿠폰이 발급된 사전예약자 중 아직 SMS를 받지 않은 대상 전원에게 쿠폰 코드를 문자로 발송한다. "
+              + "요청 본문의 messageTemplate에 {couponCode} 플레이스홀더를 포함해야 하며, 수신자별 쿠폰 코드로 치환된다. "
+              + "dryRun=true(기본값)면 발송 없이 대상 수만 집계한다. 발송 성공 건은 재호출해도 다시 발송되지 않는다.")
+  @Parameter(
+      in = ParameterIn.HEADER,
+      name = "X-Admin-Key",
+      required = true,
+      description = "관리용 API 키")
+  @Parameter(
+      in = ParameterIn.QUERY,
+      name = "dryRun",
+      description = "true면 발송하지 않고 대상 수만 반환 (기본값 true)")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "200",
+      description = "발송 결과 (targetCount/sentCount/failedCount/couponNotIssuedCount)")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "400",
+      description = "messageTemplate 누락 또는 {couponCode} 플레이스홀더 없음(INVALID_PARAMETER)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "403",
+      description = "관리용 API 키 불일치(FORBIDDEN_ADMIN_ACCESS)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  ApiResponse<PreRegistrationCouponSmsResult> sendCouponSms(
+      String adminKey, boolean dryRun, PreRegistrationCouponSmsRequest request);
 }
