@@ -13,4 +13,5 @@ public record CaptureGenerationCommand(
     Tier tier,
     CardSkill skill1,
     CardSkill skill2,
-    String cardNo) {}
+    String cardNo,
+    long submittedAtNanos) {}

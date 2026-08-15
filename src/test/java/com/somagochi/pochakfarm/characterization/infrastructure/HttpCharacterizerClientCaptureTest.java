@@ -55,6 +55,7 @@ class HttpCharacterizerClientCaptureTest {
     assertEquals("image/png", result.animalContentType());
     assertEquals("image/png", result.cardContentType());
     assertEquals(18420, result.elapsedMs());
+    assertTrue(requestBody.contains("\"capture_id\":\"123\""));
     assertTrue(requestBody.contains("\"original_image_download_url\":\"https://download.test/o\""));
     assertTrue(requestBody.contains("\"animal_image_upload_url\":\"https://upload.test/animal\""));
     assertTrue(requestBody.contains("\"card_image_upload_url\":\"https://upload.test/card\""));
@@ -112,6 +113,7 @@ class HttpCharacterizerClientCaptureTest {
 
   private CaptureCharacterizerRequest request() {
     return new CaptureCharacterizerRequest(
+        "123",
         "https://download.test/o",
         "https://upload.test/animal",
         "https://upload.test/card",

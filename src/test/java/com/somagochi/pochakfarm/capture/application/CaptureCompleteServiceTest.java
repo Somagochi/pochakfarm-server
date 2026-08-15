@@ -3,6 +3,7 @@ package com.somagochi.pochakfarm.capture.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
@@ -24,6 +25,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.task.TaskRejectedException;
@@ -56,7 +58,11 @@ class CaptureCompleteServiceTest {
     assertEquals(GenerationStatus.PROCESSING, response.generationStatus());
     assertEquals(GenerationStatus.PROCESSING, capture.getGenerationStatus());
     verify(imageUploadService).validateUploadedObject(USER_ID, ORIGINAL_IMAGE_KEY, "image/jpeg");
-    verify(captureGenerationWorker, timeout(1_000)).generate(any(CaptureGenerationCommand.class));
+    ArgumentCaptor<CaptureGenerationCommand> commandCaptor =
+        ArgumentCaptor.forClass(CaptureGenerationCommand.class);
+    verify(captureGenerationWorker, timeout(1_000)).generate(commandCaptor.capture(), anyLong());
+    assertEquals(CAPTURE_ID, commandCaptor.getValue().captureId());
+    org.junit.jupiter.api.Assertions.assertTrue(commandCaptor.getValue().submittedAtNanos() > 0L);
     executor.shutdown();
   }
 
@@ -72,7 +78,7 @@ class CaptureCompleteServiceTest {
 
     assertEquals(GenerationStatus.PROCESSING, response.generationStatus());
     verify(imageUploadService, never()).validateUploadedObject(any(), any(), any());
-    verify(captureGenerationWorker, never()).generate(any());
+    verify(captureGenerationWorker, never()).generate(any(), anyLong());
     executor.shutdown();
   }
 
@@ -92,7 +98,7 @@ class CaptureCompleteServiceTest {
 
     assertEquals(ErrorCode.FILE_NOT_FOUND.getCode(), exception.getCode());
     assertEquals(GenerationStatus.WAITING_UPLOAD, capture.getGenerationStatus());
-    verify(captureGenerationWorker, never()).generate(any());
+    verify(captureGenerationWorker, never()).generate(any(), anyLong());
     executor.shutdown();
   }
 
@@ -111,7 +117,7 @@ class CaptureCompleteServiceTest {
             BusinessException.class, () -> service.completeOriginalImage(USER_ID, CAPTURE_ID));
 
     assertEquals(ErrorCode.CHARACTERIZATION_BUSY.getCode(), exception.getCode());
-    verify(captureGenerationWorker, never()).generate(any());
+    verify(captureGenerationWorker, never()).generate(any(), anyLong());
   }
 
   @Test
@@ -125,12 +131,13 @@ class CaptureCompleteServiceTest {
     try {
       service.completeOriginalImage(USER_ID, CAPTURE_ID);
 
-      verify(captureGenerationWorker, never()).generate(any());
+      verify(captureGenerationWorker, never()).generate(any(), anyLong());
       TransactionSynchronizationManager.getSynchronizations()
           .forEach(
               synchronization ->
                   synchronization.afterCompletion(TransactionSynchronization.STATUS_COMMITTED));
-      verify(captureGenerationWorker, timeout(1_000)).generate(any(CaptureGenerationCommand.class));
+      verify(captureGenerationWorker, timeout(1_000))
+          .generate(any(CaptureGenerationCommand.class), anyLong());
     } finally {
       TransactionSynchronizationManager.clearSynchronization();
       executor.shutdown();
@@ -152,7 +159,7 @@ class CaptureCompleteServiceTest {
           .forEach(
               synchronization ->
                   synchronization.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK));
-      verify(captureGenerationWorker, never()).generate(any());
+      verify(captureGenerationWorker, never()).generate(any(), anyLong());
     } finally {
       TransactionSynchronizationManager.clearSynchronization();
       executor.shutdown();
