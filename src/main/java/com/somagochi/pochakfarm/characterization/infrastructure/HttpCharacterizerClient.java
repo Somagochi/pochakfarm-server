@@ -186,6 +186,7 @@ public class HttpCharacterizerClient implements CharacterizerClient, CaptureChar
 
   private HttpCaptureCharacterizerRequest createRequestBody(CaptureCharacterizerRequest request) {
     return new HttpCaptureCharacterizerRequest(
+        request.captureId(),
         request.originalImageDownloadUrl(),
         request.animalImageUploadUrl(),
         request.cardImageUploadUrl(),

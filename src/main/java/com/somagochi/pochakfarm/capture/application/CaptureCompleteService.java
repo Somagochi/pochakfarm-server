@@ -49,8 +49,9 @@ public class CaptureCompleteService {
     capture.markProcessing();
     CaptureGenerationCommand command = commandFrom(capture);
     try {
-      AfterCommitExecutor.executeAsyncAfterCommit(
-          taskExecutor, () -> captureGenerationWorker.generate(command));
+      AfterCommitExecutor.executeTimedAsyncAfterCommit(
+          taskExecutor,
+          queueDurationNanos -> captureGenerationWorker.generate(command, queueDurationNanos));
     } catch (TaskRejectedException exception) {
       throw new BusinessException(ErrorCode.CHARACTERIZATION_BUSY);
     }
@@ -67,7 +68,8 @@ public class CaptureCompleteService {
         capture.getTier(),
         capture.getSkill1(),
         capture.getSkill2(),
-        capture.getCardNo());
+        capture.getCardNo(),
+        System.nanoTime());
   }
 
   private void validateOwnership(Capture capture, Long userId) {
