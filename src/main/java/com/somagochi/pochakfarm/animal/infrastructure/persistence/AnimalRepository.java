@@ -59,4 +59,18 @@ public interface AnimalRepository extends JpaRepository<Animal, Long> {
       "select a from Animal a, FarmSpace s "
           + "where a.spaceId = s.id and s.userId = :userId and a.floorNum >= 1")
   List<Animal> findPlacedAnimals(@Param("userId") Long userId);
+
+  @Query(
+      "select a from Animal a, Capture c "
+          + "where a.captureId = c.id and c.userId = :userId "
+          + "and c.cardType in :cardTypes "
+          + "and c.animalName.value like :keyword escape '!' "
+          + "and a.id < :cursor "
+          + "order by a.id desc")
+  List<Animal> searchOwnedAnimalsByName(
+      @Param("userId") Long userId,
+      @Param("cardTypes") Collection<CardType> cardTypes,
+      @Param("keyword") String keyword,
+      @Param("cursor") Long cursor,
+      Limit limit);
 }
