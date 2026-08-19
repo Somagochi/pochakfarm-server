@@ -157,7 +157,10 @@ class CapturePersistenceTest {
   private User persistUser() {
     User user =
         User.register(
-            SocialProvider.KAKAO, "capture-test-" + UUID.randomUUID(), "capture@test.com");
+            SocialProvider.KAKAO,
+            "capture-test-" + UUID.randomUUID(),
+            "capture@test.com",
+            "u" + UUID.randomUUID().toString().substring(0, 5));
     assertEquals(1, user.getLevel());
     entityManager.persist(user);
     return user;

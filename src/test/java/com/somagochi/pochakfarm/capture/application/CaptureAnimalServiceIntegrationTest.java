@@ -71,7 +71,8 @@ class CaptureAnimalServiceIntegrationTest {
             User.register(
                 SocialProvider.KAKAO,
                 "capture-animal-" + UUID.randomUUID(),
-                "capture-animal@test.com"));
+                "capture-animal@test.com",
+                "u" + UUID.randomUUID().toString().substring(0, 5)));
     userId = user.getId();
     farmInitializationService.initialize(userId);
   }

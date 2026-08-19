@@ -101,7 +101,7 @@ class CaptureOverviewServiceTest {
   }
 
   private User userAt(int level, long experience) {
-    User user = User.register(SocialProvider.KAKAO, "provider-id", "user@example.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id", "user@example.com", "포착이");
     ReflectionTestUtils.setField(user, "level", level);
     ReflectionTestUtils.setField(user, "experience", experience);
     return user;

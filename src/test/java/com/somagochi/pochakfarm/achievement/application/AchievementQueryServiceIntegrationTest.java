@@ -54,7 +54,10 @@ class AchievementQueryServiceIntegrationTest {
         userRepository
             .save(
                 User.register(
-                    SocialProvider.KAKAO, UUID.randomUUID().toString(), UUID.randomUUID() + "@t"))
+                    SocialProvider.KAKAO,
+                    UUID.randomUUID().toString(),
+                    UUID.randomUUID() + "@t",
+                    "u" + UUID.randomUUID().toString().substring(0, 5)))
             .getId();
   }
 

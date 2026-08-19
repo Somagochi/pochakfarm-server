@@ -50,7 +50,10 @@ class CaptureGameResultConcurrencyTest {
     userRepository.deleteAll();
     User user =
         User.register(
-            SocialProvider.KAKAO, "game-result-" + UUID.randomUUID(), "game-result@test.com");
+            SocialProvider.KAKAO,
+            "game-result-" + UUID.randomUUID(),
+            "game-result@test.com",
+            "u" + UUID.randomUUID().toString().substring(0, 5));
     ReflectionTestUtils.setField(user, "experience", 39L);
     user = userRepository.save(user);
     userId = user.getId();

@@ -32,7 +32,7 @@ class UserTermsAgreementServiceTest {
 
   @Test
   void recordsTermsAgreementForCurrentUser() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id", "user@example.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id", "user@example.com", "포착이");
     given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user));
 
     service.agree(1L, new TermsAgreementRequest(true, true, true, false, true));
@@ -55,7 +55,7 @@ class UserTermsAgreementServiceTest {
 
   @Test
   void returnsCurrentTermsAgreement() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id", "user@example.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id", "user@example.com", "포착이");
     user.agreeToTerms(true, true, true, false, true, NOW);
     given(userRepository.findById(1L)).willReturn(Optional.of(user));
 
@@ -71,7 +71,7 @@ class UserTermsAgreementServiceTest {
 
   @Test
   void updatesMarketingAgreementAndReturnsCurrentTermsAgreement() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id", "user@example.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id", "user@example.com", "포착이");
     user.agreeToTerms(true, true, true, false, false, NOW.minusSeconds(60));
     given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user));
 
@@ -83,7 +83,7 @@ class UserTermsAgreementServiceTest {
 
   @Test
   void rejectsNullMarketingAgreementUpdate() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id", "user@example.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id", "user@example.com", "포착이");
     given(userRepository.findByIdForUpdate(1L)).willReturn(Optional.of(user));
 
     BusinessException exception =

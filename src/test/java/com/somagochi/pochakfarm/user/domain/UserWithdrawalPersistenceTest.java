@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.somagochi.pochakfarm.common.social.SocialProvider;
 import jakarta.persistence.EntityManager;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,7 +18,12 @@ class UserWithdrawalPersistenceTest {
 
   @Test
   void persistsWithdrawalReasonAsStringWhileSoftDeletingUser() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id", "user@example.com");
+    User user =
+        User.register(
+            SocialProvider.KAKAO,
+            "provider-id",
+            "user@example.com",
+            "u" + UUID.randomUUID().toString().substring(0, 5));
     entityManager.persist(user);
     entityManager.flush();
 

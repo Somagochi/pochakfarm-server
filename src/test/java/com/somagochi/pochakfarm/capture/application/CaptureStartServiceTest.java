@@ -76,7 +76,7 @@ class CaptureStartServiceTest {
 
   @Test
   void startsCaptureAndConsumesOneAttemptWithoutSpendingCoins() {
-    User user = User.register(SocialProvider.KAKAO, "provider", "user@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider", "user@test.com", "포착이");
     DailyCaptureAttempt attempt = DailyCaptureAttempt.create(USER_ID, LocalDate.of(2026, 7, 24), 5);
     given(userRepository.findByIdForUpdate(USER_ID)).willReturn(Optional.of(user));
     given(captureRepository.findByUserIdAndClientRequestId(USER_ID, REQUEST_ID))
@@ -116,7 +116,8 @@ class CaptureStartServiceTest {
   @Test
   void rejectsStartWhenNoAttemptRemains() {
     given(userRepository.findByIdForUpdate(USER_ID))
-        .willReturn(Optional.of(User.register(SocialProvider.KAKAO, "provider", "user@test.com")));
+        .willReturn(
+            Optional.of(User.register(SocialProvider.KAKAO, "provider", "user@test.com", "포착이")));
     given(captureRepository.findByUserIdAndClientRequestId(USER_ID, REQUEST_ID))
         .willReturn(Optional.empty());
     given(attemptRepository.findByUserIdAndAttemptDateForUpdate(USER_ID, LocalDate.of(2026, 7, 24)))
@@ -135,7 +136,7 @@ class CaptureStartServiceTest {
 
   @Test
   void returnsExistingCaptureWithoutConsumingAgain() {
-    User user = User.register(SocialProvider.KAKAO, "provider", "user@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider", "user@test.com", "포착이");
     Capture capture =
         Capture.create(
             USER_ID,
@@ -183,7 +184,8 @@ class CaptureStartServiceTest {
             "image/jpeg",
             NOW.plusSeconds(300));
     given(userRepository.findByIdForUpdate(USER_ID))
-        .willReturn(Optional.of(User.register(SocialProvider.KAKAO, "provider", "user@test.com")));
+        .willReturn(
+            Optional.of(User.register(SocialProvider.KAKAO, "provider", "user@test.com", "포착이")));
     given(captureRepository.findByUserIdAndClientRequestId(USER_ID, REQUEST_ID))
         .willReturn(Optional.of(capture));
 
