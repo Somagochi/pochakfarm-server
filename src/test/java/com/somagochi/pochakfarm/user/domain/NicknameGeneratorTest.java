@@ -6,45 +6,57 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
 import com.somagochi.pochakfarm.common.random.RandomProvider;
-import java.util.stream.IntStream;
+import java.util.HashSet;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class NicknameGeneratorTest {
+
+  private static final int POOL_SIZE = 100;
 
   private final RandomProvider randomProvider = mock(RandomProvider.class);
   private final NicknameGenerator nicknameGenerator = new NicknameGenerator(randomProvider);
 
   @Test
   void combinesAdjectiveNounAndZeroPaddedSuffix() {
-    given(randomProvider.nextInt(50)).willReturn(0, 0);
-    given(randomProvider.nextInt(100)).willReturn(7);
+    given(randomProvider.nextInt(POOL_SIZE)).willReturn(0, 0, 7);
 
     assertEquals("행복토끼07", nicknameGenerator.generate());
   }
 
   @Test
   void usesSuffixWithoutPaddingWhenTwoDigits() {
-    given(randomProvider.nextInt(50)).willReturn(1, 1);
-    given(randomProvider.nextInt(100)).willReturn(42);
+    given(randomProvider.nextInt(POOL_SIZE)).willReturn(1, 1, 42);
 
     assertEquals("용감여우42", nicknameGenerator.generate());
   }
 
   @Test
-  void generatesSixCharacterNicknameWithoutWhitespaceForEveryCombination() {
-    RandomProvider sequential = mock(RandomProvider.class);
-    NicknameGenerator generator = new NicknameGenerator(sequential);
+  void keepsEveryCombinationSixCharactersWithoutWhitespace() {
+    for (int index = 0; index < POOL_SIZE; index++) {
+      given(randomProvider.nextInt(POOL_SIZE)).willReturn(index, index, index);
 
-    IntStream.range(0, 50)
-        .forEach(
-            index -> {
-              given(sequential.nextInt(50)).willReturn(index, index);
-              given(sequential.nextInt(100)).willReturn(index);
+      String nickname = nicknameGenerator.generate();
 
-              String nickname = generator.generate();
+      assertEquals(6, nickname.length(), nickname);
+      assertFalse(nickname.contains(" "), nickname);
+    }
+  }
 
-              assertEquals(6, nickname.length(), nickname);
-              assertFalse(nickname.contains(" "), nickname);
-            });
+  @Test
+  void holdsHundredDistinctAdjectivesAndNouns() {
+    Set<String> adjectives = new HashSet<>();
+    Set<String> nouns = new HashSet<>();
+
+    for (int index = 0; index < POOL_SIZE; index++) {
+      given(randomProvider.nextInt(POOL_SIZE)).willReturn(index, index, 0);
+
+      String nickname = nicknameGenerator.generate();
+      adjectives.add(nickname.substring(0, 2));
+      nouns.add(nickname.substring(2, 4));
+    }
+
+    assertEquals(POOL_SIZE, adjectives.size());
+    assertEquals(POOL_SIZE, nouns.size());
   }
 }
