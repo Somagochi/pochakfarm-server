@@ -1,14 +1,11 @@
 package com.somagochi.pochakfarm.user.application;
 
-import com.somagochi.pochakfarm.common.exception.BusinessException;
-import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.social.SocialUserInfo;
 import com.somagochi.pochakfarm.farm.application.FarmInitializationService;
 import com.somagochi.pochakfarm.user.domain.User;
 import com.somagochi.pochakfarm.user.dto.UserRegistration;
 import com.somagochi.pochakfarm.user.infrastructure.persistence.UserRepository;
 import java.util.Optional;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,11 +14,15 @@ public class UserRegistrationService {
 
   private final UserRepository userRepository;
   private final FarmInitializationService farmInitializationService;
+  private final UserNicknameService userNicknameService;
 
   public UserRegistrationService(
-      UserRepository userRepository, FarmInitializationService farmInitializationService) {
+      UserRepository userRepository,
+      FarmInitializationService farmInitializationService,
+      UserNicknameService userNicknameService) {
     this.userRepository = userRepository;
     this.farmInitializationService = farmInitializationService;
+    this.userNicknameService = userNicknameService;
   }
 
   @Transactional
@@ -37,14 +38,11 @@ public class UserRegistrationService {
   }
 
   private User register(SocialUserInfo userInfo) {
-    try {
-      User user =
-          userRepository.save(
-              User.register(userInfo.provider(), userInfo.providerId(), userInfo.email()));
-      farmInitializationService.initialize(user.getId());
-      return user;
-    } catch (DataIntegrityViolationException exception) {
-      throw new BusinessException(ErrorCode.USER_ALREADY_REGISTERED);
-    }
+    String nickname = userNicknameService.generateUnique();
+    User user =
+        userRepository.save(
+            User.register(userInfo.provider(), userInfo.providerId(), userInfo.email(), nickname));
+    farmInitializationService.initialize(user.getId());
+    return user;
   }
 }

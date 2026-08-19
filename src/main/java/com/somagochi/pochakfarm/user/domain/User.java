@@ -69,15 +69,17 @@ public class User extends BaseEntity {
   @Column(name = "withdrawal_reason", columnDefinition = "varchar(32)")
   private WithdrawalReason withdrawalReason;
 
-  private User(SocialAccount socialAccount, String email) {
+  private User(SocialAccount socialAccount, String email, String nickname) {
     this.socialAccount = socialAccount;
     this.email = email;
     this.level = INITIAL_LEVEL;
     this.coins = Coin.of(INITIAL_COINS);
+    changeNickname(nickname);
   }
 
-  public static User register(SocialProvider provider, String providerId, String email) {
-    return new User(new SocialAccount(provider, providerId), email);
+  public static User register(
+      SocialProvider provider, String providerId, String email, String nickname) {
+    return new User(new SocialAccount(provider, providerId), email, nickname);
   }
 
   public boolean isTermsAgreementRequired() {

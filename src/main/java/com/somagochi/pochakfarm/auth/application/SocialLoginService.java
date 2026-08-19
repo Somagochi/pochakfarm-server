@@ -11,10 +11,13 @@ import com.somagochi.pochakfarm.common.social.SocialUserInfo;
 import com.somagochi.pochakfarm.user.application.UserRegistrationService;
 import com.somagochi.pochakfarm.user.domain.User;
 import com.somagochi.pochakfarm.user.dto.UserRegistration;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 @Service
 public class SocialLoginService {
+
+  private static final int MAX_REGISTRATION_ATTEMPTS = 3;
 
   private final SocialLoginResolver socialLoginResolver;
   private final UserRegistrationService userRegistrationService;
@@ -34,12 +37,22 @@ public class SocialLoginService {
     validateToken(request.token());
 
     SocialUserInfo userInfo = socialLoginResolver.fetchUserInfo(provider, request.token());
-    UserRegistration registration = userRegistrationService.getOrRegister(userInfo);
+    UserRegistration registration = getOrRegister(userInfo);
     User user = registration.user();
 
     TokenResponse tokenResponse = tokenService.generateTokenPair(String.valueOf(user.getId()));
     return new SocialLoginResponse(
         tokenResponse, registration.isNew(), user.isTermsAgreementRequired());
+  }
+
+  private UserRegistration getOrRegister(SocialUserInfo userInfo) {
+    for (int attempt = 0; attempt < MAX_REGISTRATION_ATTEMPTS; attempt++) {
+      try {
+        return userRegistrationService.getOrRegister(userInfo);
+      } catch (DataIntegrityViolationException ignored) {
+      }
+    }
+    throw new BusinessException(ErrorCode.USER_ALREADY_REGISTERED);
   }
 
   private void validateToken(String token) {

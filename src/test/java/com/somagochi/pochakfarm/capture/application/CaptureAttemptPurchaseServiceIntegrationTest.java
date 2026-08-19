@@ -49,7 +49,11 @@ class CaptureAttemptPurchaseServiceIntegrationTest {
     userRepository.deleteAll();
     User user =
         userRepository.save(
-            User.register(SocialProvider.KAKAO, UUID.randomUUID().toString(), "purchase@test.com"));
+            User.register(
+                SocialProvider.KAKAO,
+                UUID.randomUUID().toString(),
+                "purchase@test.com",
+                "u" + UUID.randomUUID().toString().substring(0, 5)));
     userId = user.getId();
     today = LocalDate.now(ZoneId.of("Asia/Seoul"));
   }

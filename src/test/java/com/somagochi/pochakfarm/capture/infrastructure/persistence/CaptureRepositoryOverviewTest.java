@@ -73,7 +73,8 @@ class CaptureRepositoryOverviewTest {
         User.register(
             SocialProvider.KAKAO,
             "overview-" + suffix + "-" + UUID.randomUUID(),
-            suffix + "@example.com");
+            suffix + "@example.com",
+            "u" + UUID.randomUUID().toString().substring(0, 5));
     entityManager.persist(user);
     return user;
   }

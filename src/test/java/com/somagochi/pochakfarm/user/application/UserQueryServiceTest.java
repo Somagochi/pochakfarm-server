@@ -22,7 +22,7 @@ class UserQueryServiceTest {
 
   @Test
   void returnsProfileWithCurrentAndRequiredExperienceWithoutChangingUser() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id", "user@example.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id", "user@example.com", "포착이");
     user.changeNickname("포착이");
     ReflectionTestUtils.setField(user, "level", 3);
     ReflectionTestUtils.setField(user, "experience", 54L);
