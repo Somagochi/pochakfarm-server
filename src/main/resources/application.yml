@@ -143,7 +143,7 @@ app:
     enabled: ${secret.characterization.enabled:false}
     device-limit-enabled: ${secret.characterization.device-limit-enabled:false}
     reaper:
-      enabled: ${secret.characterization.reaper.enabled:true}
+      enabled: ${secret.characterization.reaper.enabled:false}
       interval: ${secret.characterization.reaper.interval:PT1M}
       stale-threshold: ${secret.characterization.reaper.stale-threshold:PT15M}
   coupon:

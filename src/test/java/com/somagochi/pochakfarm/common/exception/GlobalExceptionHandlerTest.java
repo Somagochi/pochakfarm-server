@@ -8,6 +8,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -66,6 +67,20 @@ class GlobalExceptionHandlerTest {
     assertEquals(500, response.getBody().status());
     assertEquals("INTERNAL_SERVER_ERROR", response.getBody().code());
     assertEquals("Unexpected server error", response.getBody().message());
+  }
+
+  @Test
+  void handlesMissingServletRequestParameterException() {
+    MissingServletRequestParameterException exception =
+        new MissingServletRequestParameterException("keyword", "String");
+
+    ResponseEntity<ErrorResponse> response =
+        globalExceptionHandler.handleMissingServletRequestParameterException(exception);
+
+    assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    assertEquals(400, response.getBody().status());
+    assertEquals("INVALID_PARAMETER", response.getBody().code());
+    assertEquals("keyword is required", response.getBody().message());
   }
 
   @Test

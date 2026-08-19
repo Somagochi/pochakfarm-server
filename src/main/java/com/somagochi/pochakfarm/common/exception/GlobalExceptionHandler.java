@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -49,6 +50,16 @@ public class GlobalExceptionHandler {
         ErrorCode.INVALID_PARAMETER.getStatus(),
         ErrorCode.INVALID_PARAMETER.getCode(),
         invalidParameterMessage(exception));
+  }
+
+  @ExceptionHandler(MissingServletRequestParameterException.class)
+  public ResponseEntity<ErrorResponse> handleMissingServletRequestParameterException(
+      MissingServletRequestParameterException exception) {
+    logClientError(exception);
+    return buildResponse(
+        ErrorCode.INVALID_PARAMETER.getStatus(),
+        ErrorCode.INVALID_PARAMETER.getCode(),
+        exception.getParameterName() + " is required");
   }
 
   @ExceptionHandler(HttpMessageNotReadableException.class)

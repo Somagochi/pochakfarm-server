@@ -42,6 +42,30 @@ public interface AnimalApiSpec {
       UserPrincipal principal);
 
   @Operation(
+      summary = "내 동물 검색",
+      description =
+          "로그인한 사용자가 보유한 동물을 이름으로 검색한다(최신순, 한 페이지 12개). "
+              + "keyword 는 필수이며 keyword 로 시작하는 이름만 검색된다(전방 일치). "
+              + "type 을 지정하면 해당 카드 타입만 검색하고, 생략하면 전체 타입을 검색한다. "
+              + "cursor 에 이전 응답의 nextCursor 를 넘기면 다음 페이지를 반환한다.")
+  @SecurityRequirement(name = "bearerAuth")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "검색 성공")
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "400",
+      description = "keyword 누락 또는 공백, 지원하지 않는 type 값 (INVALID_PARAMETER)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  @io.swagger.v3.oas.annotations.responses.ApiResponse(
+      responseCode = "401",
+      description = "인증 실패 (토큰 만료/무효)",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  ApiResponse<CursorPage<AnimalResponse>> searchMyAnimals(
+      @Parameter(description = "카드 타입 필터. 생략하면 전체 타입", example = "SEA") CardType type,
+      @Parameter(description = "동물 이름 전방 일치 검색어", required = true, example = "솜") String keyword,
+      @Parameter(description = "다음 페이지 커서(이전 응답의 nextCursor). 첫 페이지는 생략", example = "38")
+          Long cursor,
+      UserPrincipal principal);
+
+  @Operation(
       summary = "동물 상세 조회",
       description =
           "로그인한 사용자가 소유한 동물의 상세 정보를 조회한다. "
