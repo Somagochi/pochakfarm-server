@@ -84,7 +84,7 @@ spring:
             token-uri: https://nid.naver.com/oauth2.0/token
             user-name-attribute: response
           apple:
-            authorization-uri: https://appleid.apple.com/auth/authorize?response_type=code
+            authorization-uri: https://appleid.apple.com/auth/authorize
             token-uri: https://appleid.apple.com/auth/token
             jwk-set-uri: https://appleid.apple.com/auth/keys
             user-name-attribute: sub
