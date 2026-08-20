@@ -35,7 +35,16 @@ spring:
       ssl:
         enabled: ${secret.data.redis.ssl.enabled}
   security:
+    apple:
+      client-id: ${secret.social.apple.client-id}
+      team-id: ${secret.social.apple.team-id:}
+      key-id: ${secret.social.apple.key-id:}
+      private-key-path: ${secret.social.apple.private-key:}
+      redirect-uri: ${secret.social.apple.redirect-uri}
+      token-uri: https://appleid.apple.com/auth/token
     oauth2:
+      login:
+        success-redirect-uri: ${secret.security.oauth2.login.success-redirect-uri:}
       client:
         registration:
           kakao:
@@ -75,7 +84,7 @@ spring:
             token-uri: https://nid.naver.com/oauth2.0/token
             user-name-attribute: response
           apple:
-            authorization-uri: https://appleid.apple.com/auth/authorize
+            authorization-uri: https://appleid.apple.com/auth/authorize?response_type=code
             token-uri: https://appleid.apple.com/auth/token
             jwk-set-uri: https://appleid.apple.com/auth/keys
             user-name-attribute: sub

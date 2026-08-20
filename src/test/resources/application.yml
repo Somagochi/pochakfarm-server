@@ -7,6 +7,10 @@ spring:
     hibernate:
       ddl-auto: create-drop
     open-in-view: false
+  security:
+    oauth2:
+      login:
+        success-redirect-uri: https://pochakfarm-coupon-submit.vercel.app/coupon
 
 app:
   jwt:
