@@ -33,7 +33,8 @@ class BattlePersistenceTest {
             entityManager
                 .createNativeQuery(
                     """
-                    SELECT status, result, started_at, ended_at
+                    SELECT status, result, started_at, ended_at, bar_position,
+                           last_action_at, final_expires_at, final_tap_count, final_move_distance
                     FROM battles
                     WHERE id = :id
                     """)
@@ -43,6 +44,25 @@ class BattlePersistenceTest {
     assertEquals(BattleStatus.IN_PROGRESS.name(), row[0].toString());
     assertNull(row[1]);
     assertNull(row[3]);
+    assertEquals(BattlePolicy.INITIAL_BAR_POSITION, ((Number) row[4]).intValue());
+    assertNull(row[5]);
+    assertNull(row[6]);
+    assertNull(row[7]);
+    assertNull(row[8]);
+  }
+
+  @Test
+  void rejectsDuplicateClientRequestIdForSameUser() {
+    String clientRequestId = UUID.randomUUID().toString();
+    entityManager.persist(Battle.start(1L, 1L, clientRequestId, STARTED_AT));
+    entityManager.flush();
+
+    assertThrows(
+        RuntimeException.class,
+        () -> {
+          entityManager.persist(Battle.start(1L, 2L, clientRequestId, STARTED_AT));
+          entityManager.flush();
+        });
   }
 
   @Test
@@ -189,6 +209,88 @@ class BattlePersistenceTest {
   }
 
   @Test
+  void rejectsDuplicateActionSeqInSameBattle() {
+    Battle battle = persistBattle(1L, 1L);
+    entityManager.persist(action(battle.getId(), 1));
+    entityManager.flush();
+
+    assertThrows(
+        RuntimeException.class,
+        () -> {
+          entityManager.persist(action(battle.getId(), 1));
+          entityManager.flush();
+        });
+  }
+
+  @Test
+  void persistsActionDerivedEntryColumns() {
+    Battle battle = persistBattle(1L, 1L);
+    BattleAction saved = action(battle.getId(), 5);
+    entityManager.persist(saved);
+    entityManager.flush();
+    entityManager.clear();
+
+    BattleAction found = entityManager.find(BattleAction.class, saved.getId());
+
+    assertEquals(2, found.getEntryOrder());
+    assertEquals(2, found.getActionNoInEntry());
+    assertEquals(CardSkill.GROUND_MOSS_CUSHION, found.getUserSkill());
+    assertEquals(CardSkill.SEA_WAVE_DASH, found.getNpcSkill());
+    assertEquals(-1, found.getNetMoveDistance());
+  }
+
+  @Test
+  void rejectsDuplicateEventSeqInSameBattle() {
+    Battle battle = persistBattle(1L, 1L);
+    entityManager.persist(broadcastEvent(battle.getId(), 1));
+    entityManager.flush();
+
+    assertThrows(
+        RuntimeException.class,
+        () -> {
+          entityManager.persist(broadcastEvent(battle.getId(), 1));
+          entityManager.flush();
+        });
+  }
+
+  @Test
+  void allowsBroadcastEventWithoutActionSeq() {
+    Battle battle = persistBattle(1L, 1L);
+    entityManager.persist(
+        BattleBroadcastEvent.record(
+            battle.getId(),
+            1,
+            null,
+            1,
+            BattleEventCode.TIER_ADVANTAGE,
+            BattleSide.NPC,
+            null,
+            BattleSide.NPC,
+            1));
+    entityManager.flush();
+
+    Object[] row =
+        (Object[])
+            entityManager
+                .createNativeQuery(
+                    """
+                    SELECT action_seq, event_code, param_animal_side, param_skill,
+                           param_winner_side, param_distance
+                    FROM battle_broadcast_events
+                    WHERE battle_id = :id AND event_seq = 1
+                    """)
+                .setParameter("id", battle.getId())
+                .getSingleResult();
+
+    assertNull(row[0]);
+    assertEquals(BattleEventCode.TIER_ADVANTAGE.name(), row[1].toString());
+    assertEquals(BattleSide.NPC.name(), row[2].toString());
+    assertNull(row[3]);
+    assertEquals(BattleSide.NPC.name(), row[4].toString());
+    assertEquals(1, ((Number) row[5]).intValue());
+  }
+
+  @Test
   void persistsFinishedResultAsString() {
     Battle battle = persistBattle(1L, 1L);
     battle.finish(BattleResult.WIN, STARTED_AT.plusSeconds(600));
@@ -203,7 +305,7 @@ class BattlePersistenceTest {
   }
 
   private Battle persistBattle(Long userId, Long gymLeaderId) {
-    Battle battle = Battle.start(userId, gymLeaderId, STARTED_AT);
+    Battle battle = Battle.start(userId, gymLeaderId, UUID.randomUUID().toString(), STARTED_AT);
     entityManager.persist(battle);
     entityManager.flush();
     return battle;
@@ -250,5 +352,33 @@ class BattlePersistenceTest {
         Tier.C,
         CardSkill.GROUND_MOSS_CUSHION,
         CardSkill.GROUND_STONE_TAP);
+  }
+
+  private BattleAction action(Long battleId, int actionSeq) {
+    return BattleAction.record(
+        battleId,
+        actionSeq,
+        CardSkill.GROUND_MOSS_CUSHION,
+        true,
+        1,
+        CardSkill.SEA_WAVE_DASH,
+        true,
+        2,
+        -1,
+        0,
+        -1);
+  }
+
+  private BattleBroadcastEvent broadcastEvent(Long battleId, int eventSeq) {
+    return BattleBroadcastEvent.record(
+        battleId,
+        eventSeq,
+        1,
+        1,
+        BattleEventCode.SKILL_TRIGGERED,
+        BattleSide.USER,
+        CardSkill.GROUND_MOSS_CUSHION,
+        null,
+        1);
   }
 }

@@ -79,6 +79,16 @@ public enum ErrorCode {
   COUPON_REDEEM_NOT_STARTED(409, "COUPON_REDEEM_NOT_STARTED", "Coupon redeem not started"),
   FORBIDDEN_COUPON_ACCESS(403, "FORBIDDEN_COUPON_ACCESS", "Forbidden coupon access"),
   FORBIDDEN_ADMIN_ACCESS(403, "FORBIDDEN_ADMIN_ACCESS", "Forbidden admin access"),
+  BATTLE_NOT_FOUND(404, "BATTLE_NOT_FOUND", "Battle not found"),
+  FORBIDDEN_BATTLE_ACCESS(403, "FORBIDDEN_BATTLE_ACCESS", "Forbidden battle access"),
+  BATTLE_ALREADY_IN_PROGRESS(409, "BATTLE_ALREADY_IN_PROGRESS", "Battle is already in progress"),
+  BATTLE_NOT_IN_PROGRESS(409, "BATTLE_NOT_IN_PROGRESS", "Battle is not in progress"),
+  BATTLE_ANIMAL_RESTING(409, "BATTLE_ANIMAL_RESTING", "Animal is resting"),
+  INVALID_BATTLE_ENTRY(400, "INVALID_BATTLE_ENTRY", "Invalid battle entry"),
+  BATTLE_ACTION_SEQUENCE_MISMATCH(
+      409, "BATTLE_ACTION_SEQUENCE_MISMATCH", "Battle action sequence mismatch"),
+  BATTLE_ACTION_CONFLICT(409, "BATTLE_ACTION_CONFLICT", "Battle action request conflict"),
+  BATTLE_FINAL_ROUND_EXPIRED(409, "BATTLE_FINAL_ROUND_EXPIRED", "Battle final round expired"),
   ;
 
   private final int status;
