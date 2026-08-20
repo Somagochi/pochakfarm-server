@@ -10,6 +10,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
+import java.time.Instant;
 import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -43,6 +44,9 @@ public class Animal extends BaseEntity {
 
   @Column(name = "slot_num")
   private Integer slotNum = 0;
+
+  @Column(name = "rest_ends_at")
+  private Instant restEndsAt;
 
   @Version
   @Column(name = "version", nullable = false)

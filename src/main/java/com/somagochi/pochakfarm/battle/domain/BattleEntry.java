@@ -1,7 +1,12 @@
 package com.somagochi.pochakfarm.battle.domain;
 
+import com.somagochi.pochakfarm.capture.domain.Tier;
+import com.somagochi.pochakfarm.characterization.domain.AnimalName;
+import com.somagochi.pochakfarm.characterization.domain.CardSkill;
+import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.entity.BaseEntity;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -52,23 +57,90 @@ public class BattleEntry extends BaseEntity {
   @Column(name = "gym_leader_animal_id", updatable = false)
   private Long gymLeaderAnimalId;
 
+  @Embedded private AnimalName animalName;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "card_type", nullable = false, updatable = false)
+  private CardType cardType;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "tier", nullable = false, updatable = false)
+  private Tier tier;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "skill_1", nullable = false, updatable = false)
+  private CardSkill skill1;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "skill_2", nullable = false, updatable = false)
+  private CardSkill skill2;
+
   private BattleEntry(
-      Long battleId, BattleSide side, Integer orderNo, Long captureId, Long gymLeaderAnimalId) {
+      Long battleId,
+      BattleSide side,
+      Integer orderNo,
+      Long captureId,
+      Long gymLeaderAnimalId,
+      AnimalName animalName,
+      CardType cardType,
+      Tier tier,
+      CardSkill skill1,
+      CardSkill skill2) {
     this.battleId = Objects.requireNonNull(battleId);
     this.side = Objects.requireNonNull(side);
     this.orderNo = validateOrderNo(orderNo);
     this.captureId = captureId;
     this.gymLeaderAnimalId = gymLeaderAnimalId;
+    this.animalName = Objects.requireNonNull(animalName);
+    this.cardType = Objects.requireNonNull(cardType);
+    this.tier = Objects.requireNonNull(tier);
+    this.skill1 = Objects.requireNonNull(skill1);
+    this.skill2 = Objects.requireNonNull(skill2);
   }
 
-  public static BattleEntry ofUser(Long battleId, Integer orderNo, Long captureId) {
+  public static BattleEntry ofUser(
+      Long battleId,
+      Integer orderNo,
+      Long captureId,
+      AnimalName animalName,
+      CardType cardType,
+      Tier tier,
+      CardSkill skill1,
+      CardSkill skill2) {
     return new BattleEntry(
-        battleId, BattleSide.USER, orderNo, Objects.requireNonNull(captureId), null);
+        battleId,
+        BattleSide.USER,
+        orderNo,
+        Objects.requireNonNull(captureId),
+        null,
+        animalName,
+        cardType,
+        tier,
+        skill1,
+        skill2);
   }
 
-  public static BattleEntry ofNpc(Long battleId, Integer orderNo, Long gymLeaderAnimalId) {
+  public static BattleEntry ofNpc(Long battleId, GymLeaderAnimal gymLeaderAnimal) {
+    Objects.requireNonNull(gymLeaderAnimal);
     return new BattleEntry(
-        battleId, BattleSide.NPC, orderNo, null, Objects.requireNonNull(gymLeaderAnimalId));
+        battleId,
+        BattleSide.NPC,
+        gymLeaderAnimal.getOrderNo(),
+        null,
+        Objects.requireNonNull(gymLeaderAnimal.getId()),
+        AnimalName.from(gymLeaderAnimal.getAnimalName()),
+        gymLeaderAnimal.getCardType(),
+        gymLeaderAnimal.getTier(),
+        gymLeaderAnimal.getSkill1(),
+        gymLeaderAnimal.getSkill2());
+  }
+
+  public String getAnimalName() {
+    return animalName.value();
+  }
+
+  public boolean isUserSide() {
+    return side == BattleSide.USER;
   }
 
   private static Integer validateOrderNo(Integer orderNo) {

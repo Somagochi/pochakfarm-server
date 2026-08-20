@@ -21,7 +21,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(
     name = "battles",
-    indexes = @Index(name = "idx_battles_user_id_started_at", columnList = "user_id, started_at"))
+    indexes =
+        @Index(name = "idx_battles_user_id_started_at", columnList = "user_id, started_at desc"))
 public class Battle extends BaseEntity {
 
   @Id

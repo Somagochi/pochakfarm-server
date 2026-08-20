@@ -146,6 +146,9 @@ app:
       enabled: ${secret.characterization.reaper.enabled:false}
       interval: ${secret.characterization.reaper.interval:PT1M}
       stale-threshold: ${secret.characterization.reaper.stale-threshold:PT15M}
+  battle:
+    rest-duration: ${secret.battle.rest-duration:PT30M}
+    abandon-threshold: ${secret.battle.abandon-threshold:PT30M}
   coupon:
     pre-registration:
       enabled: ${secret.coupon.pre-registration.enabled:true}

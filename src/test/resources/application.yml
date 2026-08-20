@@ -28,6 +28,9 @@ app:
       jwks-cache:
         ttl: 6h
         min-refresh-interval: 5m
+  battle:
+    rest-duration: PT30M
+    abandon-threshold: PT30M
   storage:
     s3:
       bucket: test-bucket
