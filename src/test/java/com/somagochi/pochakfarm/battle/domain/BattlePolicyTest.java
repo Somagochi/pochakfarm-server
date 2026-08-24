@@ -43,6 +43,16 @@ class BattlePolicyTest {
   }
 
   @Test
+  void tierPointDifferenceUsesUserPositiveAndNpcNegative() {
+    assertEquals(0, battlePolicy.tierPointDifference(Tier.C, Tier.C));
+    assertEquals(1, battlePolicy.tierPointDifference(Tier.B, Tier.C));
+    assertEquals(1, battlePolicy.tierPointDifference(Tier.A, Tier.C));
+    assertEquals(2, battlePolicy.tierPointDifference(Tier.SSS, Tier.C));
+    assertEquals(-1, battlePolicy.tierPointDifference(Tier.C, Tier.B));
+    assertEquals(-2, battlePolicy.tierPointDifference(Tier.C, Tier.SSS));
+  }
+
+  @Test
   void typeAdvantageFollowsConfirmedFourTypeCycle() {
     assertTrue(battlePolicy.hasTypeAdvantage(CardType.SKY, CardType.GROUND));
     assertFalse(battlePolicy.hasTypeAdvantage(CardType.SKY, CardType.SPACE));
@@ -91,7 +101,7 @@ class BattlePolicyTest {
   }
 
   @Test
-  void typeAdvantageMovesOneCellOnlyForTheAdvantagedType() {
+  void typeAdvantageAwardsOnePointOnlyToTheAdvantagedType() {
     assertEquals(1, battlePolicy.typeAdvantageMoveDistance(CardType.SKY, CardType.GROUND));
     assertEquals(0, battlePolicy.typeAdvantageMoveDistance(CardType.GROUND, CardType.SKY));
     assertEquals(0, battlePolicy.typeAdvantageMoveDistance(CardType.SKY, CardType.SKY));
@@ -99,6 +109,14 @@ class BattlePolicyTest {
     assertEquals(
         BattlePolicy.TYPE_ADVANTAGE_MOVE_DISTANCE,
         battlePolicy.typeAdvantageMoveDistance(CardType.SEA, CardType.SPACE));
+  }
+
+  @Test
+  void typePointDifferenceUsesUserPositiveAndNpcNegative() {
+    assertEquals(1, battlePolicy.typePointDifference(CardType.SKY, CardType.GROUND));
+    assertEquals(-1, battlePolicy.typePointDifference(CardType.GROUND, CardType.SKY));
+    assertEquals(0, battlePolicy.typePointDifference(CardType.SKY, CardType.SKY));
+    assertEquals(0, battlePolicy.typePointDifference(CardType.SKY, CardType.SEA));
   }
 
   @Test
