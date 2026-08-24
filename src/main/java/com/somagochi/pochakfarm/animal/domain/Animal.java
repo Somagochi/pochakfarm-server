@@ -73,6 +73,10 @@ public class Animal extends BaseEntity {
         && Objects.equals(this.slotNum, slotNum);
   }
 
+  public boolean isResting(Instant now) {
+    return restEndsAt != null && restEndsAt.isAfter(now);
+  }
+
   public void moveTo(Long spaceId, Integer floorNum, Integer slotNum) {
     this.spaceId = spaceId;
     this.floorNum = floorNum;

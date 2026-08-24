@@ -4,18 +4,33 @@ import com.somagochi.pochakfarm.animal.domain.Animal;
 import com.somagochi.pochakfarm.animal.dto.AnimalTypeCount;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import jakarta.persistence.LockModeType;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface AnimalRepository extends JpaRepository<Animal, Long> {
 
   Optional<Animal> findByCaptureId(Long captureId);
+
+  List<Animal> findByCaptureIdIn(Collection<Long> captureIds);
+
+  @Modifying(clearAutomatically = true)
+  @Query(
+      "update Animal a "
+          + "set a.restEndsAt = :restEndsAt, a.version = a.version + 1, a.updatedAt = :now "
+          + "where a.id = :animalId "
+          + "and (a.restEndsAt is null or a.restEndsAt <= :now)")
+  int reserveRest(
+      @Param("animalId") Long animalId,
+      @Param("restEndsAt") Instant restEndsAt,
+      @Param("now") Instant now);
 
   @Query(
       "select a from Animal a, FarmSpace s "

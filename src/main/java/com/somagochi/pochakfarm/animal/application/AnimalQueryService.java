@@ -15,6 +15,7 @@ import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.response.CursorPage;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -78,6 +79,24 @@ public class AnimalQueryService {
         AnimalSkillResponse.from(capture.getSkill2()),
         buildUrlOrNull(capture.getCardImage()),
         buildUrlOrNull(capture.getAnimalImage()));
+  }
+
+  @Transactional(readOnly = true)
+  public Map<Long, Instant> getRestEndsAtByCaptureIds(Collection<Long> captureIds) {
+    if (captureIds.isEmpty()) {
+      return Map.of();
+    }
+    return animalRepository.findByCaptureIdIn(captureIds).stream()
+        .filter(animal -> animal.getRestEndsAt() != null)
+        .collect(Collectors.toMap(Animal::getCaptureId, Animal::getRestEndsAt));
+  }
+
+  @Transactional(readOnly = true)
+  public Set<Long> findRestingCaptureIds(Collection<Long> captureIds, Instant now) {
+    return getRestEndsAtByCaptureIds(captureIds).entrySet().stream()
+        .filter(entry -> entry.getValue().isAfter(now))
+        .map(Map.Entry::getKey)
+        .collect(Collectors.toSet());
   }
 
   @Transactional(readOnly = true)
