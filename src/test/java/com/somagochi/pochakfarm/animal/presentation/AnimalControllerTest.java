@@ -201,7 +201,8 @@ class AnimalControllerTest {
         type,
         Tier.A,
         "https://cdn.example.com/card.png",
-        "https://cdn.example.com/animal.png");
+        "https://cdn.example.com/animal.png",
+        null);
   }
 
   @TestConfiguration

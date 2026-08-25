@@ -1,6 +1,7 @@
 package com.somagochi.pochakfarm.animal.application;
 
 import com.somagochi.pochakfarm.animal.domain.Animal;
+import com.somagochi.pochakfarm.animal.dto.AnimalBattleProfile;
 import com.somagochi.pochakfarm.animal.dto.AnimalDetailResponse;
 import com.somagochi.pochakfarm.animal.dto.AnimalPlacement;
 import com.somagochi.pochakfarm.animal.dto.AnimalPosition;
@@ -79,6 +80,25 @@ public class AnimalQueryService {
         AnimalSkillResponse.from(capture.getSkill2()),
         buildUrlOrNull(capture.getCardImage()),
         buildUrlOrNull(capture.getAnimalImage()));
+  }
+
+  @Transactional(readOnly = true)
+  public Map<Long, AnimalBattleProfile> getOwnedBattleProfiles(
+      Long userId, Collection<Long> animalIds) {
+    if (animalIds.isEmpty()) {
+      return Map.of();
+    }
+    return animalRepository.findOwnedBattleProfiles(userId, animalIds).stream()
+        .collect(Collectors.toMap(AnimalBattleProfile::animalId, profile -> profile));
+  }
+
+  @Transactional(readOnly = true)
+  public Map<Long, Long> getAnimalIdsByCaptureIds(Collection<Long> captureIds) {
+    if (captureIds.isEmpty()) {
+      return Map.of();
+    }
+    return animalRepository.findByCaptureIdIn(captureIds).stream()
+        .collect(Collectors.toMap(Animal::getCaptureId, Animal::getId));
   }
 
   @Transactional(readOnly = true)
@@ -190,7 +210,8 @@ public class AnimalQueryService {
         capture.getCardType(),
         capture.getTier(),
         buildUrlOrNull(capture.getCardImage()),
-        buildUrlOrNull(capture.getAnimalImage()));
+        buildUrlOrNull(capture.getAnimalImage()),
+        animal.getRestEndsAt());
   }
 
   private String buildUrlOrNull(String key) {

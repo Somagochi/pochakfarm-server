@@ -35,6 +35,11 @@ public class UserQueryService {
     return UserProfileResponse.from(user, requiredExperience, remainingExperience);
   }
 
+  @Transactional(readOnly = true)
+  public int getLevel(Long userId) {
+    return findUser(userId).getLevel();
+  }
+
   @Transactional(propagation = Propagation.MANDATORY)
   public User getForUpdate(Long userId) {
     return userRepository

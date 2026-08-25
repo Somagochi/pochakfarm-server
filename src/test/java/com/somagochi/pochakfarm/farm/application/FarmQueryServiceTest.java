@@ -148,6 +148,6 @@ class FarmQueryServiceTest {
   }
 
   private AnimalResponse animal(Long animalId, String animalName, String cardImage) {
-    return new AnimalResponse(animalId, animalName, CardType.SEA, Tier.A, cardImage, null);
+    return new AnimalResponse(animalId, animalName, CardType.SEA, Tier.A, cardImage, null, null);
   }
 }
