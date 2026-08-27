@@ -13,7 +13,6 @@ import com.somagochi.pochakfarm.develop.dto.DevelopAchievementAssetView;
 import com.somagochi.pochakfarm.develop.dto.DevelopAchievementRewardView;
 import com.somagochi.pochakfarm.storage.application.ImageUploadService;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
-import com.somagochi.pochakfarm.storage.dto.PresignResponse;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -29,9 +28,6 @@ import org.springframework.util.StringUtils;
 @Profile({"local", "dev"})
 @RequiredArgsConstructor
 public class DevelopAchievementAssetService {
-
-  private static final String ACHIEVEMENT_UPLOAD_PURPOSE = "achievement";
-  private static final String BADGE_UPLOAD_PURPOSE = "badge";
 
   private final AchievementRepository achievementRepository;
   private final AchievementRewardRepository achievementRewardRepository;
@@ -59,14 +55,6 @@ public class DevelopAchievementAssetService {
                         rewardsByAchievementId.getOrDefault(achievement.getId(), List.of()),
                         badgeByCode)))
         .toList();
-  }
-
-  public PresignResponse presignAchievementImage(String contentType) {
-    return imageUploadService.createPublicPresign(ACHIEVEMENT_UPLOAD_PURPOSE, contentType);
-  }
-
-  public PresignResponse presignBadgeImage(String contentType) {
-    return imageUploadService.createPublicPresign(BADGE_UPLOAD_PURPOSE, contentType);
   }
 
   @Transactional
