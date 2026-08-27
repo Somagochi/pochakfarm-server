@@ -12,4 +12,6 @@ public interface BattleActionRepository extends JpaRepository<BattleAction, Long
   Optional<BattleAction> findFirstByBattleIdOrderByActionSeqDesc(Long battleId);
 
   List<BattleAction> findByBattleIdOrderByActionSeqAsc(Long battleId);
+
+  int countByBattleId(Long battleId);
 }
