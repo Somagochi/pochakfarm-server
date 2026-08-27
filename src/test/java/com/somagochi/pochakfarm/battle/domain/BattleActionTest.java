@@ -41,7 +41,7 @@ class BattleActionTest {
         IllegalArgumentException.class,
         () ->
             BattleBroadcastEvent.record(
-                1L, 0, null, null, BattleEventCode.SKILL_OFFSET, null, null, null, 1));
+                1L, 0, null, null, BattleEventCode.SKILL_OFFSET, null, null, null, null));
   }
 
   private BattleAction action(int actionSeq) {

@@ -212,7 +212,7 @@ class BattleActionControllerTest {
         null,
         2,
         EXPIRES_AT,
-        List.of(territoryExpandedEvent()));
+        List.of(battlePointAppliedEvent()));
   }
 
   private static BattleActionResponse notSelectedActionResponse() {
@@ -268,12 +268,12 @@ class BattleActionControllerTest {
                     30,
                     3))),
         new BattleEntryResponse(BattleSide.NPC, 2, null, "관장2", CardType.SPACE, Tier.B, null),
-        List.of(territoryExpandedEvent()));
+        List.of(battlePointAppliedEvent()));
   }
 
-  private static BattleBroadcastEventResponse territoryExpandedEvent() {
+  private static BattleBroadcastEventResponse battlePointAppliedEvent() {
     return new BattleBroadcastEventResponse(
-        1, 1, 1, BattleEventCode.TERRITORY_EXPANDED, null, null, null, BattleSide.USER, 3);
+        1, 1, 1, BattleEventCode.BATTLE_POINT_APPLIED, null, null, null, BattleSide.USER, 3);
   }
 
   private static Authentication userAuthentication() {
