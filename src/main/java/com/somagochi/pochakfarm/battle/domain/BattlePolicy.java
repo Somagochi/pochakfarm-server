@@ -26,6 +26,8 @@ public class BattlePolicy {
   public static final int FINAL_ROUND_TWO_MOVE_TAP_COUNT = 16;
   public static final int MAX_FINAL_ROUND_MOVE_DISTANCE = 2;
 
+  private static final Map<Integer, Integer> REQUIRED_LEVELS =
+      Map.of(1, 1, 2, 3, 3, 7, 4, 12, 5, 18, 6, 25, 7, 32, 8, 40);
   private static final Map<CardType, CardType> TYPE_ADVANTAGES =
       Map.of(
           CardType.SPACE, CardType.SKY,
@@ -95,6 +97,14 @@ public class BattlePolicy {
       return MAX_FINAL_ROUND_MOVE_DISTANCE;
     }
     return tapCount >= FINAL_ROUND_ONE_MOVE_TAP_COUNT ? 1 : 0;
+  }
+
+  public int requiredLevel(int challengeOrder) {
+    Integer requiredLevel = REQUIRED_LEVELS.get(challengeOrder);
+    if (requiredLevel == null) {
+      throw new IllegalArgumentException("Challenge order is out of range: " + challengeOrder);
+    }
+    return requiredLevel;
   }
 
   public Duration restDuration() {
