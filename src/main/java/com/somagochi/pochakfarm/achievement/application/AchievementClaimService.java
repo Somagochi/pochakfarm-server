@@ -14,6 +14,7 @@ import com.somagochi.pochakfarm.user.domain.User;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -59,7 +60,8 @@ public class AchievementClaimService {
 
   private UserAchievement recordAchieved(Long userId, Achievement achievement) {
     if (!achievement.isEnabled()
-        || !achievement.isSatisfiedBy(achievementStatsLoader.load(userId))) {
+        || !achievement.isSatisfiedBy(
+            achievementStatsLoader.load(userId, Set.of(achievement.getMetric())))) {
       throw new BusinessException(ErrorCode.ACHIEVEMENT_NOT_ACHIEVED);
     }
     try {

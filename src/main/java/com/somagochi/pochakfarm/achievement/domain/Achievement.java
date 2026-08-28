@@ -184,6 +184,14 @@ public class Achievement extends BaseEntity {
     return progressOf(stats) >= targetValue;
   }
 
+  public long progressOf(AchievementMetricValues values) {
+    return metric.extract(values, metricParam);
+  }
+
+  public boolean isSatisfiedBy(AchievementMetricValues values) {
+    return progressOf(values) >= targetValue;
+  }
+
   public boolean isListedWhen(boolean achieved) {
     return enabled || achieved;
   }

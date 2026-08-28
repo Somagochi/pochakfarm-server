@@ -1,9 +1,12 @@
 package com.somagochi.pochakfarm.develop.presentation;
 
+import com.somagochi.pochakfarm.achievement.application.AchievementReconciliationService;
+import com.somagochi.pochakfarm.achievement.dto.AchievementReconciliationResult;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.response.ApiResponse;
 import com.somagochi.pochakfarm.develop.application.DevelopAchievementAssetService;
 import com.somagochi.pochakfarm.develop.dto.DevelopAchievementAssetPresignRequest;
+import com.somagochi.pochakfarm.develop.dto.DevelopAchievementReconciliationRequest;
 import com.somagochi.pochakfarm.storage.dto.PresignResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +29,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequiredArgsConstructor
 public class DevelopAchievementAssetController {
 
+  // TODO: 운영 환경에서 대사를 실행하려면 /api/admin 전용 인증·인가 구성이 필요하다.
   private final DevelopAchievementAssetService developAchievementAssetService;
+  private final AchievementReconciliationService achievementReconciliationService;
 
   @GetMapping
   public ModelAndView assets() {
@@ -45,6 +50,13 @@ public class DevelopAchievementAssetController {
     }
     return ApiResponse.success(
         developAchievementAssetService.presignAchievementImage(request.contentType()));
+  }
+
+  @PostMapping("/reconciliation")
+  @ResponseBody
+  public ApiResponse<AchievementReconciliationResult> reconcile(
+      @RequestBody DevelopAchievementReconciliationRequest request) {
+    return ApiResponse.success(achievementReconciliationService.reconcile(request.userIds()));
   }
 
   @PostMapping("/{achievementId}/images")

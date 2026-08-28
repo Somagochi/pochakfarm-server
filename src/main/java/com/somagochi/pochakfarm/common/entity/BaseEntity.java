@@ -3,6 +3,9 @@ package com.somagochi.pochakfarm.common.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.PostPersist;
+import jakarta.persistence.PostRemove;
+import jakarta.persistence.PostUpdate;
 import java.time.Instant;
 import lombok.Getter;
 import org.springframework.data.annotation.CreatedDate;
@@ -31,5 +34,20 @@ public abstract class BaseEntity {
 
   public void delete(Instant deletedAt) {
     this.deletedAt = deletedAt;
+  }
+
+  @PostPersist
+  private void publishCreatedEvent() {
+    EntityChangeEventPublisher.publish(this, EntityChangeType.CREATED);
+  }
+
+  @PostUpdate
+  private void publishUpdatedEvent() {
+    EntityChangeEventPublisher.publish(this, EntityChangeType.UPDATED);
+  }
+
+  @PostRemove
+  private void publishDeletedEvent() {
+    EntityChangeEventPublisher.publish(this, EntityChangeType.DELETED);
   }
 }

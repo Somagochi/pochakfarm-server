@@ -1,5 +1,6 @@
 package com.somagochi.pochakfarm.coupon.domain;
 
+import com.somagochi.pochakfarm.achievement.domain.AchievementSource;
 import com.somagochi.pochakfarm.common.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -32,7 +33,7 @@ import org.hibernate.annotations.SQLRestriction;
           columnNames = {"pre_registration_id"})
     })
 @SQLRestriction("deleted_at is null")
-public class PreRegistrationCouponRecipient extends BaseEntity {
+public class PreRegistrationCouponRecipient extends BaseEntity implements AchievementSource {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
