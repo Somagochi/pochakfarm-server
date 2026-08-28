@@ -67,10 +67,12 @@ class AchievementQueryServiceIntegrationTest {
   }
 
   @Test
-  void recordsAchievementWhenTargetIsReachedAndReportsProgressOtherwise() {
+  void reportsRecordedAchievementAndLiveProgressWithoutWritingOnRead() {
     convertPreRegistrationCoupon(userId);
-    persistAchievement("TEST_SQUAD", AchievementMetric.PRE_REGISTRATION_CONVERTED, 1);
+    Achievement reachedAchievement =
+        persistAchievement("TEST_SQUAD", AchievementMetric.PRE_REGISTRATION_CONVERTED, 1);
     persistAchievement("TEST_ONE_TYPE", AchievementMetric.MAX_OWNED_COUNT_PER_TYPE, 10);
+    userAchievementRepository.save(UserAchievement.achieve(userId, reachedAchievement.getId()));
 
     CursorPage<AchievementResponse> response =
         achievementQueryService.getAchievements(userId, null, null);
@@ -98,10 +100,16 @@ class AchievementQueryServiceIntegrationTest {
     insertAnimal(groundSpaceId, 1, 1);
     insertAnimal(groundSpaceId, 4, 4);
     insertAnimal(skySpaceId, 1, 2);
-    persistAchievement("TEST_FIRST_HOME", AchievementMetric.PLACED_ANIMAL_COUNT, 1);
+    Achievement firstHomeAchievement =
+        persistAchievement("TEST_FIRST_HOME", AchievementMetric.PLACED_ANIMAL_COUNT, 1);
     persistAchievement("TEST_ONE_TYPE", AchievementMetric.MAX_OWNED_COUNT_PER_TYPE, 10);
     persistAchievement("TEST_COLLECTOR", AchievementMetric.OWNED_TYPE_COUNT, 4);
-    persistAchievement("TEST_START_END", AchievementMetric.ONLY_START_END_PLACED, 1);
+    Achievement startEndAchievement =
+        persistAchievement("TEST_START_END", AchievementMetric.ONLY_START_END_PLACED, 1);
+    userAchievementRepository.saveAll(
+        List.of(
+            UserAchievement.achieve(userId, firstHomeAchievement.getId()),
+            UserAchievement.achieve(userId, startEndAchievement.getId())));
 
     CursorPage<AchievementResponse> response =
         achievementQueryService.getAchievements(userId, null, null);
@@ -161,6 +169,7 @@ class AchievementQueryServiceIntegrationTest {
     assertNull(locked.rewards());
 
     convertPreRegistrationCoupon(userId);
+    userAchievementRepository.save(UserAchievement.achieve(userId, hiddenAchievement.getId()));
 
     AchievementResponse revealed =
         find(achievementQueryService.getAchievements(userId, null, null), "TEST_HIDDEN");
@@ -176,17 +185,18 @@ class AchievementQueryServiceIntegrationTest {
 
   @Test
   void buildsAchievementImageUrlsFromStoredKeys() {
-    achievementRepository.save(
-        Achievement.create(
-            "TEST_WITH_IMAGES",
-            "이미지 업적",
-            null,
-            AchievementCategory.EVENT,
-            AchievementMetric.PRE_REGISTRATION_CONVERTED,
-            null,
-            1,
-            "achievements/locked.png",
-            "achievements/done.png"));
+    Achievement achievementWithImages =
+        achievementRepository.save(
+            Achievement.create(
+                "TEST_WITH_IMAGES",
+                "이미지 업적",
+                null,
+                AchievementCategory.EVENT,
+                AchievementMetric.PRE_REGISTRATION_CONVERTED,
+                null,
+                1,
+                "achievements/locked.png",
+                "achievements/done.png"));
     persistAchievement("TEST_WITHOUT_IMAGES", AchievementMetric.PRE_REGISTRATION_CONVERTED, 1);
 
     AchievementResponse locked =
@@ -195,6 +205,7 @@ class AchievementQueryServiceIntegrationTest {
     assertTrue(locked.imageUrl().contains("achievements/locked.png"));
 
     convertPreRegistrationCoupon(userId);
+    userAchievementRepository.save(UserAchievement.achieve(userId, achievementWithImages.getId()));
 
     AchievementResponse done =
         find(achievementQueryService.getAchievements(userId, null, null), "TEST_WITH_IMAGES");
@@ -209,7 +220,9 @@ class AchievementQueryServiceIntegrationTest {
   @Test
   void keepsAchievedAtStableAndDoesNotDuplicateOnRepeatedReads() {
     convertPreRegistrationCoupon(userId);
-    persistAchievement("TEST_SQUAD", AchievementMetric.PRE_REGISTRATION_CONVERTED, 1);
+    Achievement achievement =
+        persistAchievement("TEST_SQUAD", AchievementMetric.PRE_REGISTRATION_CONVERTED, 1);
+    userAchievementRepository.save(UserAchievement.achieve(userId, achievement.getId()));
 
     Instant first =
         find(achievementQueryService.getAchievements(userId, null, null), "TEST_SQUAD")
@@ -345,7 +358,7 @@ class AchievementQueryServiceIntegrationTest {
   }
 
   @Test
-  void recordsAchievementsOutsideRequestedPage() {
+  void doesNotRecordAchievementsInsideOrOutsideRequestedPage() {
     convertPreRegistrationCoupon(userId);
     for (int i = 1; i <= 25; i++) {
       persistAchievement("TEST_SQUAD_" + i, AchievementMetric.PRE_REGISTRATION_CONVERTED, 1);
@@ -355,7 +368,7 @@ class AchievementQueryServiceIntegrationTest {
         achievementQueryService.getAchievements(userId, null, null);
 
     assertEquals(20, first.content().size());
-    assertEquals(25, userAchievementRepository.findByUserId(userId).size());
+    assertEquals(0, userAchievementRepository.findByUserId(userId).size());
   }
 
   private Achievement persistAchievement(String code, AchievementMetric metric, long target) {

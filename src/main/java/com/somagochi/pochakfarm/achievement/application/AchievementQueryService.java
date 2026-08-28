@@ -2,7 +2,8 @@ package com.somagochi.pochakfarm.achievement.application;
 
 import com.somagochi.pochakfarm.achievement.domain.Achievement;
 import com.somagochi.pochakfarm.achievement.domain.AchievementCategory;
-import com.somagochi.pochakfarm.achievement.domain.AchievementStats;
+import com.somagochi.pochakfarm.achievement.domain.AchievementMetric;
+import com.somagochi.pochakfarm.achievement.domain.AchievementMetricValues;
 import com.somagochi.pochakfarm.achievement.domain.UserAchievement;
 import com.somagochi.pochakfarm.achievement.dto.AchievementResponse;
 import com.somagochi.pochakfarm.achievement.dto.AchievementRewardResponse;
@@ -12,6 +13,7 @@ import com.somagochi.pochakfarm.common.response.CursorPage;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,28 +32,20 @@ public class AchievementQueryService {
   private final AchievementRepository achievementRepository;
   private final UserAchievementRepository userAchievementRepository;
   private final AchievementStatsLoader achievementStatsLoader;
-  private final AchievementRecorder achievementRecorder;
   private final AchievementRewardCatalog achievementRewardCatalog;
   private final FileStorage fileStorage;
 
   @Transactional(readOnly = true)
   public CursorPage<AchievementResponse> getAchievements(
       Long userId, AchievementCategory category, Long cursor) {
-    AchievementStats stats = achievementStatsLoader.load(userId);
     List<Achievement> definitions = findValidDefinitions();
     Map<Long, UserAchievement> records = findRecords(userId);
-
-    List<Long> newlyAchieved = findNewlyAchieved(definitions, records, stats);
-    if (!newlyAchieved.isEmpty()) {
-      achievementRecorder
-          .record(userId, newlyAchieved)
-          .forEach(record -> records.put(record.getAchievementId(), record));
-    }
-
     List<Achievement> fetched = fetchPage(definitions, records, category, cursor);
     boolean hasNext = fetched.size() > PAGE_SIZE;
     List<Achievement> page = hasNext ? fetched.subList(0, PAGE_SIZE) : fetched;
-    return CursorPage.of(toResponses(page, stats, records), nextCursor(page, hasNext), hasNext);
+    AchievementMetricValues metricValues = achievementStatsLoader.load(userId, metricsOf(page));
+    return CursorPage.of(
+        toResponses(page, metricValues, records), nextCursor(page, hasNext), hasNext);
   }
 
   private List<Achievement> fetchPage(
@@ -70,7 +64,9 @@ public class AchievementQueryService {
   }
 
   private List<AchievementResponse> toResponses(
-      List<Achievement> page, AchievementStats stats, Map<Long, UserAchievement> records) {
+      List<Achievement> page,
+      AchievementMetricValues metricValues,
+      Map<Long, UserAchievement> records) {
     Map<Long, List<AchievementRewardResponse>> rewards =
         achievementRewardCatalog.describeByAchievementIds(
             page.stream().map(Achievement::getId).toList());
@@ -79,7 +75,7 @@ public class AchievementQueryService {
             definition ->
                 AchievementResponse.of(
                     definition,
-                    definition.progressOf(stats),
+                    definition.progressOf(metricValues),
                     records.get(definition.getId()),
                     rewards.getOrDefault(definition.getId(), List.of()),
                     buildUrlOrNull(definition.getUnachievedImageKey()),
@@ -120,13 +116,9 @@ public class AchievementQueryService {
     return records;
   }
 
-  private List<Long> findNewlyAchieved(
-      List<Achievement> definitions, Map<Long, UserAchievement> records, AchievementStats stats) {
-    return definitions.stream()
-        .filter(Achievement::isEnabled)
-        .filter(definition -> !records.containsKey(definition.getId()))
-        .filter(definition -> definition.isSatisfiedBy(stats))
-        .map(Achievement::getId)
-        .toList();
+  private EnumSet<AchievementMetric> metricsOf(List<Achievement> achievements) {
+    EnumSet<AchievementMetric> metrics = EnumSet.noneOf(AchievementMetric.class);
+    achievements.forEach(achievement -> metrics.add(achievement.getMetric()));
+    return metrics;
   }
 }

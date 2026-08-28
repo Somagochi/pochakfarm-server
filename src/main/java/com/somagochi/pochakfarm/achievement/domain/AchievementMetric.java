@@ -20,4 +20,8 @@ public enum AchievementMetric {
       case ONLY_START_END_PLACED -> stats.onlyStartEndPlaced() ? 1 : 0;
     };
   }
+
+  public long extract(AchievementMetricValues values, String metricParam) {
+    return values.get(this);
+  }
 }

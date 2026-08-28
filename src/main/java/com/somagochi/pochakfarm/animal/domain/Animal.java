@@ -1,5 +1,6 @@
 package com.somagochi.pochakfarm.animal.domain;
 
+import com.somagochi.pochakfarm.achievement.domain.AchievementSource;
 import com.somagochi.pochakfarm.common.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -27,7 +28,7 @@ import lombok.NoArgsConstructor;
             columnList = "space_id, floor_num, slot_num"),
     uniqueConstraints =
         @UniqueConstraint(name = "uk_animals_capture_id", columnNames = "capture_id"))
-public class Animal extends BaseEntity {
+public class Animal extends BaseEntity implements AchievementSource {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
