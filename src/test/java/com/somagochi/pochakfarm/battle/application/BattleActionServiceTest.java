@@ -158,7 +158,10 @@ class BattleActionServiceTest {
     assertEquals(-1, notSelected.barPosition());
     assertTrue(
         notSelected.broadcastEvents().stream()
-            .noneMatch(event -> event.animalSide() == BattleSide.USER));
+            .anyMatch(
+                event ->
+                    event.animalSide() == BattleSide.USER
+                        && event.eventCode() == BattleEventCode.SKILL_NOT_SELECTED));
 
     BattleActionResponse failed = select(battleId, 2, USER_STABLE_SKILL);
 
@@ -226,12 +229,17 @@ class BattleActionServiceTest {
     assertEquals(
         BattlePolicy.MAX_TIER_MOVE_DISTANCE + BattlePolicy.TYPE_ADVANTAGE_MOVE_DISTANCE,
         response.barPosition());
-    assertEquals(
-        BattlePolicy.MAX_TIER_MOVE_DISTANCE,
-        pointOf(response.broadcastEvents(), BattleEventCode.TIER_ADVANTAGE));
-    assertEquals(
-        BattlePolicy.TYPE_ADVANTAGE_MOVE_DISTANCE,
-        pointOf(response.broadcastEvents(), BattleEventCode.TYPE_ADVANTAGE));
+    List<BattleBroadcastEventResponse> events = response.broadcastEvents();
+    assertEquals(BattleEventCode.TIER_ADVANTAGE, events.get(0).eventCode());
+    assertEquals(BattleEventCode.BATTLE_POINT_APPLIED, events.get(1).eventCode());
+    assertEquals(BattlePolicy.MAX_TIER_MOVE_DISTANCE, events.get(1).point());
+    assertEquals(BattleEventCode.TYPE_ADVANTAGE, events.get(2).eventCode());
+    assertEquals(BattleEventCode.BATTLE_POINT_APPLIED, events.get(3).eventCode());
+    assertEquals(BattlePolicy.TYPE_ADVANTAGE_MOVE_DISTANCE, events.get(3).point());
+    assertEquals(BattleEventCode.SKILL_FAILED, events.get(4).eventCode());
+    assertEquals(BattleSide.USER, events.get(4).animalSide());
+    assertEquals(BattleEventCode.SKILL_FAILED, events.get(5).eventCode());
+    assertEquals(BattleSide.NPC, events.get(5).animalSide());
   }
 
   @Test
@@ -256,14 +264,6 @@ class BattleActionServiceTest {
         () ->
             battleActionService.selectSkill(
                 OTHER_USER_ID, battleId, new BattleActionRequest(1, USER_STABLE_SKILL)));
-  }
-
-  private int pointOf(List<BattleBroadcastEventResponse> events, BattleEventCode eventCode) {
-    return events.stream()
-        .filter(event -> event.eventCode() == eventCode)
-        .findFirst()
-        .orElseThrow()
-        .point();
   }
 
   private BattleActionResponse select(Long battleId, int actionSeq, CardSkill skill) {

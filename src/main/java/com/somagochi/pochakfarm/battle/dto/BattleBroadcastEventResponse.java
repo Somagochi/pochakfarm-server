@@ -30,7 +30,7 @@ public record BattleBroadcastEventResponse(
         skill,
         skill == null ? null : skill.displayName(),
         event.getParamWinnerSide(),
-        event.getParamDistance());
+        event.getParamPoints());
   }
 
   public static List<BattleBroadcastEventResponse> from(List<BattleBroadcastEvent> events) {

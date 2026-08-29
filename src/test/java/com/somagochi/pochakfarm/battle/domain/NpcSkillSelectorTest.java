@@ -1,6 +1,7 @@
 package com.somagochi.pochakfarm.battle.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.somagochi.pochakfarm.characterization.domain.CardSkill;
 import com.somagochi.pochakfarm.common.properties.BattleProperties;
@@ -54,5 +55,19 @@ class NpcSkillSelectorTest {
 
     assertEquals(firstCall, secondCall);
     assertEquals(GAMBLE, firstCall);
+  }
+
+  @Test
+  void rejectsSelectionAtTerminalPosition() {
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            npcSkillSelector.select(
+                BattlePosition.of(BattlePolicy.MAX_BAR_POSITION), STABLE, GAMBLE));
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            npcSkillSelector.select(
+                BattlePosition.of(BattlePolicy.MIN_BAR_POSITION), STABLE, GAMBLE));
   }
 }

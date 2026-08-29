@@ -15,8 +15,8 @@ public record BattlePositionChange(
     if (after.value() - before.value() != appliedPoints) {
       throw new IllegalArgumentException("Applied points do not match position change");
     }
-    if (after.isTerminal() != (winner != null)) {
-      throw new IllegalArgumentException("Winner must match terminal position");
+    if (winner != after.winner()) {
+      throw new IllegalArgumentException("Winner does not match terminal position");
     }
   }
 

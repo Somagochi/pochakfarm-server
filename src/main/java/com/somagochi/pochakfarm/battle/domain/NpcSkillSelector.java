@@ -19,6 +19,9 @@ public class NpcSkillSelector {
     Objects.requireNonNull(position);
     Objects.requireNonNull(skill1);
     Objects.requireNonNull(skill2);
+    if (position.isTerminal()) {
+      throw new IllegalStateException("Terminal battle position cannot select an NPC skill");
+    }
 
     if (position.value() < BattlePolicy.INITIAL_BAR_POSITION) {
       return higherOrFirst(skill1, skill2, battlePolicy::skillTriggerPercentage);

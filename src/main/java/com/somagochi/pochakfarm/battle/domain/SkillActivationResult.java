@@ -23,7 +23,8 @@ public record SkillActivationResult(
       if (battleType != selectedSkill.battleType()) {
         throw new IllegalArgumentException("Battle type must match selected skill");
       }
-      if (points < 0 || (status == SkillActivationStatus.FAILED && points != 0)) {
+      if ((status == SkillActivationStatus.ACTIVATED && points <= 0)
+          || (status == SkillActivationStatus.FAILED && points != 0)) {
         throw new IllegalArgumentException("Invalid skill points: " + points);
       }
     }

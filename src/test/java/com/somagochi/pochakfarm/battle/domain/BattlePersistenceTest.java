@@ -262,8 +262,8 @@ class BattlePersistenceTest {
             1,
             null,
             1,
-            BattleEventCode.TIER_ADVANTAGE,
-            BattleSide.NPC,
+            BattleEventCode.BATTLE_POINT_APPLIED,
+            null,
             null,
             BattleSide.NPC,
             1));
@@ -275,7 +275,7 @@ class BattlePersistenceTest {
                 .createNativeQuery(
                     """
                     SELECT action_seq, event_code, param_animal_side, param_skill,
-                           param_winner_side, param_distance
+                           param_winner_side, param_points
                     FROM battle_broadcast_events
                     WHERE battle_id = :id AND event_seq = 1
                     """)
@@ -283,8 +283,8 @@ class BattlePersistenceTest {
                 .getSingleResult();
 
     assertNull(row[0]);
-    assertEquals(BattleEventCode.TIER_ADVANTAGE.name(), row[1].toString());
-    assertEquals(BattleSide.NPC.name(), row[2].toString());
+    assertEquals(BattleEventCode.BATTLE_POINT_APPLIED.name(), row[1].toString());
+    assertNull(row[2]);
     assertNull(row[3]);
     assertEquals(BattleSide.NPC.name(), row[4].toString());
     assertEquals(1, ((Number) row[5]).intValue());
@@ -379,6 +379,6 @@ class BattlePersistenceTest {
         BattleSide.USER,
         CardSkill.GROUND_MOSS_CUSHION,
         null,
-        1);
+        null);
   }
 }

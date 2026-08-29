@@ -5,6 +5,8 @@ import com.somagochi.pochakfarm.battle.domain.BattleAction;
 import com.somagochi.pochakfarm.battle.domain.BattleActionPolicy;
 import com.somagochi.pochakfarm.battle.domain.BattleAdvantageResolver;
 import com.somagochi.pochakfarm.battle.domain.BattleBroadcastEvent;
+import com.somagochi.pochakfarm.battle.domain.BattleBroadcastEventGenerator;
+import com.somagochi.pochakfarm.battle.domain.BattleBroadcastEventSpec;
 import com.somagochi.pochakfarm.battle.domain.BattleEntry;
 import com.somagochi.pochakfarm.battle.domain.BattleEventCode;
 import com.somagochi.pochakfarm.battle.domain.BattlePolicy;
@@ -14,7 +16,6 @@ import com.somagochi.pochakfarm.battle.domain.BattleResult;
 import com.somagochi.pochakfarm.battle.domain.BattleSide;
 import com.somagochi.pochakfarm.battle.domain.NpcSkillSelector;
 import com.somagochi.pochakfarm.battle.domain.SkillActivationResult;
-import com.somagochi.pochakfarm.battle.domain.SkillActivationStatus;
 import com.somagochi.pochakfarm.battle.domain.SkillBattleResolution;
 import com.somagochi.pochakfarm.battle.domain.SkillBattleResolver;
 import com.somagochi.pochakfarm.battle.dto.BattleActionRequest;
@@ -45,6 +46,7 @@ public class BattleActionService {
   private final BattleActionRepository battleActionRepository;
   private final BattleBroadcastEventRepository battleBroadcastEventRepository;
   private final BattleAdvantageResolver battleAdvantageResolver;
+  private final BattleBroadcastEventGenerator battleBroadcastEventGenerator;
   private final SkillBattleResolver skillBattleResolver;
   private final NpcSkillSelector npcSkillSelector;
   private final BattleActionPolicy battleActionPolicy;
@@ -56,6 +58,7 @@ public class BattleActionService {
       BattleActionRepository battleActionRepository,
       BattleBroadcastEventRepository battleBroadcastEventRepository,
       BattleAdvantageResolver battleAdvantageResolver,
+      BattleBroadcastEventGenerator battleBroadcastEventGenerator,
       SkillBattleResolver skillBattleResolver,
       NpcSkillSelector npcSkillSelector,
       BattleActionPolicy battleActionPolicy,
@@ -65,6 +68,7 @@ public class BattleActionService {
     this.battleActionRepository = battleActionRepository;
     this.battleBroadcastEventRepository = battleBroadcastEventRepository;
     this.battleAdvantageResolver = battleAdvantageResolver;
+    this.battleBroadcastEventGenerator = battleBroadcastEventGenerator;
     this.skillBattleResolver = skillBattleResolver;
     this.npcSkillSelector = npcSkillSelector;
     this.battleActionPolicy = battleActionPolicy;
@@ -117,7 +121,7 @@ public class BattleActionService {
         npcSkillSelector.select(position, npcEntry.getSkill1(), npcEntry.getSkill2());
     SkillBattleResolution resolution =
         skillBattleResolver.resolve(position, selectedSkill, npcSkill);
-    recordSkillEvents(eventLog, entryOrder, resolution);
+    eventLog.recordAll(entryOrder, battleBroadcastEventGenerator.skill(resolution));
 
     saveAction(BattleAction.from(battleId, actionSeq, resolution));
     position = resolution.positionChange().after();
@@ -199,7 +203,9 @@ public class BattleActionService {
 
     BattlePositionChange tierChange =
         battleAdvantageResolver.resolveTier(position, userEntry.getTier(), npcEntry.getTier());
-    recordAdvantageEvent(eventLog, entryOrder, BattleEventCode.TIER_ADVANTAGE, tierChange);
+    eventLog.recordAll(
+        entryOrder,
+        battleBroadcastEventGenerator.advantage(BattleEventCode.TIER_ADVANTAGE, tierChange));
     if (tierChange.after().isTerminal()) {
       return tierChange.after();
     }
@@ -207,50 +213,10 @@ public class BattleActionService {
     BattlePositionChange typeChange =
         battleAdvantageResolver.resolveType(
             tierChange.after(), userEntry.getCardType(), npcEntry.getCardType());
-    recordAdvantageEvent(eventLog, entryOrder, BattleEventCode.TYPE_ADVANTAGE, typeChange);
+    eventLog.recordAll(
+        entryOrder,
+        battleBroadcastEventGenerator.advantage(BattleEventCode.TYPE_ADVANTAGE, typeChange));
     return typeChange.after();
-  }
-
-  private void recordAdvantageEvent(
-      BroadcastEventLog eventLog,
-      int entryOrder,
-      BattleEventCode eventCode,
-      BattlePositionChange change) {
-    if (change.appliedPoints() == 0) {
-      return;
-    }
-    BattleSide advantagedSide = change.appliedPoints() > 0 ? BattleSide.USER : BattleSide.NPC;
-    eventLog.record(
-        entryOrder, eventCode, advantagedSide, null, null, Math.abs(change.appliedPoints()));
-  }
-
-  private void recordSkillEvents(
-      BroadcastEventLog eventLog, int entryOrder, SkillBattleResolution resolution) {
-    recordActivationEvent(eventLog, entryOrder, BattleSide.USER, resolution.user());
-    recordActivationEvent(eventLog, entryOrder, BattleSide.NPC, resolution.npc());
-
-    int netPoints = resolution.netPoints();
-    if (netPoints > 0) {
-      eventLog.record(
-          entryOrder, BattleEventCode.TERRITORY_EXPANDED, null, null, BattleSide.USER, netPoints);
-    } else if (netPoints < 0) {
-      eventLog.record(
-          entryOrder, BattleEventCode.TERRITORY_EXPANDED, null, null, BattleSide.NPC, -netPoints);
-    } else if (resolution.user().points() > 0) {
-      eventLog.record(entryOrder, BattleEventCode.SKILL_OFFSET, null, null, null, null);
-    }
-  }
-
-  private void recordActivationEvent(
-      BroadcastEventLog eventLog, int entryOrder, BattleSide side, SkillActivationResult result) {
-    if (result.status() == SkillActivationStatus.NOT_SELECTED) {
-      return;
-    }
-    BattleEventCode eventCode =
-        result.status() == SkillActivationStatus.ACTIVATED
-            ? BattleEventCode.SKILL_TRIGGERED
-            : BattleEventCode.SKILL_FAILED;
-    eventLog.record(entryOrder, eventCode, side, result.skill().orElseThrow(), null, null);
   }
 
   private Optional<CardSkill> validateSelectedSkill(BattleEntry userEntry, CardSkill skill) {
@@ -338,6 +304,18 @@ public class BattleActionService {
               skill,
               winnerSide,
               point));
+    }
+
+    private void recordAll(Integer entryOrder, List<BattleBroadcastEventSpec> specs) {
+      specs.forEach(
+          spec ->
+              record(
+                  entryOrder,
+                  spec.eventCode(),
+                  spec.animalSide(),
+                  spec.skill(),
+                  spec.winnerSide(),
+                  spec.points()));
     }
 
     private List<BattleBroadcastEvent> recordedEvents() {

@@ -59,8 +59,8 @@ public class BattleBroadcastEvent extends BaseEntity {
   @Column(name = "param_winner_side", updatable = false)
   private BattleSide paramWinnerSide;
 
-  @Column(name = "param_distance", updatable = false)
-  private Integer paramDistance;
+  @Column(name = "param_points", updatable = false)
+  private Integer paramPoints;
 
   private BattleBroadcastEvent(
       Long battleId,
@@ -71,7 +71,7 @@ public class BattleBroadcastEvent extends BaseEntity {
       BattleSide paramAnimalSide,
       CardSkill paramSkill,
       BattleSide paramWinnerSide,
-      Integer paramDistance) {
+      Integer paramPoints) {
     this.battleId = Objects.requireNonNull(battleId);
     this.eventSeq = validateEventSeq(eventSeq);
     this.actionSeq = actionSeq;
@@ -80,7 +80,9 @@ public class BattleBroadcastEvent extends BaseEntity {
     this.paramAnimalSide = paramAnimalSide;
     this.paramSkill = paramSkill;
     this.paramWinnerSide = paramWinnerSide;
-    this.paramDistance = paramDistance;
+    this.paramPoints = paramPoints;
+    BattleBroadcastEventSpec.validate(
+        eventCode, paramAnimalSide, paramSkill, paramWinnerSide, paramPoints);
   }
 
   public static BattleBroadcastEvent record(
@@ -92,7 +94,7 @@ public class BattleBroadcastEvent extends BaseEntity {
       BattleSide paramAnimalSide,
       CardSkill paramSkill,
       BattleSide paramWinnerSide,
-      Integer paramDistance) {
+      Integer paramPoints) {
     return new BattleBroadcastEvent(
         battleId,
         eventSeq,
@@ -102,7 +104,7 @@ public class BattleBroadcastEvent extends BaseEntity {
         paramAnimalSide,
         paramSkill,
         paramWinnerSide,
-        paramDistance);
+        paramPoints);
   }
 
   private static Integer validateEventSeq(Integer eventSeq) {
