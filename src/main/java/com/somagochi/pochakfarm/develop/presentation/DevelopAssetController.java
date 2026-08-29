@@ -3,7 +3,9 @@ package com.somagochi.pochakfarm.develop.presentation;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.response.ApiResponse;
 import com.somagochi.pochakfarm.develop.application.DevelopAchievementAssetService;
-import com.somagochi.pochakfarm.develop.dto.DevelopAchievementAssetPresignRequest;
+import com.somagochi.pochakfarm.develop.application.DevelopGymLeaderAssetService;
+import com.somagochi.pochakfarm.develop.dto.DevelopAssetPresignRequest;
+import com.somagochi.pochakfarm.storage.application.ImageUploadService;
 import com.somagochi.pochakfarm.storage.dto.PresignResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,33 +23,35 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Slf4j
 @Controller
-@RequestMapping("/api/dev/achievements")
+@RequestMapping("/api/dev/assets")
 @Profile({"local", "dev"})
 @RequiredArgsConstructor
-public class DevelopAchievementAssetController {
+public class DevelopAssetController {
+
+  private static final String ACHIEVEMENT_TAB = "achievement";
+  private static final String GYM_LEADER_TAB = "gym-leader";
 
   private final DevelopAchievementAssetService developAchievementAssetService;
+  private final DevelopGymLeaderAssetService developGymLeaderAssetService;
+  private final ImageUploadService imageUploadService;
 
   @GetMapping
-  public ModelAndView assets() {
-    ModelAndView modelAndView = new ModelAndView("develop/achievement-assets");
+  public ModelAndView assets(@RequestParam(defaultValue = ACHIEVEMENT_TAB) String tab) {
+    ModelAndView modelAndView = new ModelAndView("develop/assets");
+    modelAndView.addObject("tab", GYM_LEADER_TAB.equals(tab) ? GYM_LEADER_TAB : ACHIEVEMENT_TAB);
     modelAndView.addObject("achievements", developAchievementAssetService.getAssets());
+    modelAndView.addObject("gymLeaders", developGymLeaderAssetService.getAssets());
     return modelAndView;
   }
 
   @PostMapping("/presign")
   @ResponseBody
-  public ApiResponse<PresignResponse> presign(
-      @RequestBody DevelopAchievementAssetPresignRequest request) {
-    if (request.isBadgeTarget()) {
-      return ApiResponse.success(
-          developAchievementAssetService.presignBadgeImage(request.contentType()));
-    }
+  public ApiResponse<PresignResponse> presign(@RequestBody DevelopAssetPresignRequest request) {
     return ApiResponse.success(
-        developAchievementAssetService.presignAchievementImage(request.contentType()));
+        imageUploadService.createPublicPresign(request.target().purpose(), request.contentType()));
   }
 
-  @PostMapping("/{achievementId}/images")
+  @PostMapping("/achievements/{achievementId}/images")
   public String updateAchievementImages(
       @PathVariable Long achievementId,
       @RequestParam(required = false) String unachievedImageKey,
@@ -56,6 +60,7 @@ public class DevelopAchievementAssetController {
       @RequestParam(required = false) String achievedImageContentType,
       RedirectAttributes redirectAttributes) {
     return handle(
+        ACHIEVEMENT_TAB,
         redirectAttributes,
         () ->
             developAchievementAssetService.updateAchievementImages(
@@ -66,37 +71,81 @@ public class DevelopAchievementAssetController {
                 achievedImageContentType));
   }
 
-  @PostMapping("/rewards/{rewardId}/amount")
+  @PostMapping("/achievements/rewards/{rewardId}/amount")
   public String updateRewardAmount(
       @PathVariable Long rewardId,
       @RequestParam long amount,
       RedirectAttributes redirectAttributes) {
     return handle(
+        ACHIEVEMENT_TAB,
         redirectAttributes,
         () -> developAchievementAssetService.updateRewardAmount(rewardId, amount));
   }
 
-  @PostMapping("/rewards/{rewardId}/badge-image")
+  @PostMapping("/achievements/rewards/{rewardId}/badge-image")
   public String updateRewardBadgeImage(
       @PathVariable Long rewardId,
       @RequestParam String badgeImageKey,
       @RequestParam String badgeImageContentType,
       RedirectAttributes redirectAttributes) {
     return handle(
+        ACHIEVEMENT_TAB,
         redirectAttributes,
         () ->
             developAchievementAssetService.updateRewardBadgeImage(
                 rewardId, badgeImageKey, badgeImageContentType));
   }
 
-  private String handle(RedirectAttributes redirectAttributes, Runnable action) {
+  @PostMapping("/gym-leaders/{gymLeaderId}/image")
+  public String updateGymLeaderImage(
+      @PathVariable Long gymLeaderId,
+      @RequestParam String imageKey,
+      @RequestParam String imageContentType,
+      RedirectAttributes redirectAttributes) {
+    return handle(
+        GYM_LEADER_TAB,
+        redirectAttributes,
+        () ->
+            developGymLeaderAssetService.updateGymLeaderImage(
+                gymLeaderId, imageKey, imageContentType));
+  }
+
+  @PostMapping("/gym-leaders/{gymLeaderId}/badge-image")
+  public String updateGymLeaderBadgeImage(
+      @PathVariable Long gymLeaderId,
+      @RequestParam String badgeImageKey,
+      @RequestParam String badgeImageContentType,
+      RedirectAttributes redirectAttributes) {
+    return handle(
+        GYM_LEADER_TAB,
+        redirectAttributes,
+        () ->
+            developGymLeaderAssetService.updateGymLeaderBadgeImage(
+                gymLeaderId, badgeImageKey, badgeImageContentType));
+  }
+
+  @PostMapping("/gym-leaders/animals/{gymLeaderAnimalId}/image")
+  public String updateGymLeaderAnimalImage(
+      @PathVariable Long gymLeaderAnimalId,
+      @RequestParam String imageKey,
+      @RequestParam String imageContentType,
+      RedirectAttributes redirectAttributes) {
+    return handle(
+        GYM_LEADER_TAB,
+        redirectAttributes,
+        () ->
+            developGymLeaderAssetService.updateGymLeaderAnimalImage(
+                gymLeaderAnimalId, imageKey, imageContentType));
+  }
+
+  private String handle(String tab, RedirectAttributes redirectAttributes, Runnable action) {
     try {
       action.run();
       redirectAttributes.addFlashAttribute("message", "저장했습니다.");
     } catch (BusinessException e) {
-      log.error("업적 에셋 저장 실패: {} - {}", e.getCode(), e.getMessage(), e);
+      log.error("에셋 저장 실패: {} - {}", e.getCode(), e.getMessage(), e);
       redirectAttributes.addFlashAttribute("error", e.getCode() + ": " + e.getMessage());
     }
-    return "redirect:/api/dev/achievements";
+    return "redirect:/api/dev/assets?tab=" + tab;
   }
 }

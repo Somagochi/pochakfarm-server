@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>에셋 관리 (dev)</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; margin: 32px auto; max-width: 980px; padding: 0 16px; background: #f6f7f9; color: #1f2328; }
+    h1 { font-size: 22px; margin-bottom: 4px; }
+    .sub { color: #57606a; font-size: 13px; margin-bottom: 20px; }
+    .flash { padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+    .flash.ok { background: #dafbe1; color: #116329; }
+    .flash.fail { background: #ffebe9; color: #cf222e; }
+    .tabs { display: flex; gap: 6px; border-bottom: 1px solid #d0d7de; margin-bottom: 20px; }
+    .tab { background: none; border: none; border-bottom: 2px solid transparent; color: #57606a; font-size: 14px; font-weight: 700; padding: 10px 16px; cursor: pointer; }
+    .tab:hover { color: #1f2328; }
+    .tab.active { color: #1f2328; border-bottom-color: #fd8c73; }
+    .panel[hidden] { display: none; }
+    .card { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-bottom: 20px; overflow: hidden; }
+    .card-header { padding: 14px 18px; border-bottom: 1px solid #eaeef2; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .card-header .title { font-size: 16px; font-weight: 700; }
+    .code { font-family: ui-monospace, monospace; font-size: 13px; color: #0969da; }
+    .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; }
+    .badge.hidden-badge { background: #24292f; color: #fff; }
+    .badge.category { background: #ddf4ff; color: #0969da; }
+    .badge.order { background: #fff1e5; color: #bc4c00; font-weight: 700; }
+    .badge.tier { background: #f3e8ff; color: #6639ba; font-family: ui-monospace, monospace; font-weight: 700; }
+    .badge.card-type { background: #ddf4ff; color: #0969da; }
+    .desc { color: #57606a; font-size: 12px; }
+    .card-header .target { margin-left: auto; color: #57606a; font-size: 12px; }
+    .section { padding: 14px 18px; border-bottom: 1px solid #eaeef2; }
+    .section:last-child { border-bottom: none; }
+    .section-title { font-size: 12px; color: #57606a; font-weight: 700; margin-bottom: 10px; }
+    .asset-row { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+    .asset-cell { display: flex; align-items: center; gap: 10px; }
+    .asset-cell .label { font-size: 12px; color: #57606a; width: 52px; }
+    .preview { width: 64px; height: 64px; object-fit: contain; border-radius: 8px; background: #f0f2f5; border: 1px solid #eaeef2; display: block; }
+    .no-image { width: 64px; height: 64px; border-radius: 8px; background: #f0f2f5; border: 1px dashed #c4ccd4; color: #8b949e; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+    input[type="file"] { font-size: 12px; max-width: 200px; }
+    input[type="number"] { width: 110px; padding: 6px 8px; border: 1px solid #c4ccd4; border-radius: 6px; font-size: 13px; }
+    button[type="submit"] { background: #1f883d; color: #fff; border: none; border-radius: 6px; padding: 7px 14px; font-size: 13px; cursor: pointer; }
+    button[type="submit"]:hover { background: #1a7f37; }
+    button[type="submit"]:disabled { background: #8b949e; cursor: progress; }
+    .reward-row { display: flex; align-items: center; gap: 14px; padding: 8px 0; border-top: 1px dashed #eaeef2; flex-wrap: wrap; }
+    .reward-row:first-of-type { border-top: none; }
+    .reward-type { font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+    .reward-type.coin { background: #fff8c5; color: #7d4e00; }
+    .reward-type.experience { background: #e6f0ff; color: #0550ae; }
+    .reward-type.badge-type { background: #ffeff7; color: #bf3989; }
+    .reward-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .animal-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px dashed #eaeef2; flex-wrap: wrap; }
+    .animal-row:first-of-type { border-top: none; }
+    .animal-meta { display: flex; flex-direction: column; gap: 4px; }
+    .animal-meta .name { font-size: 14px; font-weight: 700; }
+    .skill { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 6px; }
+    .skill.stable { background: #dafbe1; color: #116329; }
+    .skill.balanced { background: #fff8c5; color: #7d4e00; }
+    .skill.gamble { background: #ffebe9; color: #cf222e; }
+  </style>
+</head>
+<body>
+<h1>에셋 관리 (dev)</h1>
+<p class="sub">업적과 관장의 이미지 에셋을 관리한다. 이미지는 presigned 업로드로 교체된다. (png / jpeg / webp)</p>
+
+<div class="flash ok" th:if="${message}" th:text="${message}"></div>
+<div class="flash fail" th:if="${error}" th:text="${error}"></div>
+<div class="flash fail" id="upload-error" hidden></div>
+
+<div class="tabs">
+  <button type="button" class="tab" data-tab="achievement" th:classappend="${tab == 'achievement'} ? 'active'">업적</button>
+  <button type="button" class="tab" data-tab="gym-leader" th:classappend="${tab == 'gym-leader'} ? 'active'">관장</button>
+</div>
+
+<div class="panel" data-panel="achievement" th:hidden="${tab != 'achievement'}">
+  <div class="card" th:each="achievement : ${achievements}">
+    <div class="card-header">
+      <span class="code" th:text="${achievement.code}"></span>
+      <span class="title" th:text="${achievement.title}"></span>
+      <span class="badge category" th:text="${achievement.category}"></span>
+      <span class="badge hidden-badge" th:if="${achievement.hidden}">숨김</span>
+      <span class="desc" th:text="${achievement.description}"></span>
+      <span class="target" th:text="'목표 ' + ${achievement.targetValue}"></span>
+    </div>
+
+    <div class="section">
+      <div class="section-title">업적 이미지</div>
+      <form class="upload-form" th:action="@{/api/dev/assets/achievements/{id}/images(id=${achievement.id})}" method="post">
+        <div class="asset-row">
+          <div class="asset-cell">
+            <span class="label">미달성</span>
+            <img class="preview" th:if="${achievement.unachievedImageUrl}" th:src="${achievement.unachievedImageUrl}" alt="미달성 이미지">
+            <div class="no-image" th:unless="${achievement.unachievedImageUrl}">없음</div>
+            <input type="file" data-target="ACHIEVEMENT" data-key-field="unachievedImageKey" data-content-type-field="unachievedImageContentType" accept="image/png,image/jpeg,image/webp">
+          </div>
+          <div class="asset-cell">
+            <span class="label">달성</span>
+            <img class="preview" th:if="${achievement.achievedImageUrl}" th:src="${achievement.achievedImageUrl}" alt="달성 이미지">
+            <div class="no-image" th:unless="${achievement.achievedImageUrl}">없음</div>
+            <input type="file" data-target="ACHIEVEMENT" data-key-field="achievedImageKey" data-content-type-field="achievedImageContentType" accept="image/png,image/jpeg,image/webp">
+          </div>
+          <input type="hidden" name="unachievedImageKey">
+          <input type="hidden" name="unachievedImageContentType">
+          <input type="hidden" name="achievedImageKey">
+          <input type="hidden" name="achievedImageContentType">
+          <button type="submit">이미지 저장</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="section">
+      <div class="section-title">보상</div>
+      <div class="reward-row" th:each="reward : ${achievement.rewards}">
+        <th:block th:if="${reward.isBadge()}">
+          <span class="reward-type badge-type">BADGE</span>
+          <form class="upload-form reward-form" th:action="@{/api/dev/assets/achievements/rewards/{id}/badge-image(id=${reward.id})}" method="post">
+            <img class="preview" th:if="${reward.badgeImageUrl}" th:src="${reward.badgeImageUrl}" alt="뱃지 아이콘">
+            <div class="no-image" th:unless="${reward.badgeImageUrl}">없음</div>
+            <span class="desc" th:text="${reward.badgeCode} + ' · ' + ${reward.badgeName}"></span>
+            <input type="file" data-target="BADGE" data-key-field="badgeImageKey" data-content-type-field="badgeImageContentType" accept="image/png,image/jpeg,image/webp">
+            <input type="hidden" name="badgeImageKey">
+            <input type="hidden" name="badgeImageContentType">
+            <button type="submit">아이콘 저장</button>
+          </form>
+        </th:block>
+        <th:block th:unless="${reward.isBadge()}">
+          <span class="reward-type" th:classappend="${reward.rewardType.name() == 'COIN'} ? 'coin' : 'experience'" th:text="${reward.rewardType}"></span>
+          <form class="reward-form" th:action="@{/api/dev/assets/achievements/rewards/{id}/amount(id=${reward.id})}" method="post">
+            <input type="number" name="amount" min="1" th:value="${reward.amount}">
+            <button type="submit">수치 저장</button>
+          </form>
+        </th:block>
+      </div>
+      <div class="desc" th:if="${#lists.isEmpty(achievement.rewards)}">보상 없음</div>
+    </div>
+  </div>
+  <div class="desc" th:if="${#lists.isEmpty(achievements)}">등록된 업적이 없다.</div>
+</div>
+
+<div class="panel" data-panel="gym-leader" th:hidden="${tab != 'gym-leader'}">
+  <div class="card" th:each="gymLeader : ${gymLeaders}">
+    <div class="card-header">
+      <span class="badge order" th:text="${gymLeader.challengeOrder} + '번'"></span>
+      <span class="code" th:text="${gymLeader.code}"></span>
+      <span class="title" th:text="${gymLeader.name}"></span>
+      <span class="target" th:text="'뱃지 ' + ${gymLeader.badgeCode}"></span>
+    </div>
+
+    <div class="section">
+      <div class="section-title">관장 이미지</div>
+      <form class="upload-form" th:action="@{/api/dev/assets/gym-leaders/{id}/image(id=${gymLeader.id})}" method="post">
+        <div class="asset-row">
+          <div class="asset-cell">
+            <span class="label">초상</span>
+            <img class="preview" th:if="${gymLeader.imageUrl}" th:src="${gymLeader.imageUrl}" alt="관장 이미지">
+            <div class="no-image" th:unless="${gymLeader.imageUrl}">없음</div>
+            <input type="file" data-target="GYM_LEADER" data-key-field="imageKey" data-content-type-field="imageContentType" accept="image/png,image/jpeg,image/webp">
+          </div>
+          <input type="hidden" name="imageKey">
+          <input type="hidden" name="imageContentType">
+          <button type="submit">이미지 저장</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="section">
+      <div class="section-title">관장 뱃지</div>
+      <form class="upload-form" th:action="@{/api/dev/assets/gym-leaders/{id}/badge-image(id=${gymLeader.id})}" method="post">
+        <div class="asset-row">
+          <div class="asset-cell">
+            <img class="preview" th:if="${gymLeader.badgeImageUrl}" th:src="${gymLeader.badgeImageUrl}" alt="관장 뱃지">
+            <div class="no-image" th:unless="${gymLeader.badgeImageUrl}">없음</div>
+            <span class="desc" th:text="${gymLeader.badgeName} != null ? ${gymLeader.badgeCode} + ' · ' + ${gymLeader.badgeName} : ${gymLeader.badgeCode} + ' · 미등록'"></span>
+            <input type="file" data-target="BADGE" data-key-field="badgeImageKey" data-content-type-field="badgeImageContentType" accept="image/png,image/jpeg,image/webp">
+          </div>
+          <input type="hidden" name="badgeImageKey">
+          <input type="hidden" name="badgeImageContentType">
+          <button type="submit">뱃지 저장</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="section">
+      <div class="section-title">관장 동물</div>
+      <div class="animal-row" th:each="animal : ${gymLeader.animals}">
+        <span class="badge order" th:text="${animal.orderNo} + '번'"></span>
+        <img class="preview" th:if="${animal.imageUrl}" th:src="${animal.imageUrl}" alt="관장 동물 이미지">
+        <div class="no-image" th:unless="${animal.imageUrl}">없음</div>
+        <div class="animal-meta">
+          <span class="name" th:text="${animal.animalName}"></span>
+          <span>
+            <span class="badge tier" th:text="${animal.tier}"></span>
+            <span class="badge card-type" th:text="${animal.cardTypeLabel}"></span>
+          </span>
+          <span>
+            <span class="skill" th:classappend="${#strings.toLowerCase(animal.skill1BattleType)}" th:text="${animal.skill1Name}"></span>
+            <span class="skill" th:classappend="${#strings.toLowerCase(animal.skill2BattleType)}" th:text="${animal.skill2Name}"></span>
+          </span>
+        </div>
+        <form class="upload-form reward-form" th:action="@{/api/dev/assets/gym-leaders/animals/{id}/image(id=${animal.id})}" method="post">
+          <input type="file" data-target="GYM_LEADER_ANIMAL" data-key-field="imageKey" data-content-type-field="imageContentType" accept="image/png,image/jpeg,image/webp">
+          <input type="hidden" name="imageKey">
+          <input type="hidden" name="imageContentType">
+          <button type="submit">이미지 저장</button>
+        </form>
+      </div>
+      <div class="desc" th:if="${#lists.isEmpty(gymLeader.animals)}">등록된 동물이 없다.</div>
+    </div>
+  </div>
+  <div class="desc" th:if="${#lists.isEmpty(gymLeaders)}">등록된 관장이 없다.</div>
+</div>
+
+<script>
+  const errorBox = document.getElementById('upload-error');
+
+  function showError(message) {
+    errorBox.textContent = message;
+    errorBox.hidden = false;
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+
+  function selectTab(tab) {
+    document.querySelectorAll('.tab').forEach(button => {
+      button.classList.toggle('active', button.dataset.tab === tab);
+    });
+    document.querySelectorAll('.panel').forEach(panel => {
+      panel.hidden = panel.dataset.panel !== tab;
+    });
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tab);
+    window.history.replaceState(null, '', url);
+  }
+
+  document.querySelectorAll('.tab').forEach(button => {
+    button.addEventListener('click', () => selectTab(button.dataset.tab));
+  });
+
+  async function presignAndPut(file, target) {
+    const presignResponse = await fetch('/api/dev/assets/presign', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({contentType: file.type, target: target})
+    });
+    if (!presignResponse.ok) {
+      throw new Error('presign 발급 실패 (' + presignResponse.status + ')');
+    }
+    const presign = (await presignResponse.json()).data;
+    const putResponse = await fetch(presign.uploadUrl, {
+      method: 'PUT',
+      headers: {'Content-Type': file.type},
+      body: file
+    });
+    if (!putResponse.ok) {
+      throw new Error('S3 업로드 실패 (' + putResponse.status + ')');
+    }
+    return presign.key;
+  }
+
+  function lockButton(button) {
+    button.disabled = true;
+    button.dataset.originalText = button.textContent;
+    button.textContent = '업로드 중…';
+  }
+
+  function unlockButton(button) {
+    button.disabled = false;
+    button.textContent = button.dataset.originalText;
+  }
+
+  document.querySelectorAll('.upload-form').forEach(form => {
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      errorBox.hidden = true;
+      const fileInputs = Array.from(form.querySelectorAll('input[type="file"]'));
+      if (!fileInputs.some(input => input.files[0])) {
+        showError('교체할 이미지 파일을 선택하세요.');
+        return;
+      }
+      const button = form.querySelector('button[type="submit"]');
+      lockButton(button);
+      try {
+        for (const fileInput of fileInputs) {
+          const file = fileInput.files[0];
+          if (!file) {
+            continue;
+          }
+          const key = await presignAndPut(file, fileInput.dataset.target);
+          form.querySelector('input[name="' + fileInput.dataset.keyField + '"]').value = key;
+          form.querySelector('input[name="' + fileInput.dataset.contentTypeField + '"]').value = file.type;
+        }
+        form.submit();
+      } catch (e) {
+        showError(e.message);
+        unlockButton(button);
+      }
+    });
+  });
+</script>
+</body>
+</html>

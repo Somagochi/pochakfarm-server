@@ -24,10 +24,7 @@ public class DevelopSecurityConfig {
 
   private static final String[] AUTHENTICATED_ENDPOINTS = {"/api/dev/animal"};
   private static final String[] BASIC_AUTH_ENDPOINTS = {
-    "/api/dev/achievements",
-    "/api/dev/achievements/**",
-    "/api/dev/notifications/**",
-    "/sms-test.html"
+    "/api/dev/assets", "/api/dev/assets/**", "/api/dev/notifications/**", "/sms-test.html"
   };
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -76,8 +73,8 @@ public class DevelopSecurityConfig {
   private OrRequestMatcher basicAuthEndpointsMatcher() {
     PathPatternRequestMatcher.Builder builder = PathPatternRequestMatcher.withDefaults();
     return new OrRequestMatcher(
-        builder.matcher("/api/dev/achievements"),
-        builder.matcher("/api/dev/achievements/**"),
+        builder.matcher("/api/dev/assets"),
+        builder.matcher("/api/dev/assets/**"),
         builder.matcher("/api/dev/notifications/**"));
   }
 }
