@@ -18,6 +18,7 @@ import com.somagochi.pochakfarm.battle.infrastructure.persistence.GymLeaderAnima
 import com.somagochi.pochakfarm.battle.infrastructure.persistence.GymLeaderClearRepository;
 import com.somagochi.pochakfarm.battle.infrastructure.persistence.GymLeaderRepository;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
+import com.somagochi.pochakfarm.user.domain.LevelRewardPolicy;
 import com.somagochi.pochakfarm.user.domain.User;
 import com.somagochi.pochakfarm.user.infrastructure.persistence.CoinHistoryRepository;
 import com.somagochi.pochakfarm.user.infrastructure.persistence.UserRepository;
@@ -48,6 +49,7 @@ class BattleRewardServiceTest {
   @Autowired private UserBadgeRepository userBadgeRepository;
   @Autowired private UserRepository userRepository;
   @Autowired private CoinHistoryRepository coinHistoryRepository;
+  @Autowired private LevelRewardPolicy levelRewardPolicy;
   @Autowired private EntityManager entityManager;
 
   private User user;
@@ -75,7 +77,8 @@ class BattleRewardServiceTest {
   }
 
   @Test
-  void grantsFirstClearCoinExperienceAndBadgeInOneTransaction() {
+  void grantsFirstClearCoinExperienceBadgeAndLevelUpCoinInOneTransaction() {
+    user.gainExperience(35, levelRewardPolicy);
     Battle battle = startFirstGymBattle();
     GymLeader gymLeader = gymLeaderRepository.findById(battle.getGymLeaderId()).orElseThrow();
     badgeRepository.save(Badge.create(gymLeader.getBadgeCode(), "관장 도전장", "첫 번째 관장 승리", null));
@@ -88,14 +91,14 @@ class BattleRewardServiceTest {
     assertEquals(300, response.gymLeaderCoins());
     assertEquals(20, response.experience());
     assertEquals(1, response.levelBefore());
-    assertEquals(1, response.levelAfter());
-    assertEquals(20, response.experienceAfter());
-    assertEquals(0, response.levelUpCoins());
-    assertEquals(1_300, response.coinsAfter());
+    assertEquals(2, response.levelAfter());
+    assertEquals(15, response.experienceAfter());
+    assertEquals(500, response.levelUpCoins());
+    assertEquals(1_800, response.coinsAfter());
     assertTrue(
         userBadgeRepository.findOwnedBadgeCodes(user.getId()).contains(gymLeader.getBadgeCode()));
     assertEquals(1, gymLeaderClearRepository.count());
-    assertEquals(1, coinHistoryRepository.count());
+    assertEquals(2, coinHistoryRepository.count());
   }
 
   @Test
@@ -120,6 +123,23 @@ class BattleRewardServiceTest {
     assertEquals(0, rematchResult.experience());
     assertEquals(1, gymLeaderClearRepository.count());
     assertEquals(1, coinHistoryRepository.count());
+  }
+
+  @Test
+  void sumsEveryLevelUpCoinWhenOneRewardRaisesMultipleLevels() {
+    Battle battle = startGymBattle(8);
+    GymLeader gymLeader = gymLeaderRepository.findById(battle.getGymLeaderId()).orElseThrow();
+    badgeRepository.save(Badge.create(gymLeader.getBadgeCode(), "관장 도전장", "여덟 번째 관장 승리", null));
+    flushAndClear();
+
+    BattleRewardResponse response = battleRewardService.grantFirstClear(battle);
+
+    assertEquals(1, response.levelBefore());
+    assertEquals(5, response.levelAfter());
+    assertEquals(0, response.experienceAfter());
+    assertEquals(2_500, response.levelUpCoins());
+    assertEquals(6_500, response.coinsAfter());
+    assertEquals(2, coinHistoryRepository.count());
   }
 
   private Battle startFirstGymBattle() {

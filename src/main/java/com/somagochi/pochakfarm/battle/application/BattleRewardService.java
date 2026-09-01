@@ -12,6 +12,7 @@ import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.user.application.UserCoinService;
 import com.somagochi.pochakfarm.user.domain.CoinTransactionReason;
+import com.somagochi.pochakfarm.user.domain.LevelReward;
 import com.somagochi.pochakfarm.user.domain.LevelRewardPolicy;
 import com.somagochi.pochakfarm.user.domain.User;
 import com.somagochi.pochakfarm.user.infrastructure.persistence.UserRepository;
@@ -67,7 +68,11 @@ public class BattleRewardService {
 
     userCoinService.earn(
         user, coinReward, CoinTransactionReason.GYM_LEADER_CLEAR_REWARD, battle.getId());
-    user.addExperience(experienceReward);
+    LevelReward levelReward = user.gainExperience(experienceReward, levelRewardPolicy);
+    if (levelReward.coinReward() > 0) {
+      userCoinService.earn(
+          user, levelReward.coinReward(), CoinTransactionReason.LEVEL_UP_REWARD, battle.getId());
+    }
     badgeGrantService.grant(user.getId(), gymLeader.getBadgeCode());
 
     GymLeaderClear clear =
@@ -77,13 +82,13 @@ public class BattleRewardService {
                 gymLeader.getId(),
                 battle.getId(),
                 coinReward,
-                experienceReward,
+                levelReward.experienceReward(),
                 gymLeader.getBadgeCode(),
-                user.getLevel(),
-                user.getLevel(),
-                user.getExperience(),
-                levelRewardPolicy.requiredExperienceForNextLevel(user.getLevel()),
-                0,
+                levelReward.levelBefore(),
+                levelReward.levelAfter(),
+                levelReward.experienceAfter(),
+                levelReward.requiredExperienceForNextLevel(),
+                levelReward.coinReward(),
                 user.getCoins()));
     return BattleRewardResponse.granted(clear);
   }
