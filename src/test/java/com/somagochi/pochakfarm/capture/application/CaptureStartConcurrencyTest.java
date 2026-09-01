@@ -60,7 +60,10 @@ class CaptureStartConcurrencyTest {
     User user =
         userRepository.save(
             User.register(
-                SocialProvider.KAKAO, "concurrency-" + UUID.randomUUID(), "concurrency@test.com"));
+                SocialProvider.KAKAO,
+                "concurrency-" + UUID.randomUUID(),
+                "concurrency@test.com",
+                "u" + UUID.randomUUID().toString().substring(0, 5)));
     userId = user.getId();
     attemptRepository.save(
         DailyCaptureAttempt.create(userId, LocalDate.now(ZoneId.of("Asia/Seoul")), 1));

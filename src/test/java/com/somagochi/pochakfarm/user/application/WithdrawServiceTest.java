@@ -27,7 +27,7 @@ class WithdrawServiceTest {
     UserRepository userRepository = mock(UserRepository.class);
     TokenService tokenService = mock(TokenService.class);
     WithdrawService withdrawService = new WithdrawService(userRepository, tokenService);
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "포착이");
     given(userRepository.findById(1L)).willReturn(Optional.of(user));
 
     withdrawService.withdraw(1L, "access-token", "refresh-token", WithdrawalReason.LOW_USAGE);
@@ -60,7 +60,7 @@ class WithdrawServiceTest {
     UserRepository userRepository = mock(UserRepository.class);
     TokenService tokenService = mock(TokenService.class);
     WithdrawService withdrawService = new WithdrawService(userRepository, tokenService);
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "포착이");
     given(userRepository.findById(1L)).willReturn(Optional.of(user));
 
     withdrawService.withdraw(1L, "access-token", "refresh-token", null);

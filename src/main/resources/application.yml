@@ -1,6 +1,11 @@
+server:
+  shutdown: graceful
+
 spring:
   profiles:
     active: local
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
   config:
     import: optional:classpath:secret/
   servlet:
@@ -30,7 +35,16 @@ spring:
       ssl:
         enabled: ${secret.data.redis.ssl.enabled}
   security:
+    apple:
+      client-id: ${secret.social.apple.client-id}
+      team-id: ${secret.social.apple.team-id:}
+      key-id: ${secret.social.apple.key-id:}
+      private-key-path: ${secret.social.apple.private-key:}
+      redirect-uri: ${secret.social.apple.redirect-uri}
+      token-uri: https://appleid.apple.com/auth/token
     oauth2:
+      login:
+        success-redirect-uri: ${secret.security.oauth2.login.success-redirect-uri:}
       client:
         registration:
           kakao:
@@ -138,9 +152,12 @@ app:
     enabled: ${secret.characterization.enabled:false}
     device-limit-enabled: ${secret.characterization.device-limit-enabled:false}
     reaper:
-      enabled: ${secret.characterization.reaper.enabled:true}
+      enabled: ${secret.characterization.reaper.enabled:false}
       interval: ${secret.characterization.reaper.interval:PT1M}
       stale-threshold: ${secret.characterization.reaper.stale-threshold:PT15M}
+  battle:
+    rest-duration: ${secret.battle.rest-duration:PT30M}
+    abandon-threshold: ${secret.battle.abandon-threshold:PT30M}
   coupon:
     pre-registration:
       enabled: ${secret.coupon.pre-registration.enabled:true}

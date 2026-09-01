@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -34,5 +35,14 @@ class AfterCommitExecutorTest {
     } finally {
       TransactionSynchronizationManager.clearSynchronization();
     }
+  }
+
+  @Test
+  void reportsExecutorQueueDurationSeparately() {
+    AtomicLong queueDurationNanos = new AtomicLong(-1L);
+
+    AfterCommitExecutor.executeTimedAsyncAfterCommit(Runnable::run, queueDurationNanos::set);
+
+    assertTrue(queueDurationNanos.get() >= 0L);
   }
 }

@@ -2,6 +2,7 @@ package com.somagochi.pochakfarm.common.transaction;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.LongConsumer;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -26,17 +27,22 @@ public final class AfterCommitExecutor {
   }
 
   public static void executeAsyncAfterCommit(TaskExecutor executor, Runnable action) {
+    executeTimedAsyncAfterCommit(executor, ignored -> action.run());
+  }
+
+  public static void executeTimedAsyncAfterCommit(TaskExecutor executor, LongConsumer action) {
     if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-      executor.execute(action);
+      executeTimed(executor, action);
       return;
     }
 
     CountDownLatch transactionCompleted = new CountDownLatch(1);
     AtomicBoolean committed = new AtomicBoolean(false);
-    executor.execute(
-        () -> {
+    executeTimed(
+        executor,
+        queueDurationNanos -> {
           if (await(transactionCompleted) && committed.get()) {
-            action.run();
+            action.accept(queueDurationNanos);
           }
         });
     TransactionSynchronizationManager.registerSynchronization(
@@ -47,6 +53,11 @@ public final class AfterCommitExecutor {
             transactionCompleted.countDown();
           }
         });
+  }
+
+  private static void executeTimed(TaskExecutor executor, LongConsumer action) {
+    long submittedAtNanos = System.nanoTime();
+    executor.execute(() -> action.accept(Math.max(0L, System.nanoTime() - submittedAtNanos)));
   }
 
   private static boolean await(CountDownLatch transactionCompleted) {

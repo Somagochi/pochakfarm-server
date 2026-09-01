@@ -25,14 +25,25 @@ public class CardMetadataGenerator {
   }
 
   public CardMetadata generate(CardType cardType) {
-    List<CardSkill> skills = CardSkill.forType(cardType);
-    int firstIndex = random.nextInt(skills.size());
-    int secondIndex = random.nextInt(skills.size() - 1);
+    SkillBattleType[] battleTypes = pickDifferentBattleTypes();
+    CardSkill firstSkill = pickSkill(cardType, battleTypes[0]);
+    CardSkill secondSkill = pickSkill(cardType, battleTypes[1]);
+    return new CardMetadata(cardType, pickPower(), firstSkill, secondSkill, FIXED_CARD_NO);
+  }
+
+  private SkillBattleType[] pickDifferentBattleTypes() {
+    SkillBattleType[] battleTypes = SkillBattleType.values();
+    int firstIndex = random.nextInt(battleTypes.length);
+    int secondIndex = random.nextInt(battleTypes.length - 1);
     if (secondIndex >= firstIndex) {
       secondIndex++;
     }
-    return new CardMetadata(
-        cardType, pickPower(), skills.get(firstIndex), skills.get(secondIndex), FIXED_CARD_NO);
+    return new SkillBattleType[] {battleTypes[firstIndex], battleTypes[secondIndex]};
+  }
+
+  private CardSkill pickSkill(CardType cardType, SkillBattleType battleType) {
+    List<CardSkill> skills = CardSkill.forType(cardType, battleType);
+    return skills.get(random.nextInt(skills.size()));
   }
 
   private CardType pickCardType() {

@@ -19,6 +19,15 @@ class CardMetadataGeneratorTest {
   }
 
   @Test
+  void eachCardTypeHasTenSkillsForEveryBattleType() {
+    for (CardType cardType : CardType.values()) {
+      for (SkillBattleType battleType : SkillBattleType.values()) {
+        assertEquals(10, CardSkill.forType(cardType, battleType).size());
+      }
+    }
+  }
+
+  @Test
   void generatesMetadataWithinCardPolicy() {
     CardMetadataGenerator generator = new CardMetadataGenerator(new Random(0));
 
@@ -28,7 +37,21 @@ class CardMetadataGeneratorTest {
     assertEquals(metadata.cardType(), metadata.skill1().cardType());
     assertEquals(metadata.cardType(), metadata.skill2().cardType());
     assertNotEquals(metadata.skill1(), metadata.skill2());
+    assertNotEquals(metadata.skill1().battleType(), metadata.skill2().battleType());
     assertEquals("001", metadata.cardNo());
+  }
+
+  @Test
+  void alwaysGeneratesSkillsWithDifferentBattleTypes() {
+    CardMetadataGenerator generator = new CardMetadataGenerator(new Random(0));
+
+    for (CardType cardType : CardType.values()) {
+      for (int i = 0; i < 100; i++) {
+        CardMetadata metadata = generator.generate(cardType);
+
+        assertNotEquals(metadata.skill1().battleType(), metadata.skill2().battleType());
+      }
+    }
   }
 
   @Test

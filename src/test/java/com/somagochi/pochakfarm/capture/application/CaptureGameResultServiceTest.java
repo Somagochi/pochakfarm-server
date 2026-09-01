@@ -273,7 +273,7 @@ class CaptureGameResultServiceTest {
   }
 
   private User user() {
-    return User.register(SocialProvider.KAKAO, "provider-id", "test@test.com");
+    return User.register(SocialProvider.KAKAO, "provider-id", "test@test.com", "포착이");
   }
 
   private Capture capture(Instant expiresAt) {

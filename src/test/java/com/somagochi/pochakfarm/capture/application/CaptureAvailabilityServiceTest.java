@@ -41,7 +41,7 @@ class CaptureAvailabilityServiceTest {
 
   @Test
   void returnsPersistedAttemptBalance() {
-    User user = User.register(SocialProvider.KAKAO, "provider", "user@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider", "user@test.com", "포착이");
     given(userRepository.findById(1L)).willReturn(Optional.of(user));
     given(attemptRepository.findByUserIdAndAttemptDate(1L, LocalDate.of(2026, 8, 2)))
         .willReturn(Optional.of(DailyCaptureAttempt.create(1L, LocalDate.of(2026, 8, 2), 2)));
@@ -57,7 +57,8 @@ class CaptureAvailabilityServiceTest {
   @Test
   void returnsFiveForNewKoreaDateWithoutWriting() {
     given(userRepository.findById(1L))
-        .willReturn(Optional.of(User.register(SocialProvider.KAKAO, "provider", "user@test.com")));
+        .willReturn(
+            Optional.of(User.register(SocialProvider.KAKAO, "provider", "user@test.com", "포착이")));
     given(attemptRepository.findByUserIdAndAttemptDate(1L, LocalDate.of(2026, 8, 2)))
         .willReturn(Optional.empty());
 

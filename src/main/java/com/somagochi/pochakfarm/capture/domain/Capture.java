@@ -28,7 +28,10 @@ import org.hibernate.annotations.SQLRestriction;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(
     name = "captures",
-    indexes = @Index(name = "idx_captures_user_id_created_at", columnList = "user_id, created_at"),
+    indexes =
+        @Index(
+            name = "idx_captures_user_id_card_type_animal_name",
+            columnList = "user_id, card_type, animal_name"),
     uniqueConstraints =
         @UniqueConstraint(
             name = "uk_captures_user_id_client_request_id",

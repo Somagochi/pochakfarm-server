@@ -13,6 +13,8 @@ import com.somagochi.pochakfarm.animal.dto.AnimalResponse;
 import com.somagochi.pochakfarm.capture.domain.Tier;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.config.SecurityConfig;
+import com.somagochi.pochakfarm.common.exception.BusinessException;
+import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.exception.GlobalExceptionHandler;
 import com.somagochi.pochakfarm.common.response.CursorPage;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationFilter;
@@ -88,6 +90,102 @@ class AnimalControllerTest {
   }
 
   @Test
+  void searchesMyAnimalsByKeyword() throws Exception {
+    given(animalQueryService.searchMyAnimals(USER_ID, CardType.SEA, "\uc19c", null))
+        .willReturn(CursorPage.of(List.of(animalResponse(11L, CardType.SEA)), 11L, true));
+
+    mockMvc
+        .perform(
+            get("/api/animals/search")
+                .param("type", "SEA")
+                .param("keyword", "\uc19c")
+                .with(authentication(userAuthentication())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.content.length()").value(1))
+        .andExpect(jsonPath("$.data.content[0].animalId").value(11))
+        .andExpect(jsonPath("$.data.nextCursor").value(11))
+        .andExpect(jsonPath("$.data.hasNext").value(true));
+  }
+
+  @Test
+  void searchesMyAnimalsWithCursor() throws Exception {
+    given(animalQueryService.searchMyAnimals(USER_ID, CardType.SEA, "\uc19c", 50L))
+        .willReturn(CursorPage.of(List.of(), null, false));
+
+    mockMvc
+        .perform(
+            get("/api/animals/search")
+                .param("type", "SEA")
+                .param("keyword", "\uc19c")
+                .param("cursor", "50")
+                .with(authentication(userAuthentication())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.content.length()").value(0))
+        .andExpect(jsonPath("$.data.hasNext").value(false));
+  }
+
+  @Test
+  void returnsBadRequestWhenSearchKeywordIsBlank() throws Exception {
+    given(animalQueryService.searchMyAnimals(USER_ID, CardType.SEA, "   ", null))
+        .willThrow(new BusinessException(ErrorCode.INVALID_PARAMETER));
+
+    mockMvc
+        .perform(
+            get("/api/animals/search")
+                .param("type", "SEA")
+                .param("keyword", "   ")
+                .with(authentication(userAuthentication())))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_PARAMETER.getCode()));
+  }
+
+  @Test
+  void returnsBadRequestWhenSearchKeywordIsMissing() throws Exception {
+    mockMvc
+        .perform(
+            get("/api/animals/search")
+                .param("type", "SEA")
+                .with(authentication(userAuthentication())))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_PARAMETER.getCode()))
+        .andExpect(jsonPath("$.message").value("keyword is required"));
+  }
+
+  @Test
+  void searchesEveryCardTypeWhenTypeIsNotGiven() throws Exception {
+    given(animalQueryService.searchMyAnimals(USER_ID, null, "\uc19c", null))
+        .willReturn(CursorPage.of(List.of(animalResponse(11L, CardType.SKY)), null, false));
+
+    mockMvc
+        .perform(
+            get("/api/animals/search")
+                .param("keyword", "\uc19c")
+                .with(authentication(userAuthentication())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.content[0].animalId").value(11))
+        .andExpect(jsonPath("$.data.hasNext").value(false));
+  }
+
+  @Test
+  void returnsBadRequestWhenSearchTypeIsNotSupported() throws Exception {
+    mockMvc
+        .perform(
+            get("/api/animals/search")
+                .param("type", "RIVER")
+                .param("keyword", "\uc19c")
+                .with(authentication(userAuthentication())))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_PARAMETER.getCode()));
+  }
+
+  @Test
+  void returnsUnauthorizedWithoutSearchAuthentication() throws Exception {
+    mockMvc
+        .perform(get("/api/animals/search").param("type", "SEA").param("keyword", "\uc19c"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
   void returnsUnauthorizedWithoutAuthentication() throws Exception {
     mockMvc.perform(get("/api/animals")).andExpect(status().isUnauthorized());
   }
@@ -103,7 +201,8 @@ class AnimalControllerTest {
         type,
         Tier.A,
         "https://cdn.example.com/card.png",
-        "https://cdn.example.com/animal.png");
+        "https://cdn.example.com/animal.png",
+        null);
   }
 
   @TestConfiguration

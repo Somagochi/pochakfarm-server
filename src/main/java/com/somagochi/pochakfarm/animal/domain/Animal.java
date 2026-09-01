@@ -10,6 +10,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
+import java.time.Instant;
 import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -44,6 +45,9 @@ public class Animal extends BaseEntity {
   @Column(name = "slot_num")
   private Integer slotNum = 0;
 
+  @Column(name = "rest_ends_at")
+  private Instant restEndsAt;
+
   @Version
   @Column(name = "version", nullable = false)
   private Long version;
@@ -67,6 +71,10 @@ public class Animal extends BaseEntity {
     return Objects.equals(this.spaceId, spaceId)
         && Objects.equals(this.floorNum, floorNum)
         && Objects.equals(this.slotNum, slotNum);
+  }
+
+  public boolean isResting(Instant now) {
+    return restEndsAt != null && restEndsAt.isAfter(now);
   }
 
   public void moveTo(Long spaceId, Integer floorNum, Integer slotNum) {

@@ -1,6 +1,7 @@
 package com.somagochi.pochakfarm.animal.application;
 
 import com.somagochi.pochakfarm.animal.domain.Animal;
+import com.somagochi.pochakfarm.animal.dto.AnimalBattleProfile;
 import com.somagochi.pochakfarm.animal.dto.AnimalDetailResponse;
 import com.somagochi.pochakfarm.animal.dto.AnimalPlacement;
 import com.somagochi.pochakfarm.animal.dto.AnimalPosition;
@@ -15,6 +16,7 @@ import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.response.CursorPage;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AnimalQueryService {
 
   private static final int PAGE_SIZE = 12;
+  private static final char LIKE_ESCAPE_CHAR = '!';
 
   private final AnimalRepository animalRepository;
   private final CaptureRepository captureRepository;
@@ -45,22 +48,21 @@ public class AnimalQueryService {
 
   @Transactional(readOnly = true)
   public CursorPage<AnimalResponse> getMyAnimals(Long userId, CardType type, Long cursor) {
-    List<Animal> fetched =
+    return toCursorPage(
         animalRepository.findOwnedAnimals(
-            userId, cardTypesOf(type), effectiveCursor(cursor), Limit.of(PAGE_SIZE + 1));
-    if (fetched.isEmpty()) {
-      return CursorPage.of(List.of(), null, false);
-    }
-    boolean hasNext = fetched.size() > PAGE_SIZE;
-    List<Animal> page = hasNext ? fetched.subList(0, PAGE_SIZE) : fetched;
-    Map<Long, Capture> captureById = findCapturesById(page);
-    List<AnimalResponse> items =
-        page.stream()
-            .filter(animal -> captureById.containsKey(animal.getCaptureId()))
-            .map(animal -> toResponse(animal, captureById.get(animal.getCaptureId())))
-            .toList();
-    Long nextCursor = hasNext ? page.get(page.size() - 1).getId() : null;
-    return CursorPage.of(items, nextCursor, hasNext);
+            userId, cardTypesOf(type), effectiveCursor(cursor), Limit.of(PAGE_SIZE + 1)));
+  }
+
+  @Transactional(readOnly = true)
+  public CursorPage<AnimalResponse> searchMyAnimals(
+      Long userId, CardType type, String keyword, Long cursor) {
+    return toCursorPage(
+        animalRepository.searchOwnedAnimalsByName(
+            userId,
+            cardTypesOf(type),
+            prefixPattern(normalizeKeyword(keyword)),
+            effectiveCursor(cursor),
+            Limit.of(PAGE_SIZE + 1)));
   }
 
   @Transactional(readOnly = true)
@@ -78,6 +80,43 @@ public class AnimalQueryService {
         AnimalSkillResponse.from(capture.getSkill2()),
         buildUrlOrNull(capture.getCardImage()),
         buildUrlOrNull(capture.getAnimalImage()));
+  }
+
+  @Transactional(readOnly = true)
+  public Map<Long, AnimalBattleProfile> getOwnedBattleProfiles(
+      Long userId, Collection<Long> animalIds) {
+    if (animalIds.isEmpty()) {
+      return Map.of();
+    }
+    return animalRepository.findOwnedBattleProfiles(userId, animalIds).stream()
+        .collect(Collectors.toMap(AnimalBattleProfile::animalId, profile -> profile));
+  }
+
+  @Transactional(readOnly = true)
+  public Map<Long, Long> getAnimalIdsByCaptureIds(Collection<Long> captureIds) {
+    if (captureIds.isEmpty()) {
+      return Map.of();
+    }
+    return animalRepository.findByCaptureIdIn(captureIds).stream()
+        .collect(Collectors.toMap(Animal::getCaptureId, Animal::getId));
+  }
+
+  @Transactional(readOnly = true)
+  public Map<Long, Instant> getRestEndsAtByCaptureIds(Collection<Long> captureIds) {
+    if (captureIds.isEmpty()) {
+      return Map.of();
+    }
+    return animalRepository.findByCaptureIdIn(captureIds).stream()
+        .filter(animal -> animal.getRestEndsAt() != null)
+        .collect(Collectors.toMap(Animal::getCaptureId, Animal::getRestEndsAt));
+  }
+
+  @Transactional(readOnly = true)
+  public Set<Long> findRestingCaptureIds(Collection<Long> captureIds, Instant now) {
+    return getRestEndsAtByCaptureIds(captureIds).entrySet().stream()
+        .filter(entry -> entry.getValue().isAfter(now))
+        .map(Map.Entry::getKey)
+        .collect(Collectors.toSet());
   }
 
   @Transactional(readOnly = true)
@@ -116,6 +155,40 @@ public class AnimalQueryService {
     return byPosition;
   }
 
+  private CursorPage<AnimalResponse> toCursorPage(List<Animal> fetched) {
+    if (fetched.isEmpty()) {
+      return CursorPage.of(List.of(), null, false);
+    }
+    boolean hasNext = fetched.size() > PAGE_SIZE;
+    List<Animal> page = hasNext ? fetched.subList(0, PAGE_SIZE) : fetched;
+    Map<Long, Capture> captureById = findCapturesById(page);
+    List<AnimalResponse> items =
+        page.stream()
+            .filter(animal -> captureById.containsKey(animal.getCaptureId()))
+            .map(animal -> toResponse(animal, captureById.get(animal.getCaptureId())))
+            .toList();
+    Long nextCursor = hasNext ? page.get(page.size() - 1).getId() : null;
+    return CursorPage.of(items, nextCursor, hasNext);
+  }
+
+  private String normalizeKeyword(String keyword) {
+    if (keyword == null || keyword.isBlank()) {
+      throw new BusinessException(ErrorCode.INVALID_PARAMETER);
+    }
+    return keyword.trim();
+  }
+
+  private String prefixPattern(String keyword) {
+    StringBuilder pattern = new StringBuilder();
+    for (char each : keyword.toCharArray()) {
+      if (each == LIKE_ESCAPE_CHAR || each == '%' || each == '_') {
+        pattern.append(LIKE_ESCAPE_CHAR);
+      }
+      pattern.append(each);
+    }
+    return pattern.append('%').toString();
+  }
+
   private Collection<CardType> cardTypesOf(CardType type) {
     return type == null ? List.of(CardType.values()) : List.of(type);
   }
@@ -137,7 +210,8 @@ public class AnimalQueryService {
         capture.getCardType(),
         capture.getTier(),
         buildUrlOrNull(capture.getCardImage()),
-        buildUrlOrNull(capture.getAnimalImage()));
+        buildUrlOrNull(capture.getAnimalImage()),
+        animal.getRestEndsAt());
   }
 
   private String buildUrlOrNull(String key) {

@@ -3,6 +3,7 @@ package com.somagochi.pochakfarm.characterization.infrastructure.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record HttpCaptureCharacterizerRequest(
+    @JsonProperty("capture_id") String captureId,
     @JsonProperty("original_image_download_url") String originalImageDownloadUrl,
     @JsonProperty("animal_image_upload_url") String animalImageUploadUrl,
     @JsonProperty("card_image_upload_url") String cardImageUploadUrl,

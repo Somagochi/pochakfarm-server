@@ -17,7 +17,12 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
+import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -59,7 +64,12 @@ public class SecurityConfig {
       HttpSecurity http,
       ObjectProvider<ClientRegistrationRepository> clientRegistrationRepository,
       ObjectProvider<OAuth2UserServiceImpl> oauth2UserService,
-      ObjectProvider<OAuth2LoginSuccessHandler> oauth2LoginSuccessHandler)
+      ObjectProvider<OAuth2LoginSuccessHandler> oauth2LoginSuccessHandler,
+      ObjectProvider<OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest>>
+          accessTokenResponseClient,
+      ObjectProvider<OAuth2AuthorizationRequestResolver> authorizationRequestResolver,
+      ObjectProvider<AuthorizationRequestRepository<OAuth2AuthorizationRequest>>
+          authorizationRequestRepository)
       throws Exception {
     http.csrf(AbstractHttpConfigurer::disable)
         .formLogin(AbstractHttpConfigurer::disable)
@@ -86,8 +96,17 @@ public class SecurityConfig {
       http.oauth2Login(
           oauth ->
               oauth
-                  .authorizationEndpoint(endpoint -> endpoint.baseUri("/api/auth/oauth2"))
+                  .authorizationEndpoint(
+                      endpoint ->
+                          endpoint
+                              .authorizationRequestResolver(
+                                  authorizationRequestResolver.getObject())
+                              .authorizationRequestRepository(
+                                  authorizationRequestRepository.getObject()))
                   .redirectionEndpoint(endpoint -> endpoint.baseUri("/api/auth/oauth2/code/*"))
+                  .tokenEndpoint(
+                      endpoint ->
+                          endpoint.accessTokenResponseClient(accessTokenResponseClient.getObject()))
                   .userInfoEndpoint(userInfo -> userInfo.userService(oauth2UserService.getObject()))
                   .successHandler(oauth2LoginSuccessHandler.getObject()));
     }

@@ -61,7 +61,11 @@ class AnimalSlotMoveConcurrencyTest {
     userRepository.deleteAll();
     User user =
         userRepository.save(
-            User.register(SocialProvider.KAKAO, "move-" + UUID.randomUUID(), "move@test.com"));
+            User.register(
+                SocialProvider.KAKAO,
+                "move-" + UUID.randomUUID(),
+                "move@test.com",
+                "u" + UUID.randomUUID().toString().substring(0, 5)));
     userId = user.getId();
     spaceId = farmSpaceRepository.save(FarmSpace.create(userId, CardType.SEA)).getId();
   }

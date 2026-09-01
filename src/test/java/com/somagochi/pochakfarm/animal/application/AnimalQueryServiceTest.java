@@ -125,6 +125,105 @@ class AnimalQueryServiceTest {
   }
 
   @Test
+  void searchMyAnimalsMatchesNamePrefixWithinOwnAnimalsOfCardType() {
+    Animal animal = animal(30L, null, null);
+    Capture capture = capture(30L);
+    given(
+            animalRepository.searchOwnedAnimalsByName(
+                eq(1L),
+                eq(List.of(CardType.SEA)),
+                eq("\uc19c%"),
+                eq(Long.MAX_VALUE),
+                eq(Limit.of(13))))
+        .willReturn(List.of(animal));
+    given(captureRepository.findAllById(any())).willReturn(List.of(capture));
+
+    CursorPage<AnimalResponse> page = service.searchMyAnimals(1L, CardType.SEA, "\uc19c", null);
+
+    assertEquals(1, page.content().size());
+    assertEquals(30L, page.content().get(0).animalId());
+    assertFalse(page.hasNext());
+    assertNull(page.nextCursor());
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void searchMyAnimalsQueriesEveryCardTypeWhenTypeIsNotGiven() {
+    given(animalRepository.searchOwnedAnimalsByName(any(), any(), any(), any(), any()))
+        .willReturn(List.of());
+
+    service.searchMyAnimals(1L, null, "솜", null);
+
+    ArgumentCaptor<Collection<CardType>> captor = ArgumentCaptor.forClass(Collection.class);
+    verify(animalRepository)
+        .searchOwnedAnimalsByName(
+            eq(1L), captor.capture(), eq("솜%"), eq(Long.MAX_VALUE), eq(Limit.of(13)));
+    assertEquals(Set.of(CardType.values()), Set.copyOf(captor.getValue()));
+  }
+
+  @Test
+  void searchMyAnimalsTrimsKeywordAndEscapesLikeWildcards() {
+    given(animalRepository.searchOwnedAnimalsByName(any(), any(), any(), any(), any()))
+        .willReturn(List.of());
+
+    service.searchMyAnimals(1L, CardType.SEA, "  1_0%! ", null);
+
+    verify(animalRepository)
+        .searchOwnedAnimalsByName(
+            eq(1L),
+            eq(List.of(CardType.SEA)),
+            eq("1!_0!%!!%"),
+            eq(Long.MAX_VALUE),
+            eq(Limit.of(13)));
+  }
+
+  @Test
+  void searchMyAnimalsUsesCursorAndReturnsNextCursorWhenMoreExist() {
+    List<Animal> animals = new ArrayList<>();
+    List<Capture> captures = new ArrayList<>();
+    for (int i = 0; i < 13; i++) {
+      long id = 40L - i;
+      animals.add(animal(id, null, null));
+      captures.add(capture(id));
+    }
+    given(
+            animalRepository.searchOwnedAnimalsByName(
+                eq(1L), eq(List.of(CardType.SEA)), eq("\ub3d9%"), eq(50L), eq(Limit.of(13))))
+        .willReturn(animals);
+    given(captureRepository.findAllById(any())).willReturn(captures);
+
+    CursorPage<AnimalResponse> page = service.searchMyAnimals(1L, CardType.SEA, "\ub3d9", 50L);
+
+    assertEquals(12, page.content().size());
+    assertTrue(page.hasNext());
+    assertEquals(29L, page.nextCursor());
+  }
+
+  @Test
+  void searchMyAnimalsReturnsEmptyWhenNothingMatches() {
+    given(animalRepository.searchOwnedAnimalsByName(any(), any(), any(), any(), any()))
+        .willReturn(List.of());
+
+    CursorPage<AnimalResponse> page =
+        service.searchMyAnimals(1L, CardType.SEA, "\uc5c6\ub294\uc774\ub984", null);
+
+    assertTrue(page.content().isEmpty());
+    assertFalse(page.hasNext());
+    assertNull(page.nextCursor());
+    verifyNoInteractions(captureRepository);
+  }
+
+  @Test
+  void searchMyAnimalsThrowsWhenKeywordIsMissingOrBlank() {
+    assertThrows(
+        BusinessException.class, () -> service.searchMyAnimals(1L, CardType.SEA, null, null));
+    assertThrows(
+        BusinessException.class, () -> service.searchMyAnimals(1L, CardType.SEA, "   ", null));
+
+    verifyNoInteractions(animalRepository, captureRepository);
+  }
+
+  @Test
   void getByFloorRangeReturnsEmptyWithoutLoadingCapturesWhenNoAnimals() {
     given(animalRepository.findBySpaceIdAndFloorNumBetween(100L, 1, 4)).willReturn(List.of());
 

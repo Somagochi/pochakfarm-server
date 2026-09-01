@@ -56,6 +56,17 @@ public class AnimalController implements AnimalApiSpec {
   }
 
   @Override
+  @GetMapping("/search")
+  public ApiResponse<CursorPage<AnimalResponse>> searchMyAnimals(
+      @RequestParam(name = "type", required = false) CardType type,
+      @RequestParam(name = "keyword") String keyword,
+      @RequestParam(name = "cursor", required = false) Long cursor,
+      @AuthenticationPrincipal UserPrincipal principal) {
+    return ApiResponse.success(
+        animalQueryService.searchMyAnimals(principal.id(), type, keyword, cursor));
+  }
+
+  @Override
   @PatchMapping("/{animalId}/slot")
   public ApiResponse<AnimalSlotMoveResponse> moveSlot(
       @PathVariable Long animalId,

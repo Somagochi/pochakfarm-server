@@ -17,17 +17,40 @@ class UserTest {
 
   @Test
   void registerStartsAtLevelOneWithNoExperienceAndInitialCoins() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "포착이");
 
     assertEquals(1, user.getLevel());
     assertEquals(0, user.getExperience());
     assertEquals(1000, user.getCoins());
     assertTrue(user.isTermsAgreementRequired());
+    assertEquals("포착이", user.getNickname());
+  }
+
+  @Test
+  void registerRejectsNicknameLongerThanSixCharacters() {
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () ->
+                User.register(
+                    SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "일곱글자닉네임"));
+
+    assertEquals(ErrorCode.INVALID_NICKNAME.getCode(), exception.getCode());
+  }
+
+  @Test
+  void registerRejectsNullNickname() {
+    BusinessException exception =
+        assertThrows(
+            BusinessException.class,
+            () -> User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", null));
+
+    assertEquals(ErrorCode.INVALID_NICKNAME.getCode(), exception.getCode());
   }
 
   @Test
   void agreesToRequiredAndSelectedOptionalTerms() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "포착이");
     Instant agreedAt = Instant.parse("2026-08-04T01:02:03Z");
 
     user.agreeToTerms(true, true, true, false, true, agreedAt);
@@ -40,7 +63,7 @@ class UserTest {
 
   @Test
   void rejectsTermsAgreementWhenAnyRequiredConsentIsMissing() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "포착이");
 
     BusinessException exception =
         assertThrows(
@@ -57,7 +80,7 @@ class UserTest {
 
   @Test
   void rejectsTermsAgreementWhenRequiredConsentIsNull() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "포착이");
 
     BusinessException exception =
         assertThrows(
@@ -71,7 +94,7 @@ class UserTest {
 
   @Test
   void termsAgreementIsIdempotent() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "포착이");
     Instant firstAgreedAt = Instant.parse("2026-08-04T01:02:03Z");
     user.agreeToTerms(true, true, true, false, true, firstAgreedAt);
 
@@ -84,7 +107,7 @@ class UserTest {
 
   @Test
   void agreesToMarketingWhenCurrentlyNotAgreed() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "포착이");
     Instant initialAgreedAt = Instant.parse("2026-08-04T01:02:03Z");
     Instant marketingAgreedAt = Instant.parse("2026-08-05T01:02:03Z");
     user.agreeToTerms(true, true, true, false, false, initialAgreedAt);
@@ -96,7 +119,7 @@ class UserTest {
 
   @Test
   void keepsOriginalMarketingAgreementTimeWhenAlreadyAgreed() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "포착이");
     Instant firstAgreedAt = Instant.parse("2026-08-04T01:02:03Z");
     user.agreeToTerms(true, true, true, false, true, firstAgreedAt);
 
@@ -107,7 +130,7 @@ class UserTest {
 
   @Test
   void withdrawsMarketingAgreement() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "포착이");
     user.agreeToTerms(true, true, true, false, true, Instant.parse("2026-08-04T01:02:03Z"));
 
     user.updateMarketingAgreement(false, Instant.parse("2026-08-05T01:02:03Z"));
@@ -117,7 +140,7 @@ class UserTest {
 
   @Test
   void keepsMarketingAgreementEmptyWhenAlreadyNotAgreed() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "포착이");
     user.agreeToTerms(true, true, true, false, false, Instant.parse("2026-08-04T01:02:03Z"));
 
     user.updateMarketingAgreement(false, Instant.parse("2026-08-05T01:02:03Z"));
@@ -127,7 +150,7 @@ class UserTest {
 
   @Test
   void rejectsNullMarketingAgreement() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "포착이");
 
     BusinessException exception =
         assertThrows(
@@ -139,7 +162,7 @@ class UserTest {
 
   @Test
   void changeNicknameUpdatesTrimmedNickname() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "포착이");
 
     user.changeNickname("  포착이  ");
 
@@ -148,7 +171,7 @@ class UserTest {
 
   @Test
   void changeNicknameRejectsBlankNickname() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "포착이");
 
     BusinessException exception =
         assertThrows(BusinessException.class, () -> user.changeNickname("   "));
@@ -158,7 +181,7 @@ class UserTest {
 
   @Test
   void changeNicknameRejectsNullNickname() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "포착이");
 
     BusinessException exception =
         assertThrows(BusinessException.class, () -> user.changeNickname(null));
@@ -168,7 +191,7 @@ class UserTest {
 
   @Test
   void changeNicknameRejectsTooLongNickname() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "포착이");
 
     BusinessException exception =
         assertThrows(BusinessException.class, () -> user.changeNickname("a".repeat(21)));
@@ -178,7 +201,7 @@ class UserTest {
 
   @Test
   void gainsExperienceAndAppliesLevelReward() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "포착이");
 
     LevelReward reward = user.gainExperience(40, new LevelRewardPolicy());
 
@@ -191,7 +214,7 @@ class UserTest {
 
   @Test
   void spendsCoins() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "포착이");
 
     user.spendCoins(200);
 
@@ -200,7 +223,7 @@ class UserTest {
 
   @Test
   void rejectsSpendingCoinsWhenInsufficient() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "포착이");
 
     BusinessException exception =
         assertThrows(BusinessException.class, () -> user.spendCoins(1200));
@@ -211,7 +234,7 @@ class UserTest {
 
   @Test
   void withdrawMarksDeletedAndAnonymizesUniqueIdentifiers() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "포착이");
     user.changeNickname("포착이");
 
     user.withdraw(WithdrawalReason.INCONVENIENT);
@@ -229,7 +252,7 @@ class UserTest {
 
   @Test
   void withdrawIsIdempotent() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", "test123@test.com", "포착이");
 
     user.withdraw(WithdrawalReason.LOW_USAGE);
     String providerIdAfterFirst = user.getSocialAccount().getProviderId();
@@ -244,7 +267,7 @@ class UserTest {
 
   @Test
   void withdrawHandlesNullEmail() {
-    User user = User.register(SocialProvider.KAKAO, "provider-id-1", null);
+    User user = User.register(SocialProvider.KAKAO, "provider-id-1", null, "포착이");
 
     user.withdraw(null);
 

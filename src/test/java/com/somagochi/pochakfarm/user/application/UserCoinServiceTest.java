@@ -139,7 +139,7 @@ class UserCoinServiceTest {
   }
 
   private User user(long coins, LockModeType lockMode) {
-    User user = User.register(SocialProvider.KAKAO, "provider-id", "user@example.com");
+    User user = User.register(SocialProvider.KAKAO, "provider-id", "user@example.com", "포착이");
     setField(user, "id", USER_ID);
     setField(user, "coins", Coin.of(coins));
     given(entityManager.getLockMode(user)).willReturn(lockMode);
