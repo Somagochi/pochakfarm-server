@@ -67,7 +67,7 @@ class RedisOAuth2AuthorizationRequestRepositoryTest {
         repository.loadAuthorizationRequest(requestWithState(STATE));
 
     assertEquals(STATE, loaded.getState());
-    assertEquals("com.somagochi.pochakfarm.web", loaded.getClientId());
+    assertEquals("com.example.app.web", loaded.getClientId());
     assertEquals("https://api.example.com/api/auth/oauth2/code/apple", loaded.getRedirectUri());
     assertEquals("https://appleid.apple.com/auth/authorize", loaded.getAuthorizationUri());
     assertTrue(loaded.getScopes().contains("email"));
@@ -130,7 +130,7 @@ class RedisOAuth2AuthorizationRequestRepositoryTest {
   private static OAuth2AuthorizationRequest authorizationRequest() {
     return OAuth2AuthorizationRequest.authorizationCode()
         .authorizationUri("https://appleid.apple.com/auth/authorize")
-        .clientId("com.somagochi.pochakfarm.web")
+        .clientId("com.example.app.web")
         .redirectUri("https://api.example.com/api/auth/oauth2/code/apple")
         .scope("email")
         .state(STATE)

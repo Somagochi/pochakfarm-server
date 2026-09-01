@@ -8,6 +8,7 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.LocatorAdapter;
 import java.security.Key;
+import java.util.Collection;
 import java.util.Set;
 import org.springframework.stereotype.Component;
 
@@ -20,7 +21,8 @@ public class OidcVerifier {
     this.jwksProvider = jwksProvider;
   }
 
-  public Claims verify(String idToken, String issuer, String audience, String jwksUri) {
+  public Claims verify(
+      String idToken, String issuer, Collection<String> audiences, String jwksUri) {
     try {
       Claims claims =
           Jwts.parser()
@@ -29,16 +31,16 @@ public class OidcVerifier {
               .build()
               .parseSignedClaims(idToken)
               .getPayload();
-      validateAudience(claims, audience);
+      validateAudience(claims, audiences);
       return claims;
     } catch (JwtException | IllegalArgumentException exception) {
       throw new BusinessException(ErrorCode.INVALID_SOCIAL_TOKEN);
     }
   }
 
-  private void validateAudience(Claims claims, String audience) {
+  private void validateAudience(Claims claims, Collection<String> audiences) {
     Set<String> aud = claims.getAudience();
-    if (aud == null || !aud.contains(audience)) {
+    if (aud == null || audiences == null || audiences.stream().noneMatch(aud::contains)) {
       throw new BusinessException(ErrorCode.INVALID_SOCIAL_TOKEN);
     }
   }

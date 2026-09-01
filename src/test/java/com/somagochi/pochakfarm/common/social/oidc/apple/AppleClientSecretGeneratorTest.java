@@ -29,7 +29,7 @@ class AppleClientSecretGeneratorTest {
 
   private static final String TEAM_ID = "TEAM123456";
   private static final String KEY_ID = "KEY1234567";
-  private static final String CLIENT_ID = "com.somagochi.pochakfarm.web";
+  private static final String CLIENT_ID = "com.example.app.web";
 
   private static KeyPair keyPair;
 

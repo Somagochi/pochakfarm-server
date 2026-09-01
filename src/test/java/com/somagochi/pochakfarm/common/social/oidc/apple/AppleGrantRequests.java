@@ -12,7 +12,7 @@ final class AppleGrantRequests {
 
   static final String TOKEN_URI = "https://appleid.apple.com/auth/token";
   static final String REDIRECT_URI = "https://api.example.com/api/auth/oauth2/code/apple";
-  static final String CLIENT_ID = "com.somagochi.pochakfarm.web";
+  static final String CLIENT_ID = "com.example.app.web";
   static final String STATIC_CLIENT_SECRET = "static-placeholder-secret";
 
   private AppleGrantRequests() {}

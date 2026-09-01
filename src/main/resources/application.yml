@@ -32,6 +32,8 @@ spring:
       username: ${secret.data.redis.username}
       password: ${secret.data.redis.password}
       port: ${secret.data.redis.port}
+      timeout: ${secret.data.redis.timeout:2s}
+      connect-timeout: ${secret.data.redis.connect-timeout:3s}
       ssl:
         enabled: ${secret.data.redis.ssl.enabled}
   security:
@@ -138,7 +140,7 @@ app:
     apple:
       issuer: https://appleid.apple.com
       jwks-uri: https://appleid.apple.com/auth/keys
-      audience: ${secret.social.apple.audience}
+      audiences: ${secret.social.apple.audiences}
     oidc:
       jwks-cache:
         ttl: ${secret.social.oidc.jwks-cache.ttl}
