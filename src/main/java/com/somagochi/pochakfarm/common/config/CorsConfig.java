@@ -16,21 +16,36 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class CorsConfig {
 
   private static final String LOCAL_ORIGIN_PATTERN = "http://localhost:*";
+  private static final String APPLE_ORIGIN = "https://appleid.apple.com";
+  private static final String ALL_PATHS_PATTERN = "/**";
 
   @Bean
   public CorsConfigurationSource corsConfigurationSource(
       OAuth2LoginProperties oAuth2LoginProperties) {
-    CorsConfiguration corsConfiguration = new CorsConfiguration();
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration(
+        SecurityConfig.OAUTH2_REDIRECTION_BASE_URI, redirectionEndpointConfiguration());
+    source.registerCorsConfiguration(
+        ALL_PATHS_PATTERN, defaultConfiguration(oAuth2LoginProperties));
+    return source;
+  }
 
+  private CorsConfiguration redirectionEndpointConfiguration() {
+    CorsConfiguration corsConfiguration = new CorsConfiguration();
+    corsConfiguration.setAllowedOrigins(List.of(APPLE_ORIGIN));
+    corsConfiguration.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
+    corsConfiguration.addAllowedHeader("*");
+    return corsConfiguration;
+  }
+
+  private CorsConfiguration defaultConfiguration(OAuth2LoginProperties oAuth2LoginProperties) {
+    CorsConfiguration corsConfiguration = new CorsConfiguration();
     corsConfiguration.setAllowedOriginPatterns(allowedOriginPatterns(oAuth2LoginProperties));
     corsConfiguration.setAllowedMethods(
         List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     corsConfiguration.addAllowedHeader("*");
     corsConfiguration.setAllowCredentials(true);
-
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", corsConfiguration);
-    return source;
+    return corsConfiguration;
   }
 
   private List<String> allowedOriginPatterns(OAuth2LoginProperties oAuth2LoginProperties) {

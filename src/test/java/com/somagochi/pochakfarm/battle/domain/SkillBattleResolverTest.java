@@ -22,7 +22,13 @@ class SkillBattleResolverTest {
   private static final CardSkill GAMBLE = CardSkill.GROUND_PAW_STRIKE;
 
   private final BattlePolicy battlePolicy =
-      new BattlePolicy(new BattleProperties(Duration.ofMinutes(30), Duration.ofMinutes(30)));
+      new BattlePolicy(
+          new BattleProperties(
+              Duration.ofMinutes(30),
+              Duration.ofMinutes(30),
+              Duration.ofSeconds(30),
+              Duration.ofSeconds(3),
+              Duration.ofSeconds(1)));
 
   @Test
   void judgesUserAndNpcWithIndependentRandomValues() {

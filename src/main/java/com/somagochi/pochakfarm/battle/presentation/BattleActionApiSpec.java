@@ -2,6 +2,9 @@ package com.somagochi.pochakfarm.battle.presentation;
 
 import com.somagochi.pochakfarm.battle.dto.BattleActionRequest;
 import com.somagochi.pochakfarm.battle.dto.BattleActionResponse;
+import com.somagochi.pochakfarm.battle.dto.BattleFinalRoundResultRequest;
+import com.somagochi.pochakfarm.battle.dto.BattleFinalRoundResultResponse;
+import com.somagochi.pochakfarm.battle.dto.BattleFinalRoundStartResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleStateResponse;
 import com.somagochi.pochakfarm.common.exception.ErrorResponse;
 import com.somagochi.pochakfarm.common.response.ApiResponse;
@@ -92,4 +95,23 @@ public interface BattleActionApiSpec {
       description = "대전을 찾을 수 없음 (BATTLE_NOT_FOUND)",
       content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   ApiResponse<BattleStateResponse> getBattle(UserPrincipal principal, Long battleId);
+
+  @Operation(
+      summary = "최종 승부 시작",
+      description =
+          "9회 대전 후 동점 또는 1~2 승부 포인트 열세인 경기의 최종 승부를 시작한다. "
+              + "클라이언트가 연출 준비를 마친 후 호출하며, 최초 호출에서만 3초 입력 타이머를 시작한다. "
+              + "재호출해도 종료 시각은 연장되지 않으며, 최종 승부 대기 후 30초 이내에 시작하지 않으면 패배한다.")
+  @SecurityRequirement(name = "bearerAuth")
+  ApiResponse<BattleFinalRoundStartResponse> startFinalRound(
+      UserPrincipal principal, Long battleId);
+
+  @Operation(
+      summary = "최종 승부 결과 제출",
+      description =
+          "3초간 집계한 tapCount 를 제출하면 서버가 0~3 승부 포인트로 환산하고 최종 승패를 판정한다. "
+              + "입력 종료 후 통신 전송을 위한 1초 유예만 허용하며, 이후 요청은 시간 초과 패배로 처리한다.")
+  @SecurityRequirement(name = "bearerAuth")
+  ApiResponse<BattleFinalRoundResultResponse> submitFinalRound(
+      UserPrincipal principal, Long battleId, BattleFinalRoundResultRequest request);
 }

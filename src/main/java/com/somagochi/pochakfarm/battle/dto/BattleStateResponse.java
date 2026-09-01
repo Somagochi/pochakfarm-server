@@ -22,5 +22,7 @@ public record BattleStateResponse(
     @Schema(description = "다음 행동의 서버 기준 선택 마감 시각. 다음 행동이 없으면 null") Instant nextSelectionExpiresAt,
     @Schema(description = "현재 출전 중인 유저 동물") BattleEntryResponse userEntry,
     @Schema(description = "현재 출전 중인 관장 동물") BattleEntryResponse npcEntry,
+    @Schema(description = "최종 승부 진행 상태") BattleFinalRoundStateResponse finalRound,
+    @Schema(description = "종료된 대전의 보상·성장 결과. 진행 중이면 null") BattleRewardResponse reward,
     @Schema(description = "지금까지 발생한 중계 이벤트 전체")
         List<BattleBroadcastEventResponse> broadcastEvents) {}

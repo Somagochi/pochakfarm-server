@@ -16,9 +16,18 @@ class BattlePolicyTest {
 
   private static final Duration REST_DURATION = Duration.ofMinutes(30);
   private static final Duration ABANDON_THRESHOLD = Duration.ofMinutes(45);
+  private static final Duration FINAL_ROUND_START_TIMEOUT = Duration.ofSeconds(30);
+  private static final Duration FINAL_ROUND_DURATION = Duration.ofSeconds(3);
+  private static final Duration FINAL_ROUND_SUBMISSION_GRACE = Duration.ofSeconds(1);
 
   private final BattlePolicy battlePolicy =
-      new BattlePolicy(new BattleProperties(REST_DURATION, ABANDON_THRESHOLD));
+      new BattlePolicy(
+          new BattleProperties(
+              REST_DURATION,
+              ABANDON_THRESHOLD,
+              FINAL_ROUND_START_TIMEOUT,
+              FINAL_ROUND_DURATION,
+              FINAL_ROUND_SUBMISSION_GRACE));
 
   @Test
   void tierMoveDistanceFollowsStepDifference() {
@@ -130,19 +139,47 @@ class BattlePolicyTest {
   }
 
   @Test
-  void finalRoundMoveDistanceIsClampedAtTwo() {
-    assertEquals(0, battlePolicy.finalRoundMoveDistance(0));
-    assertEquals(0, battlePolicy.finalRoundMoveDistance(7));
-    assertEquals(1, battlePolicy.finalRoundMoveDistance(8));
-    assertEquals(1, battlePolicy.finalRoundMoveDistance(15));
-    assertEquals(2, battlePolicy.finalRoundMoveDistance(16));
-    assertEquals(2, battlePolicy.finalRoundMoveDistance(100));
+  void finalRoundPointsFollowTapCountBoundariesAndAreClampedAtThree() {
+    assertEquals(0, battlePolicy.finalRoundPoints(0));
+    assertEquals(0, battlePolicy.finalRoundPoints(4));
+    assertEquals(1, battlePolicy.finalRoundPoints(5));
+    assertEquals(1, battlePolicy.finalRoundPoints(11));
+    assertEquals(2, battlePolicy.finalRoundPoints(12));
+    assertEquals(2, battlePolicy.finalRoundPoints(19));
+    assertEquals(3, battlePolicy.finalRoundPoints(20));
+    assertEquals(3, battlePolicy.finalRoundPoints(100));
+  }
+
+  @Test
+  void finalRoundIsRequiredOnlyForTieOrUpToTwoPointDeficit() {
+    assertFalse(battlePolicy.requiresFinalRound(1));
+    assertTrue(battlePolicy.requiresFinalRound(0));
+    assertTrue(battlePolicy.requiresFinalRound(-1));
+    assertTrue(battlePolicy.requiresFinalRound(-2));
+    assertFalse(battlePolicy.requiresFinalRound(-3));
+  }
+
+  @Test
+  void gymLeaderRewardsFollowChallengeOrder() {
+    long[] expectedCoins = {300, 500, 700, 1_000, 1_500, 2_000, 2_500, 3_000};
+    long[] expectedExperience = {20, 30, 50, 75, 100, 140, 180, 220};
+
+    for (int challengeOrder = 1; challengeOrder <= 8; challengeOrder++) {
+      assertEquals(
+          expectedCoins[challengeOrder - 1], battlePolicy.gymLeaderCoinReward(challengeOrder));
+      assertEquals(
+          expectedExperience[challengeOrder - 1],
+          battlePolicy.gymLeaderExperienceReward(challengeOrder));
+    }
   }
 
   @Test
   void exposesDurationsFromConfiguration() {
     assertEquals(REST_DURATION, battlePolicy.restDuration());
     assertEquals(ABANDON_THRESHOLD, battlePolicy.abandonThreshold());
+    assertEquals(FINAL_ROUND_START_TIMEOUT, battlePolicy.finalRoundStartTimeout());
+    assertEquals(FINAL_ROUND_DURATION, battlePolicy.finalRoundDuration());
+    assertEquals(FINAL_ROUND_SUBMISSION_GRACE, battlePolicy.finalRoundSubmissionGrace());
   }
 
   @Test

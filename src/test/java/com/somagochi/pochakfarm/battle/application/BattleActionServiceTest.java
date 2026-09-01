@@ -66,6 +66,7 @@ class BattleActionServiceTest {
 
   @MockitoBean private RandomProvider randomProvider;
   @MockitoBean private Clock clock;
+  @MockitoBean private BattleRewardService battleRewardService;
 
   private Instant now;
 
@@ -103,9 +104,41 @@ class BattleActionServiceTest {
     assertEquals(4, firstActionOfSecondEntry.barPosition());
     assertEquals(3, lastAction.entryOrder());
     assertEquals(9, lastAction.barPosition());
-    assertEquals(BattleStatus.IN_PROGRESS, lastAction.battleStatus());
+    assertEquals(BattleStatus.FINISHED, lastAction.battleStatus());
+    assertEquals(BattleResult.WIN, lastAction.battleResult());
     assertNull(lastAction.nextActionSeq());
     assertEquals(BattlePolicy.TOTAL_ACTION_COUNT, battleActionRepository.countByBattleId(battleId));
+  }
+
+  @Test
+  void preparesFinalRoundOnlyForTieOrUpToTwoPointDeficit() {
+    for (int barPosition = 0; barPosition >= -2; barPosition--) {
+      Long battleId = fixture().barPosition(barPosition).start(USER_ID, STARTED_AT).getId();
+      failBothSides();
+
+      BattleActionResponse response = playAllActions(battleId);
+      var battle = battleRepository.findById(battleId).orElseThrow();
+
+      assertEquals(BattleStatus.IN_PROGRESS, response.battleStatus());
+      assertNull(response.battleResult());
+      assertEquals(STARTED_AT, battle.getFinalReadyAt());
+    }
+  }
+
+  @Test
+  void finishesImmediatelyAfterNinthActionWhenUserLeadsOrTrailsByThree() {
+    Long winningBattleId = fixture().barPosition(1).start(USER_ID, STARTED_AT).getId();
+    failBothSides();
+    BattleActionResponse winning = playAllActions(winningBattleId);
+
+    Long losingBattleId = fixture().barPosition(-3).start(USER_ID, STARTED_AT).getId();
+    failBothSides();
+    BattleActionResponse losing = playAllActions(losingBattleId);
+
+    assertEquals(BattleResult.WIN, winning.battleResult());
+    assertEquals(BattleResult.LOSE, losing.battleResult());
+    assertEquals(BattleStatus.FINISHED, winning.battleStatus());
+    assertEquals(BattleStatus.FINISHED, losing.battleStatus());
   }
 
   @Test
@@ -140,6 +173,24 @@ class BattleActionServiceTest {
     assertEquals(first.broadcastEvents(), retried.broadcastEvents());
     assertEquals(1, battleActionRepository.countByBattleId(battleId));
     verify(randomProvider, times(2)).nextInt(PERCENTAGE_BOUND);
+  }
+
+  @Test
+  void replaysNinthActionPositionBeforeFinalRoundResult() {
+    Long battleId = fixture().barPosition(-2).start(USER_ID, STARTED_AT).getId();
+    failBothSides();
+    BattleActionResponse ninthAction = playAllActions(battleId);
+    var battle = battleRepository.findById(battleId).orElseThrow();
+    battle.startFinalRound(STARTED_AT.plusSeconds(3));
+    battle.applyFinalRound(20, 3, 1);
+    battle.finish(BattleResult.WIN, STARTED_AT.plusSeconds(3));
+    battleRepository.save(battle);
+
+    BattleActionResponse replayed =
+        select(battleId, BattlePolicy.TOTAL_ACTION_COUNT, USER_GAMBLE_SKILL);
+
+    assertEquals(-2, ninthAction.barPosition());
+    assertEquals(ninthAction.barPosition(), replayed.barPosition());
   }
 
   @Test
@@ -275,6 +326,18 @@ class BattleActionServiceTest {
     AtomicInteger callCount = new AtomicInteger();
     given(randomProvider.nextInt(PERCENTAGE_BOUND))
         .willAnswer(invocation -> callCount.getAndIncrement() % 2 == 0 ? 0 : PERCENTAGE_BOUND - 1);
+  }
+
+  private void failBothSides() {
+    given(randomProvider.nextInt(PERCENTAGE_BOUND)).willReturn(PERCENTAGE_BOUND - 1);
+  }
+
+  private BattleActionResponse playAllActions(Long battleId) {
+    BattleActionResponse response = null;
+    for (int actionSeq = 1; actionSeq <= BattlePolicy.TOTAL_ACTION_COUNT; actionSeq++) {
+      response = select(battleId, actionSeq, USER_STABLE_SKILL);
+    }
+    return response;
   }
 
   private void randomValues(int... values) {

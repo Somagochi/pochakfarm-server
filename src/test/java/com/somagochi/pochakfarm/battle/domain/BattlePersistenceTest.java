@@ -34,7 +34,7 @@ class BattlePersistenceTest {
                 .createNativeQuery(
                     """
                     SELECT status, result, started_at, ended_at, bar_position,
-                           last_action_at, final_expires_at, final_tap_count, final_move_distance
+                           last_action_at, final_ready_at, final_expires_at, final_tap_count, final_points
                     FROM battles
                     WHERE id = :id
                     """)
@@ -49,6 +49,7 @@ class BattlePersistenceTest {
     assertNull(row[6]);
     assertNull(row[7]);
     assertNull(row[8]);
+    assertNull(row[9]);
   }
 
   @Test
