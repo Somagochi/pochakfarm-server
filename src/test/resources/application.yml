@@ -27,7 +27,7 @@ app:
     apple:
       issuer: https://appleid.apple.com
       jwks-uri: https://appleid.apple.com/auth/keys
-      audience: com.somagochi.pochakfarm
+      audiences: com.example.app,com.example.app.web
     oidc:
       jwks-cache:
         ttl: 6h

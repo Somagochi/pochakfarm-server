@@ -140,7 +140,7 @@ app:
     apple:
       issuer: https://appleid.apple.com
       jwks-uri: https://appleid.apple.com/auth/keys
-      audience: ${secret.social.apple.audience}
+      audiences: ${secret.social.apple.audiences}
     oidc:
       jwks-cache:
         ttl: ${secret.social.oidc.jwks-cache.ttl}

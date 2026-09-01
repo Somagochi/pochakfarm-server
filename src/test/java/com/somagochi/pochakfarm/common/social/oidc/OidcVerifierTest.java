@@ -15,13 +15,16 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class OidcVerifierTest {
 
   private static final String ISSUER = "https://appleid.apple.com";
-  private static final String AUDIENCE = "com.somagochi.pochakfarm";
+  private static final String APP_AUDIENCE = "com.example.app";
+  private static final String WEB_AUDIENCE = "com.example.app.web";
+  private static final List<String> AUDIENCES = List.of(APP_AUDIENCE, WEB_AUDIENCE);
   private static final String JWKS_URI = "https://appleid.apple.com/auth/keys";
   private static final String KID = "test-kid";
   private static final String SUBJECT = "apple-user-123";
@@ -43,10 +46,11 @@ class OidcVerifierTest {
   }
 
   @Test
-  void returnsClaimsForValidToken() {
-    String token = token(ISSUER, AUDIENCE, Instant.now().plusSeconds(300), keyPair.getPrivate());
+  void returnsClaimsForAppAudience() {
+    String token =
+        token(ISSUER, APP_AUDIENCE, Instant.now().plusSeconds(300), keyPair.getPrivate());
 
-    Claims claims = oidcVerifier.verify(token, ISSUER, AUDIENCE, JWKS_URI);
+    Claims claims = oidcVerifier.verify(token, ISSUER, AUDIENCES, JWKS_URI);
 
     assertEquals(SUBJECT, claims.getSubject());
     assertEquals(EMAIL, claims.get("email", String.class));
@@ -54,11 +58,21 @@ class OidcVerifierTest {
   }
 
   @Test
+  void returnsClaimsForWebAudience() {
+    String token =
+        token(ISSUER, WEB_AUDIENCE, Instant.now().plusSeconds(300), keyPair.getPrivate());
+
+    Claims claims = oidcVerifier.verify(token, ISSUER, AUDIENCES, JWKS_URI);
+
+    assertEquals(SUBJECT, claims.getSubject());
+  }
+
+  @Test
   void throwsWhenIssuerDoesNotMatch() {
     String token =
         token(
             "https://evil.example.com",
-            AUDIENCE,
+            APP_AUDIENCE,
             Instant.now().plusSeconds(300),
             keyPair.getPrivate());
 
@@ -75,7 +89,8 @@ class OidcVerifierTest {
 
   @Test
   void throwsWhenTokenExpired() {
-    String token = token(ISSUER, AUDIENCE, Instant.now().minusSeconds(60), keyPair.getPrivate());
+    String token =
+        token(ISSUER, APP_AUDIENCE, Instant.now().minusSeconds(60), keyPair.getPrivate());
 
     assertInvalidSocialToken(token);
   }
@@ -84,7 +99,7 @@ class OidcVerifierTest {
   void throwsWhenSignatureDoesNotMatchJwksKey() {
     // 토큰은 다른 개인키로 서명했지만 JwksProvider는 원래 공개키를 돌려준다 → 서명 불일치
     String token =
-        token(ISSUER, AUDIENCE, Instant.now().plusSeconds(300), otherKeyPair.getPrivate());
+        token(ISSUER, APP_AUDIENCE, Instant.now().plusSeconds(300), otherKeyPair.getPrivate());
 
     assertInvalidSocialToken(token);
   }
@@ -97,7 +112,7 @@ class OidcVerifierTest {
   private void assertInvalidSocialToken(String token) {
     BusinessException exception =
         assertThrows(
-            BusinessException.class, () -> oidcVerifier.verify(token, ISSUER, AUDIENCE, JWKS_URI));
+            BusinessException.class, () -> oidcVerifier.verify(token, ISSUER, AUDIENCES, JWKS_URI));
 
     assertEquals(ErrorCode.INVALID_SOCIAL_TOKEN.getCode(), exception.getCode());
   }
