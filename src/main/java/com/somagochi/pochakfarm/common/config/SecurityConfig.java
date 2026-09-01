@@ -31,6 +31,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+  public static final String OAUTH2_REDIRECTION_BASE_URI = "/api/auth/oauth2/code/*";
+
   private static final String[] PUBLIC_GET_ENDPOINTS = {
     "/actuator/health",
     "/actuator/health/**",
@@ -103,7 +105,7 @@ public class SecurityConfig {
                                   authorizationRequestResolver.getObject())
                               .authorizationRequestRepository(
                                   authorizationRequestRepository.getObject()))
-                  .redirectionEndpoint(endpoint -> endpoint.baseUri("/api/auth/oauth2/code/*"))
+                  .redirectionEndpoint(endpoint -> endpoint.baseUri(OAUTH2_REDIRECTION_BASE_URI))
                   .tokenEndpoint(
                       endpoint ->
                           endpoint.accessTokenResponseClient(accessTokenResponseClient.getObject()))
