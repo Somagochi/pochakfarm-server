@@ -32,6 +32,8 @@ spring:
       username: ${secret.data.redis.username}
       password: ${secret.data.redis.password}
       port: ${secret.data.redis.port}
+      timeout: ${secret.data.redis.timeout:2s}
+      connect-timeout: ${secret.data.redis.connect-timeout:3s}
       ssl:
         enabled: ${secret.data.redis.ssl.enabled}
   security:
