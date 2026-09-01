@@ -119,6 +119,8 @@ public class BattleFixtures {
   }
 
   public void cleanUp() {
+    jdbcTemplate.update("delete from gym_leader_clears");
+    jdbcTemplate.update("delete from coin_histories");
     jdbcTemplate.update("delete from battle_entries");
     jdbcTemplate.update("delete from battles");
     jdbcTemplate.update("delete from gym_leader_animals");

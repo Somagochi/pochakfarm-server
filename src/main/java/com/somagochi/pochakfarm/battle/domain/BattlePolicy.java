@@ -22,12 +22,18 @@ public class BattlePolicy {
   public static final int TIER_STEP_FOR_MAX_MOVE_DISTANCE = 3;
   public static final int TYPE_ADVANTAGE_MOVE_DISTANCE = 1;
 
-  public static final int FINAL_ROUND_ONE_MOVE_TAP_COUNT = 8;
-  public static final int FINAL_ROUND_TWO_MOVE_TAP_COUNT = 16;
-  public static final int MAX_FINAL_ROUND_MOVE_DISTANCE = 2;
+  public static final int FINAL_ROUND_ONE_POINT_TAP_COUNT = 5;
+  public static final int FINAL_ROUND_TWO_POINT_TAP_COUNT = 12;
+  public static final int FINAL_ROUND_THREE_POINT_TAP_COUNT = 20;
+  public static final int MAX_FINAL_ROUND_POINTS = 3;
+  public static final int MAX_FINAL_ROUND_DEFICIT = 2;
 
   private static final Map<Integer, Integer> REQUIRED_LEVELS =
       Map.of(1, 1, 2, 3, 3, 7, 4, 12, 5, 18, 6, 25, 7, 32, 8, 40);
+  private static final Map<Integer, Long> GYM_LEADER_COIN_REWARDS =
+      Map.of(1, 300L, 2, 500L, 3, 700L, 4, 1_000L, 5, 1_500L, 6, 2_000L, 7, 2_500L, 8, 3_000L);
+  private static final Map<Integer, Long> GYM_LEADER_EXPERIENCE_REWARDS =
+      Map.of(1, 20L, 2, 30L, 3, 50L, 4, 75L, 5, 100L, 6, 140L, 7, 180L, 8, 220L);
   private static final Map<CardType, CardType> TYPE_ADVANTAGES =
       Map.of(
           CardType.SPACE, CardType.SKY,
@@ -92,11 +98,18 @@ public class BattlePolicy {
     return SKILL_TRIGGER_PERCENTAGES.get(battleType);
   }
 
-  public int finalRoundMoveDistance(int tapCount) {
-    if (tapCount >= FINAL_ROUND_TWO_MOVE_TAP_COUNT) {
-      return MAX_FINAL_ROUND_MOVE_DISTANCE;
+  public int finalRoundPoints(int tapCount) {
+    if (tapCount >= FINAL_ROUND_THREE_POINT_TAP_COUNT) {
+      return MAX_FINAL_ROUND_POINTS;
     }
-    return tapCount >= FINAL_ROUND_ONE_MOVE_TAP_COUNT ? 1 : 0;
+    if (tapCount >= FINAL_ROUND_TWO_POINT_TAP_COUNT) {
+      return 2;
+    }
+    return tapCount >= FINAL_ROUND_ONE_POINT_TAP_COUNT ? 1 : 0;
+  }
+
+  public boolean requiresFinalRound(int barPosition) {
+    return barPosition <= INITIAL_BAR_POSITION && barPosition >= -MAX_FINAL_ROUND_DEFICIT;
   }
 
   public int requiredLevel(int challengeOrder) {
@@ -107,11 +120,39 @@ public class BattlePolicy {
     return requiredLevel;
   }
 
+  public long gymLeaderCoinReward(int challengeOrder) {
+    return rewardFor(GYM_LEADER_COIN_REWARDS, challengeOrder);
+  }
+
+  public long gymLeaderExperienceReward(int challengeOrder) {
+    return rewardFor(GYM_LEADER_EXPERIENCE_REWARDS, challengeOrder);
+  }
+
+  private long rewardFor(Map<Integer, Long> rewards, int challengeOrder) {
+    Long reward = rewards.get(challengeOrder);
+    if (reward == null) {
+      throw new IllegalArgumentException("Challenge order is out of range: " + challengeOrder);
+    }
+    return reward;
+  }
+
   public Duration restDuration() {
     return battleProperties.restDuration();
   }
 
   public Duration abandonThreshold() {
     return battleProperties.abandonThreshold();
+  }
+
+  public Duration finalRoundStartTimeout() {
+    return battleProperties.finalRoundStartTimeout();
+  }
+
+  public Duration finalRoundDuration() {
+    return battleProperties.finalRoundDuration();
+  }
+
+  public Duration finalRoundSubmissionGrace() {
+    return battleProperties.finalRoundSubmissionGrace();
   }
 }

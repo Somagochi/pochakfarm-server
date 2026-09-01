@@ -16,7 +16,13 @@ class NpcSkillSelectorTest {
 
   private final NpcSkillSelector npcSkillSelector =
       new NpcSkillSelector(
-          new BattlePolicy(new BattleProperties(Duration.ofMinutes(30), Duration.ofMinutes(30))));
+          new BattlePolicy(
+              new BattleProperties(
+                  Duration.ofMinutes(30),
+                  Duration.ofMinutes(30),
+                  Duration.ofSeconds(30),
+                  Duration.ofSeconds(3),
+                  Duration.ofSeconds(1))));
 
   @Test
   void picksHigherTriggerPercentageSkillWhenNpcIsAhead() {

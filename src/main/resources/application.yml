@@ -158,6 +158,9 @@ app:
   battle:
     rest-duration: ${secret.battle.rest-duration:PT30M}
     abandon-threshold: ${secret.battle.abandon-threshold:PT30M}
+    final-round-start-timeout: ${secret.battle.final-round-start-timeout:PT30S}
+    final-round-duration: ${secret.battle.final-round-duration:PT3S}
+    final-round-submission-grace: ${secret.battle.final-round-submission-grace:PT1S}
   coupon:
     pre-registration:
       enabled: ${secret.coupon.pre-registration.enabled:true}

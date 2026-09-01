@@ -117,19 +117,44 @@ class BattleTest {
   @Test
   void finalRoundRecordsExpiryAndResult() {
     Battle battle = battle();
+    Instant finalReadyAt = STARTED_AT.plusSeconds(5);
     Instant finalExpiresAt = STARTED_AT.plusSeconds(10);
 
-    battle.enterFinalRound(finalExpiresAt);
+    battle.prepareFinalRound(finalReadyAt);
+    battle.startFinalRound(finalExpiresAt);
 
+    assertEquals(finalReadyAt, battle.getFinalReadyAt());
     assertEquals(finalExpiresAt, battle.getFinalExpiresAt());
-    assertFalse(battle.isFinalRoundExpired(finalExpiresAt.minusSeconds(1)));
-    assertTrue(battle.isFinalRoundExpired(finalExpiresAt));
+    assertFalse(
+        battle.isFinalRoundSubmissionExpired(
+            finalExpiresAt.plusMillis(999), Duration.ofSeconds(1)));
+    assertFalse(
+        battle.isFinalRoundSubmissionExpired(finalExpiresAt.plusSeconds(1), Duration.ofSeconds(1)));
+    assertTrue(
+        battle.isFinalRoundSubmissionExpired(
+            finalExpiresAt.plusSeconds(1).plusNanos(1), Duration.ofSeconds(1)));
 
     battle.applyFinalRound(14, 1, 3);
 
     assertEquals(14, battle.getFinalTapCount());
-    assertEquals(1, battle.getFinalMoveDistance());
+    assertEquals(1, battle.getFinalPoints());
     assertEquals(3, battle.getBarPosition());
+  }
+
+  @Test
+  void finalRoundStartIsIdempotentAndReadyStateExpiresAtThirtySeconds() {
+    Battle battle = battle();
+    Instant readyAt = STARTED_AT.plusSeconds(1);
+    Instant expiresAt = readyAt.plusSeconds(10);
+    battle.prepareFinalRound(readyAt);
+
+    assertFalse(battle.isFinalRoundStartExpired(readyAt.plusSeconds(29), Duration.ofSeconds(30)));
+    assertTrue(battle.isFinalRoundStartExpired(readyAt.plusSeconds(30), Duration.ofSeconds(30)));
+
+    battle.startFinalRound(expiresAt);
+    battle.startFinalRound(expiresAt.plusSeconds(10));
+
+    assertEquals(expiresAt, battle.getFinalExpiresAt());
   }
 
   @Test

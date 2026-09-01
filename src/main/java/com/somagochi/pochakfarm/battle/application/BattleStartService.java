@@ -49,6 +49,7 @@ public class BattleStartService {
   private final AnimalQueryService animalQueryService;
   private final AnimalRestService animalRestService;
   private final BattlePolicy battlePolicy;
+  private final BattleFinalRoundService battleFinalRoundService;
   private final FileStorage fileStorage;
 
   @Transactional
@@ -142,6 +143,11 @@ public class BattleStartService {
         .findFirstByUserIdAndStatusOrderByStartedAtDesc(userId, BattleStatus.IN_PROGRESS)
         .ifPresent(
             battle -> {
+              battleFinalRoundService.finishWhenTimedOut(battle, now);
+              if (!battle.isInProgress()) {
+                battleRepository.saveAndFlush(battle);
+                return;
+              }
               if (battle.isExpiredAt(now, battlePolicy.abandonThreshold())) {
                 battle.abandon(now);
                 battleRepository.saveAndFlush(battle);

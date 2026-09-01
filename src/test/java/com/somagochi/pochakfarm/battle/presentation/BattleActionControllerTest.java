@@ -8,9 +8,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.somagochi.pochakfarm.battle.application.BattleActionService;
+import com.somagochi.pochakfarm.battle.application.BattleFinalRoundService;
 import com.somagochi.pochakfarm.battle.application.BattleStateQueryService;
 import com.somagochi.pochakfarm.battle.domain.BattleEventCode;
 import com.somagochi.pochakfarm.battle.domain.BattlePolicy;
+import com.somagochi.pochakfarm.battle.domain.BattleResult;
 import com.somagochi.pochakfarm.battle.domain.BattleSide;
 import com.somagochi.pochakfarm.battle.domain.BattleStatus;
 import com.somagochi.pochakfarm.battle.domain.SkillActivationStatus;
@@ -19,6 +21,10 @@ import com.somagochi.pochakfarm.battle.dto.BattleActionResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleBroadcastEventResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleEntryResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleEntrySkillResponse;
+import com.somagochi.pochakfarm.battle.dto.BattleFinalRoundResultRequest;
+import com.somagochi.pochakfarm.battle.dto.BattleFinalRoundResultResponse;
+import com.somagochi.pochakfarm.battle.dto.BattleFinalRoundStartResponse;
+import com.somagochi.pochakfarm.battle.dto.BattleFinalRoundStateResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleSkillOutcomeResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleStateResponse;
 import com.somagochi.pochakfarm.capture.domain.Tier;
@@ -71,6 +77,8 @@ class BattleActionControllerTest {
   @MockitoBean private BattleActionService battleActionService;
 
   @MockitoBean private BattleStateQueryService battleStateQueryService;
+
+  @MockitoBean private BattleFinalRoundService battleFinalRoundService;
 
   @Test
   void returnsResolutionOfSelectedSkill() throws Exception {
@@ -182,6 +190,55 @@ class BattleActionControllerTest {
   }
 
   @Test
+  void startsFinalRoundAfterClientAnimationIsReady() throws Exception {
+    BattleFinalRoundStateResponse finalRound =
+        new BattleFinalRoundStateResponse(
+            true,
+            true,
+            EXPIRES_AT.plusSeconds(27),
+            EXPIRES_AT,
+            EXPIRES_AT.plusSeconds(1),
+            null,
+            null);
+    given(battleFinalRoundService.start(USER_ID, BATTLE_ID))
+        .willReturn(
+            new BattleFinalRoundStartResponse(
+                BATTLE_ID, BattleStatus.IN_PROGRESS, null, finalRound, null));
+
+    mockMvc
+        .perform(
+            post("/api/battles/{battleId}/final-round/start", BATTLE_ID)
+                .with(authentication(userAuthentication())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.finalRound.required").value(true))
+        .andExpect(jsonPath("$.data.finalRound.started").value(true))
+        .andExpect(jsonPath("$.data.finalRound.inputExpiresAt").exists())
+        .andExpect(jsonPath("$.data.finalRound.submissionExpiresAt").exists());
+  }
+
+  @Test
+  void submitsTapCountAndReturnsFinalResult() throws Exception {
+    BattleFinalRoundStateResponse finalRound =
+        new BattleFinalRoundStateResponse(
+            true, true, EXPIRES_AT.plusSeconds(27), EXPIRES_AT, EXPIRES_AT.plusSeconds(1), 20, 3);
+    given(battleFinalRoundService.submit(USER_ID, BATTLE_ID, new BattleFinalRoundResultRequest(20)))
+        .willReturn(
+            new BattleFinalRoundResultResponse(
+                BATTLE_ID, BattleStatus.FINISHED, BattleResult.WIN, 1, finalRound, null));
+
+    mockMvc
+        .perform(
+            post("/api/battles/{battleId}/final-round/result", BATTLE_ID)
+                .with(authentication(userAuthentication()))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"tapCount\":20}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.battleResult").value("WIN"))
+        .andExpect(jsonPath("$.data.finalRound.tapCount").value(20))
+        .andExpect(jsonPath("$.data.finalRound.point").value(3));
+  }
+
+  @Test
   void returnsUnauthorizedWithoutAuthentication() throws Exception {
     mockMvc.perform(get("/api/battles/{battleId}", BATTLE_ID)).andExpect(status().isUnauthorized());
   }
@@ -212,6 +269,8 @@ class BattleActionControllerTest {
         null,
         2,
         EXPIRES_AT,
+        noFinalRound(),
+        null,
         List.of(battlePointAppliedEvent()));
   }
 
@@ -236,6 +295,8 @@ class BattleActionControllerTest {
         null,
         2,
         EXPIRES_AT,
+        noFinalRound(),
+        null,
         List.of());
   }
 
@@ -268,7 +329,13 @@ class BattleActionControllerTest {
                     30,
                     3))),
         new BattleEntryResponse(BattleSide.NPC, 2, null, "관장2", CardType.SPACE, Tier.B, null),
+        noFinalRound(),
+        null,
         List.of(battlePointAppliedEvent()));
+  }
+
+  private static BattleFinalRoundStateResponse noFinalRound() {
+    return new BattleFinalRoundStateResponse(false, false, null, null, null, null, null);
   }
 
   private static BattleBroadcastEventResponse battlePointAppliedEvent() {

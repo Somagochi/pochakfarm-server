@@ -21,6 +21,7 @@ import com.somagochi.pochakfarm.battle.domain.SkillBattleResolver;
 import com.somagochi.pochakfarm.battle.dto.BattleActionRequest;
 import com.somagochi.pochakfarm.battle.dto.BattleActionResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleBroadcastEventResponse;
+import com.somagochi.pochakfarm.battle.dto.BattleFinalRoundStateResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleSkillOutcomeResponse;
 import com.somagochi.pochakfarm.battle.infrastructure.persistence.BattleActionRepository;
 import com.somagochi.pochakfarm.battle.infrastructure.persistence.BattleBroadcastEventRepository;
@@ -49,6 +50,8 @@ public class BattleActionService {
   private final BattleBroadcastEventGenerator battleBroadcastEventGenerator;
   private final SkillBattleResolver skillBattleResolver;
   private final NpcSkillSelector npcSkillSelector;
+  private final BattlePolicy battlePolicy;
+  private final BattleRewardService battleRewardService;
   private final BattleActionPolicy battleActionPolicy;
   private final Clock clock;
 
@@ -61,6 +64,8 @@ public class BattleActionService {
       BattleBroadcastEventGenerator battleBroadcastEventGenerator,
       SkillBattleResolver skillBattleResolver,
       NpcSkillSelector npcSkillSelector,
+      BattlePolicy battlePolicy,
+      BattleRewardService battleRewardService,
       BattleActionPolicy battleActionPolicy,
       Clock clock) {
     this.battleRepository = battleRepository;
@@ -71,6 +76,8 @@ public class BattleActionService {
     this.battleBroadcastEventGenerator = battleBroadcastEventGenerator;
     this.skillBattleResolver = skillBattleResolver;
     this.npcSkillSelector = npcSkillSelector;
+    this.battlePolicy = battlePolicy;
+    this.battleRewardService = battleRewardService;
     this.battleActionPolicy = battleActionPolicy;
     this.clock = clock;
   }
@@ -131,7 +138,9 @@ public class BattleActionService {
 
     battle.applyAction(position.value(), now);
     if (position.isTerminal()) {
-      battle.finish(resultOf(position), now);
+      finish(battle, resultOf(position), now);
+    } else if (actionSeq == BattlePolicy.TOTAL_ACTION_COUNT) {
+      completeActions(battle, position, now);
     }
     List<BattleBroadcastEvent> events =
         battleBroadcastEventRepository.saveAll(eventLog.recordedEvents());
@@ -154,7 +163,7 @@ public class BattleActionService {
     return battleActionRepository
         .findByBattleIdAndActionSeq(action.getBattleId(), action.getActionSeq() + 1)
         .map(BattleAction::getBarPositionBefore)
-        .orElseGet(battle::getBarPosition);
+        .orElseGet(action::getBarPositionAfter);
   }
 
   private BattleActionResponse toResponse(
@@ -182,6 +191,8 @@ public class BattleActionService {
         nextActionSeq == null
             ? null
             : battleActionPolicy.selectionExpiresAt(battle.lastProgressAt()),
+        BattleFinalRoundStateResponse.from(battle, battlePolicy),
+        battle.isInProgress() ? null : battleRewardService.findResult(battle),
         BattleBroadcastEventResponse.from(events));
   }
 
@@ -242,6 +253,24 @@ public class BattleActionService {
 
   private BattleResult resultOf(BattlePosition position) {
     return position.value() == BattlePolicy.MAX_BAR_POSITION ? BattleResult.WIN : BattleResult.LOSE;
+  }
+
+  private void completeActions(Battle battle, BattlePosition position, Instant now) {
+    if (battlePolicy.requiresFinalRound(position.value())) {
+      battle.prepareFinalRound(now);
+      return;
+    }
+    finish(
+        battle,
+        position.value() > BattlePolicy.INITIAL_BAR_POSITION ? BattleResult.WIN : BattleResult.LOSE,
+        now);
+  }
+
+  private void finish(Battle battle, BattleResult result, Instant now) {
+    battle.finish(result, now);
+    if (result == BattleResult.WIN) {
+      battleRewardService.grantFirstClear(battle);
+    }
   }
 
   private Integer remainingActionSeq(Battle battle) {
