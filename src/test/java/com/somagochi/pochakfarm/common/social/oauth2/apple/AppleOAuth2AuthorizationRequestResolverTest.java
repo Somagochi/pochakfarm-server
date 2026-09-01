@@ -41,7 +41,7 @@ class AppleOAuth2AuthorizationRequestResolverTest {
     assertTrue(uri.startsWith("https://appleid.apple.com/auth/authorize?"), uri);
     assertEquals(1, countOf(uri, "response_type=code"));
     assertEquals(1, countOf(uri, "response_mode=form_post"));
-    assertTrue(uri.contains("client_id=com.somagochi.pochakfarm.web"), uri);
+    assertTrue(uri.contains("client_id=com.example.app.web"), uri);
     assertTrue(uri.contains("scope=email"), uri);
     assertTrue(uri.contains("state="), uri);
   }
@@ -70,7 +70,7 @@ class AppleOAuth2AuthorizationRequestResolverTest {
 
   private static ClientRegistration registration(String registrationId) {
     return ClientRegistration.withRegistrationId(registrationId)
-        .clientId("com.somagochi.pochakfarm.web")
+        .clientId("com.example.app.web")
         .clientSecret("client-secret")
         .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
         .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)

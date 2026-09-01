@@ -18,7 +18,14 @@ public class AppleSocialLoginClient implements SocialLoginClient {
 
   public AppleSocialLoginClient(OidcVerifier oidcVerifier, AppleProperties appleProperties) {
     this.oidcVerifier = oidcVerifier;
-    this.appleProperties = appleProperties;
+    this.appleProperties = requireAudiencesConfigured(appleProperties);
+  }
+
+  private AppleProperties requireAudiencesConfigured(AppleProperties appleProperties) {
+    if (appleProperties.audiences() == null || appleProperties.audiences().isEmpty()) {
+      throw new IllegalArgumentException("app.social.apple.audiences must be configured");
+    }
+    return appleProperties;
   }
 
   @Override
@@ -30,7 +37,10 @@ public class AppleSocialLoginClient implements SocialLoginClient {
   public SocialUserInfo authenticate(String token) {
     Claims claims =
         oidcVerifier.verify(
-            token, appleProperties.issuer(), appleProperties.audience(), appleProperties.jwksUri());
+            token,
+            appleProperties.issuer(),
+            appleProperties.audiences(),
+            appleProperties.jwksUri());
     String subject = claims.getSubject();
     if (subject == null) {
       throw new BusinessException(ErrorCode.SOCIAL_USER_INFO_FAILED);
