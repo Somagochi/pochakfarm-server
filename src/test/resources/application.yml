@@ -35,6 +35,9 @@ app:
   battle:
     rest-duration: PT30M
     abandon-threshold: PT30M
+    final-round-start-timeout: PT30S
+    final-round-duration: PT3S
+    final-round-submission-grace: PT1S
   storage:
     s3:
       bucket: test-bucket

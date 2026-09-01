@@ -23,5 +23,7 @@ public record BattleActionResponse(
     @Schema(description = "대전 결과. 진행 중이면 null", example = "WIN") BattleResult battleResult,
     @Schema(description = "다음 행동 순번. 더 진행할 행동이 없으면 null", example = "4") Integer nextActionSeq,
     @Schema(description = "다음 행동의 서버 기준 선택 마감 시각. 다음 행동이 없으면 null") Instant nextSelectionExpiresAt,
+    @Schema(description = "최종 승부 진행 상태") BattleFinalRoundStateResponse finalRound,
+    @Schema(description = "대전이 종료되었을 때의 보상·성장 결과. 진행 중이면 null") BattleRewardResponse reward,
     @Schema(description = "이번 행동에서 발생한 중계 이벤트 목록")
         List<BattleBroadcastEventResponse> broadcastEvents) {}

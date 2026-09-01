@@ -2,6 +2,7 @@ package com.somagochi.pochakfarm.battle.application;
 
 import com.somagochi.pochakfarm.battle.domain.Battle;
 import com.somagochi.pochakfarm.battle.domain.BattleEntry;
+import com.somagochi.pochakfarm.battle.domain.BattlePolicy;
 import com.somagochi.pochakfarm.battle.domain.GymLeader;
 import com.somagochi.pochakfarm.battle.domain.GymLeaderAnimal;
 import com.somagochi.pochakfarm.battle.infrastructure.persistence.BattleEntryRepository;
@@ -38,6 +39,8 @@ final class BattleFixture {
   private CardSkill userSkill2 = USER_GAMBLE_SKILL;
   private CardSkill npcSkill1 = NPC_STABLE_SKILL;
   private CardSkill npcSkill2 = NPC_GAMBLE_SKILL;
+  private int barPosition;
+  private Integer challengeOrder;
 
   BattleFixture(
       BattleRepository battleRepository,
@@ -74,11 +77,25 @@ final class BattleFixture {
     return this;
   }
 
+  BattleFixture barPosition(int barPosition) {
+    this.barPosition = barPosition;
+    return this;
+  }
+
+  BattleFixture challengeOrder(int challengeOrder) {
+    this.challengeOrder = challengeOrder;
+    return this;
+  }
+
   Battle start(Long userId, Instant startedAt) {
     GymLeader gymLeader = gymLeaderRepository.save(gymLeader());
     Battle battle =
         battleRepository.save(
             Battle.start(userId, gymLeader.getId(), UUID.randomUUID().toString(), startedAt));
+    if (barPosition != BattlePolicy.INITIAL_BAR_POSITION) {
+      battle.applyAction(barPosition, startedAt);
+      battleRepository.save(battle);
+    }
     for (int orderNo = 1; orderNo <= BattleEntry.ENTRY_COUNT; orderNo++) {
       battleEntryRepository.save(
           BattleEntry.ofUser(
@@ -110,10 +127,13 @@ final class BattleFixture {
   }
 
   private GymLeader gymLeader() {
-    int challengeOrder =
-        CHALLENGE_ORDER.updateAndGet(
-            previous -> previous >= GymLeader.LAST_CHALLENGE_ORDER ? 1 : previous + 1);
+    int resolvedChallengeOrder =
+        challengeOrder == null
+            ? CHALLENGE_ORDER.updateAndGet(
+                previous -> previous >= GymLeader.LAST_CHALLENGE_ORDER ? 1 : previous + 1)
+            : challengeOrder;
     String unique = UUID.randomUUID().toString();
-    return GymLeader.create("leader-" + unique, "관장", challengeOrder, "badge-" + unique, null);
+    return GymLeader.create(
+        "leader-" + unique, "관장", resolvedChallengeOrder, "badge-" + unique, null);
   }
 }

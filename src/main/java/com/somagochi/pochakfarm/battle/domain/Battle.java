@@ -61,14 +61,17 @@ public class Battle extends BaseEntity {
   @Column(name = "last_action_at")
   private Instant lastActionAt;
 
+  @Column(name = "final_ready_at")
+  private Instant finalReadyAt;
+
   @Column(name = "final_expires_at")
   private Instant finalExpiresAt;
 
   @Column(name = "final_tap_count")
   private Integer finalTapCount;
 
-  @Column(name = "final_move_distance")
-  private Integer finalMoveDistance;
+  @Column(name = "final_points")
+  private Integer finalPoints;
 
   @Column(name = "ended_at")
   private Instant endedAt;
@@ -109,19 +112,44 @@ public class Battle extends BaseEntity {
     this.lastActionAt = Objects.requireNonNull(actionAt);
   }
 
-  public void enterFinalRound(Instant finalExpiresAt) {
+  public void prepareFinalRound(Instant finalReadyAt) {
     requireInProgress();
-    this.finalExpiresAt = Objects.requireNonNull(finalExpiresAt);
+    this.finalReadyAt = Objects.requireNonNull(finalReadyAt);
   }
 
-  public boolean isFinalRoundExpired(Instant now) {
-    return finalExpiresAt != null && !finalExpiresAt.isAfter(now);
+  public boolean isFinalRoundReady() {
+    return isInProgress() && finalReadyAt != null && finalExpiresAt == null;
   }
 
-  public void applyFinalRound(int finalTapCount, int finalMoveDistance, int barPosition) {
+  public boolean isFinalRoundStartExpired(Instant now, Duration timeout) {
+    return isFinalRoundReady() && !finalReadyAt.plus(timeout).isAfter(now);
+  }
+
+  public void startFinalRound(Instant finalExpiresAt) {
     requireInProgress();
+    if (finalReadyAt == null) {
+      throw new IllegalStateException("Battle final round is not ready");
+    }
+    if (this.finalExpiresAt == null) {
+      this.finalExpiresAt = Objects.requireNonNull(finalExpiresAt);
+    }
+  }
+
+  public boolean isFinalRoundStarted() {
+    return finalExpiresAt != null;
+  }
+
+  public boolean isFinalRoundSubmissionExpired(Instant now, Duration submissionGrace) {
+    return finalExpiresAt != null && finalExpiresAt.plus(submissionGrace).isBefore(now);
+  }
+
+  public void applyFinalRound(int finalTapCount, int finalPoints, int barPosition) {
+    requireInProgress();
+    if (finalExpiresAt == null) {
+      throw new IllegalStateException("Battle final round is not started");
+    }
     this.finalTapCount = finalTapCount;
-    this.finalMoveDistance = finalMoveDistance;
+    this.finalPoints = finalPoints;
     this.barPosition = barPosition;
   }
 

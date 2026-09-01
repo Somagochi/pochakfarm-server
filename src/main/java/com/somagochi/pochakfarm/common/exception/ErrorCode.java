@@ -91,6 +91,10 @@ public enum ErrorCode {
       409, "BATTLE_ACTION_SEQUENCE_MISMATCH", "Battle action sequence mismatch"),
   BATTLE_ACTION_CONFLICT(409, "BATTLE_ACTION_CONFLICT", "Battle action request conflict"),
   BATTLE_FINAL_ROUND_EXPIRED(409, "BATTLE_FINAL_ROUND_EXPIRED", "Battle final round expired"),
+  BATTLE_FINAL_ROUND_NOT_READY(
+      409, "BATTLE_FINAL_ROUND_NOT_READY", "Battle final round is not ready"),
+  BATTLE_FINAL_ROUND_NOT_STARTED(
+      409, "BATTLE_FINAL_ROUND_NOT_STARTED", "Battle final round is not started"),
   BATTLE_ACTION_SELECTION_CLOSED(
       409, "BATTLE_ACTION_SELECTION_CLOSED", "Battle action selection is closed"),
   GYM_LEADER_NOT_FOUND(404, "GYM_LEADER_NOT_FOUND", "Gym leader not found"),

@@ -16,5 +16,8 @@ class BattlePolicyConfigurationTest {
   void bindsBattleDurationsFromConfiguration() {
     assertEquals(Duration.ofMinutes(30), battlePolicy.restDuration());
     assertEquals(Duration.ofMinutes(30), battlePolicy.abandonThreshold());
+    assertEquals(Duration.ofSeconds(30), battlePolicy.finalRoundStartTimeout());
+    assertEquals(Duration.ofSeconds(3), battlePolicy.finalRoundDuration());
+    assertEquals(Duration.ofSeconds(1), battlePolicy.finalRoundSubmissionGrace());
   }
 }

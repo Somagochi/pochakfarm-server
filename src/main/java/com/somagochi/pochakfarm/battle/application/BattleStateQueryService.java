@@ -8,6 +8,7 @@ import com.somagochi.pochakfarm.battle.domain.BattlePolicy;
 import com.somagochi.pochakfarm.battle.domain.BattleSide;
 import com.somagochi.pochakfarm.battle.dto.BattleBroadcastEventResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleEntryResponse;
+import com.somagochi.pochakfarm.battle.dto.BattleFinalRoundStateResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleStateResponse;
 import com.somagochi.pochakfarm.battle.infrastructure.persistence.BattleActionRepository;
 import com.somagochi.pochakfarm.battle.infrastructure.persistence.BattleBroadcastEventRepository;
@@ -15,6 +16,8 @@ import com.somagochi.pochakfarm.battle.infrastructure.persistence.BattleEntryRep
 import com.somagochi.pochakfarm.battle.infrastructure.persistence.BattleRepository;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
+import java.time.Clock;
+import java.time.Instant;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +30,9 @@ public class BattleStateQueryService {
   private final BattleBroadcastEventRepository battleBroadcastEventRepository;
   private final BattlePolicy battlePolicy;
   private final BattleActionPolicy battleActionPolicy;
+  private final BattleFinalRoundService battleFinalRoundService;
+  private final BattleRewardService battleRewardService;
+  private final Clock clock;
 
   public BattleStateQueryService(
       BattleRepository battleRepository,
@@ -34,24 +40,32 @@ public class BattleStateQueryService {
       BattleActionRepository battleActionRepository,
       BattleBroadcastEventRepository battleBroadcastEventRepository,
       BattlePolicy battlePolicy,
-      BattleActionPolicy battleActionPolicy) {
+      BattleActionPolicy battleActionPolicy,
+      BattleFinalRoundService battleFinalRoundService,
+      BattleRewardService battleRewardService,
+      Clock clock) {
     this.battleRepository = battleRepository;
     this.battleEntryRepository = battleEntryRepository;
     this.battleActionRepository = battleActionRepository;
     this.battleBroadcastEventRepository = battleBroadcastEventRepository;
     this.battlePolicy = battlePolicy;
     this.battleActionPolicy = battleActionPolicy;
+    this.battleFinalRoundService = battleFinalRoundService;
+    this.battleRewardService = battleRewardService;
+    this.clock = clock;
   }
 
-  @Transactional(readOnly = true)
+  @Transactional
   public BattleStateResponse getBattle(Long userId, Long battleId) {
     Battle battle =
         battleRepository
-            .findById(battleId)
+            .findByIdForUpdate(battleId)
             .orElseThrow(() -> new BusinessException(ErrorCode.BATTLE_NOT_FOUND));
     if (!battle.isOwnedBy(userId)) {
       throw new BusinessException(ErrorCode.FORBIDDEN_BATTLE_ACCESS);
     }
+    Instant now = clock.instant();
+    battleFinalRoundService.finishWhenTimedOut(battle, now);
 
     int completedActionCount = battleActionRepository.countByBattleId(battleId);
     Integer nextActionSeq = nextActionSeq(battle, completedActionCount);
@@ -76,6 +90,8 @@ public class BattleStateQueryService {
             : battleActionPolicy.selectionExpiresAt(battle.lastProgressAt()),
         BattleEntryResponse.from(entry(battleId, BattleSide.USER, currentEntryOrder), battlePolicy),
         BattleEntryResponse.from(entry(battleId, BattleSide.NPC, currentEntryOrder), battlePolicy),
+        BattleFinalRoundStateResponse.from(battle, battlePolicy),
+        battle.isInProgress() ? null : battleRewardService.findResult(battle),
         BattleBroadcastEventResponse.from(
             battleBroadcastEventRepository.findByBattleIdOrderByEventSeqAsc(battleId)));
   }
