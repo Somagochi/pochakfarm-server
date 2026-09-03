@@ -23,11 +23,11 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-  private static final String BAD_REQUEST_MESSAGE = "Invalid request";
-  private static final String UNAUTHORIZED_MESSAGE = "Authentication is required";
-  private static final String FORBIDDEN_MESSAGE = "Access is denied";
-  private static final String NOT_FOUND_MESSAGE = "Resource not found";
-  private static final String INTERNAL_SERVER_ERROR_MESSAGE = "Unexpected server error";
+  private static final String BAD_REQUEST_MESSAGE = "잘못된 요청입니다.";
+  private static final String UNAUTHORIZED_MESSAGE = "로그인이 필요합니다.";
+  private static final String FORBIDDEN_MESSAGE = "접근 권한이 없습니다.";
+  private static final String NOT_FOUND_MESSAGE = "요청한 리소스를 찾을 수 없습니다.";
+  private static final String INTERNAL_SERVER_ERROR_MESSAGE = "서버 오류가 발생했습니다.";
 
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException exception) {
@@ -59,7 +59,7 @@ public class GlobalExceptionHandler {
     return buildResponse(
         ErrorCode.INVALID_PARAMETER.getStatus(),
         ErrorCode.INVALID_PARAMETER.getCode(),
-        exception.getParameterName() + " is required");
+        exception.getParameterName() + "은(는) 필수 값입니다.");
   }
 
   @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -136,9 +136,9 @@ public class GlobalExceptionHandler {
           Arrays.stream(requiredType.getEnumConstants())
               .map(constant -> ((Enum<?>) constant).name())
               .collect(Collectors.joining(", "));
-      return exception.getName() + " must be one of [" + allowed + "]";
+      return exception.getName() + "은(는) [" + allowed + "] 중 하나여야 합니다.";
     }
-    return exception.getName() + " has an invalid value";
+    return exception.getName() + "의 값이 올바르지 않습니다.";
   }
 
   private void logByStatus(int status, Exception e) {

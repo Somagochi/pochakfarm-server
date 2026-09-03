@@ -1,6 +1,7 @@
 -- NPC 관장 마스터 데이터 시드 (관장 8명, 관장 동물 24마리, 관장 뱃지 8종)
 -- 편성 근거: SOMA-206 확정표 / .ai/planning/SOMA-206-npc-gym-leaders.md
--- 실행 순서: battle-init-schema.sql -> battle-progress-schema.sql -> badges -> gym_leaders -> gym_leader_animals
+-- 실행 순서: battle-init-schema.sql -> battle-progress-schema.sql -> gym-leader-thumbnail-schema.sql
+--            -> badges -> gym_leaders -> gym_leader_animals
 -- code 는 마이그레이션/운영 스크립트의 식별자이므로 한 번 배포되면 절대 변경하지 않는다.
 --   관장: GYM + 3자리 일련번호 / 뱃지: BDG + 3자리 일련번호 (achievement-seed.sql 의 BDG005 다음 번호)
 -- badges.code / gym_leaders.code 는 유니크 제약이 있어 재실행 시 에러로 중단된다.

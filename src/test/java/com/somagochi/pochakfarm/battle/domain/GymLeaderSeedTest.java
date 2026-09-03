@@ -66,6 +66,7 @@ class GymLeaderSeedTest {
       assertEquals("GYM%03d".formatted(index + 1), leader.getCode());
       assertEquals(index + 1, leader.getChallengeOrder());
       assertEquals("BDG%03d".formatted(index + 6), leader.getBadgeCode());
+      assertNull(leader.getThumbnailKey());
       assertNull(leader.getImageKey());
     }
     assertEquals("두더", leaders.get(0).getName());

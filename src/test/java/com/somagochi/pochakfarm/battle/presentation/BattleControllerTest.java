@@ -19,6 +19,7 @@ import com.somagochi.pochakfarm.battle.dto.BattleStartResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleUserEntryResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderAnimalResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderDetailResponse;
+import com.somagochi.pochakfarm.battle.dto.GymLeaderProfileResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderUnlockResponse;
 import com.somagochi.pochakfarm.capture.domain.Tier;
@@ -72,19 +73,41 @@ class BattleControllerTest {
   @MockitoBean private BattleStartService battleStartService;
 
   @Test
-  void returnsGymLeadersWithSeparatedUnlockConditions() throws Exception {
+  void returnsGymLeaderListWithThumbnailAndUnlockedOnly() throws Exception {
     given(gymLeaderQueryService.getGymLeaders(USER_ID))
-        .willReturn(List.of(gymLeaderResponse(false, true, "BDG008", false)));
+        .willReturn(
+            List.of(new GymLeaderResponse(4L, "노바", 4, "https://cdn/thumb.png", false, false)));
 
     mockMvc
         .perform(get("/api/battles/gym-leaders").with(authentication(userAuthentication())))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data[0].gymLeaderId").value(4))
-        .andExpect(jsonPath("$.data[0].unlock.unlocked").value(false))
-        .andExpect(jsonPath("$.data[0].unlock.requiredLevel").value(12))
-        .andExpect(jsonPath("$.data[0].unlock.levelSatisfied").value(true))
-        .andExpect(jsonPath("$.data[0].unlock.previousBadgeCode").value("BDG008"))
-        .andExpect(jsonPath("$.data[0].unlock.previousBadgeSatisfied").value(false));
+        .andExpect(jsonPath("$.data[0].thumbnailUrl").value("https://cdn/thumb.png"))
+        .andExpect(jsonPath("$.data[0].cleared").value(false))
+        .andExpect(jsonPath("$.data[0].unlocked").value(false))
+        .andExpect(jsonPath("$.data[0].code").doesNotExist())
+        .andExpect(jsonPath("$.data[0].badgeCode").doesNotExist())
+        .andExpect(jsonPath("$.data[0].imageUrl").doesNotExist())
+        .andExpect(jsonPath("$.data[0].unlock").doesNotExist());
+  }
+
+  @Test
+  void returnsSeparatedUnlockConditionsInDetailResponse() throws Exception {
+    given(gymLeaderQueryService.getGymLeader(USER_ID, 4L))
+        .willReturn(
+            new GymLeaderDetailResponse(
+                gymLeaderProfileResponse(false, true, "BDG008", false), List.of()));
+
+    mockMvc
+        .perform(get("/api/battles/gym-leaders/4").with(authentication(userAuthentication())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.gymLeader.gymLeaderId").value(4))
+        .andExpect(jsonPath("$.data.gymLeader.imageUrl").value("https://cdn/image.png"))
+        .andExpect(jsonPath("$.data.gymLeader.unlock.unlocked").value(false))
+        .andExpect(jsonPath("$.data.gymLeader.unlock.requiredLevel").value(12))
+        .andExpect(jsonPath("$.data.gymLeader.unlock.levelSatisfied").value(true))
+        .andExpect(jsonPath("$.data.gymLeader.unlock.previousBadgeCode").value("BDG008"))
+        .andExpect(jsonPath("$.data.gymLeader.unlock.previousBadgeSatisfied").value(false));
   }
 
   @Test
@@ -92,7 +115,7 @@ class BattleControllerTest {
     given(gymLeaderQueryService.getGymLeader(USER_ID, 4L))
         .willReturn(
             new GymLeaderDetailResponse(
-                gymLeaderResponse(true, true, "BDG008", true),
+                gymLeaderProfileResponse(true, true, "BDG008", true),
                 List.of(new GymLeaderAnimalResponse(1, "별콩", CardType.SPACE, Tier.B, null))));
 
     mockMvc
@@ -180,14 +203,14 @@ class BattleControllerTest {
         .andExpect(jsonPath("$.code").value("GYM_LEADER_LOCKED"));
   }
 
-  private static GymLeaderResponse gymLeaderResponse(
+  private static GymLeaderProfileResponse gymLeaderProfileResponse(
       boolean unlocked, boolean levelSatisfied, String previousBadgeCode, boolean badgeSatisfied) {
-    return new GymLeaderResponse(
+    return new GymLeaderProfileResponse(
         4L,
         "GYM004",
         "노바",
         4,
-        null,
+        "https://cdn/image.png",
         "BDG009",
         false,
         new GymLeaderUnlockResponse(

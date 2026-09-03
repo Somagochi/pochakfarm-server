@@ -7,6 +7,7 @@ import com.somagochi.pochakfarm.battle.domain.GymLeaderUnlock;
 import com.somagochi.pochakfarm.battle.domain.GymLeaderUnlockResolver;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderAnimalResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderDetailResponse;
+import com.somagochi.pochakfarm.battle.dto.GymLeaderProfileResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderUnlockResponse;
 import com.somagochi.pochakfarm.battle.infrastructure.persistence.GymLeaderAnimalRepository;
@@ -41,7 +42,7 @@ public class GymLeaderQueryService {
     return gymLeaders.stream()
         .map(
             gymLeader ->
-                toResponse(
+                toListResponse(
                     gymLeader, previousOf(gymLeaders, gymLeader), userLevel, ownedBadgeCodes))
         .toList();
   }
@@ -58,7 +59,7 @@ public class GymLeaderQueryService {
             .toList();
 
     return new GymLeaderDetailResponse(
-        toResponse(gymLeader, findPrevious(gymLeader), userLevel, ownedBadgeCodes), animals);
+        toProfileResponse(gymLeader, findPrevious(gymLeader), userLevel, ownedBadgeCodes), animals);
   }
 
   @Transactional(readOnly = true)
@@ -91,7 +92,7 @@ public class GymLeaderQueryService {
     return index <= 0 ? null : gymLeaders.get(index - 1);
   }
 
-  private GymLeaderResponse toResponse(
+  private GymLeaderResponse toListResponse(
       GymLeader gymLeader,
       GymLeader previousGymLeader,
       int userLevel,
@@ -99,6 +100,22 @@ public class GymLeaderQueryService {
     GymLeaderUnlock unlock =
         gymLeaderUnlockResolver.resolve(gymLeader, previousGymLeader, userLevel, ownedBadgeCodes);
     return new GymLeaderResponse(
+        gymLeader.getId(),
+        gymLeader.getName(),
+        gymLeader.getChallengeOrder(),
+        buildUrlOrNull(gymLeader.getThumbnailKey()),
+        ownedBadgeCodes.contains(gymLeader.getBadgeCode()),
+        unlock.isUnlocked());
+  }
+
+  private GymLeaderProfileResponse toProfileResponse(
+      GymLeader gymLeader,
+      GymLeader previousGymLeader,
+      int userLevel,
+      Set<String> ownedBadgeCodes) {
+    GymLeaderUnlock unlock =
+        gymLeaderUnlockResolver.resolve(gymLeader, previousGymLeader, userLevel, ownedBadgeCodes);
+    return new GymLeaderProfileResponse(
         gymLeader.getId(),
         gymLeader.getCode(),
         gymLeader.getName(),

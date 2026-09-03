@@ -22,9 +22,8 @@ public interface BattleApiSpec {
       summary = "관장 목록 조회",
       description =
           "NPC 관장 8명을 도전 순서 오름차순으로 조회한다. "
-              + "관장에는 도전 쿨타임이 없지만 순차 해금 잠금은 있으므로, 관장별 해금 여부와 "
-              + "요구 레벨·직전 관장 뱃지 두 조건의 충족 여부를 각각 내려준다. "
-              + "관장 동물의 스킬 정보는 대전 전에 공개하지 않는다.")
+              + "목록에는 썸네일과 클리어·해금 여부만 내려주고, "
+              + "관장 코드·뱃지 코드·해금 조건 상세와 관장 동물은 관장 상세 API 로 조회한다.")
   @SecurityRequirement(name = "bearerAuth")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -37,6 +36,7 @@ public interface BattleApiSpec {
       summary = "관장 상세 조회",
       description =
           "관장 1명과 관장 동물 3마리를 조회한다. "
+              + "관장은 원본 이미지와 함께 요구 레벨·직전 관장 뱃지 두 해금 조건의 충족 여부를 각각 내려준다. "
               + "관장 동물은 이미지·이름·출전 순서·티어·타입만 공개하고 "
               + "스킬, 전투 유형, 발동 확률, 승부 포인트는 응답에 포함하지 않는다.")
   @SecurityRequirement(name = "bearerAuth")

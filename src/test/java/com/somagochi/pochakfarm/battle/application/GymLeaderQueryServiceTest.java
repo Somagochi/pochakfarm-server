@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.somagochi.pochakfarm.battle.domain.BattlePolicy;
 import com.somagochi.pochakfarm.battle.domain.GymLeader;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderDetailResponse;
+import com.somagochi.pochakfarm.battle.dto.GymLeaderProfileResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderResponse;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
@@ -41,25 +42,27 @@ class GymLeaderQueryServiceTest {
 
   @Test
   void unlocksFirstGymLeaderWithoutAnyCondition() {
-    GymLeaderResponse response = gymLeaderQueryService.getGymLeaders(userId).get(0);
+    GymLeaderProfileResponse profile = gymLeaderProfileOf(first);
 
-    assertTrue(response.unlock().unlocked());
-    assertEquals(1, response.unlock().requiredLevel());
-    assertTrue(response.unlock().levelSatisfied());
-    assertNull(response.unlock().previousBadgeCode());
-    assertTrue(response.unlock().previousBadgeSatisfied());
+    assertTrue(profile.unlock().unlocked());
+    assertEquals(1, profile.unlock().requiredLevel());
+    assertTrue(profile.unlock().levelSatisfied());
+    assertNull(profile.unlock().previousBadgeCode());
+    assertTrue(profile.unlock().previousBadgeSatisfied());
+    assertTrue(gymLeaderResponseOf(first).unlocked());
   }
 
   @Test
   void reportsMissingPreviousBadgeSeparatelyFromLevel() {
     fixtures.changeLevel(userId, 40);
 
-    GymLeaderResponse response = gymLeaderResponseOf(second);
+    GymLeaderProfileResponse profile = gymLeaderProfileOf(second);
 
-    assertFalse(response.unlock().unlocked());
-    assertTrue(response.unlock().levelSatisfied());
-    assertEquals(first.getBadgeCode(), response.unlock().previousBadgeCode());
-    assertFalse(response.unlock().previousBadgeSatisfied());
+    assertFalse(profile.unlock().unlocked());
+    assertTrue(profile.unlock().levelSatisfied());
+    assertEquals(first.getBadgeCode(), profile.unlock().previousBadgeCode());
+    assertFalse(profile.unlock().previousBadgeSatisfied());
+    assertFalse(gymLeaderResponseOf(second).unlocked());
   }
 
   @Test
@@ -67,12 +70,12 @@ class GymLeaderQueryServiceTest {
     fixtures.grantBadge(userId, first.getBadgeCode());
     fixtures.changeLevel(userId, 1);
 
-    GymLeaderResponse response = gymLeaderResponseOf(second);
+    GymLeaderProfileResponse profile = gymLeaderProfileOf(second);
 
-    assertFalse(response.unlock().unlocked());
-    assertFalse(response.unlock().levelSatisfied());
-    assertEquals(3, response.unlock().requiredLevel());
-    assertTrue(response.unlock().previousBadgeSatisfied());
+    assertFalse(profile.unlock().unlocked());
+    assertFalse(profile.unlock().levelSatisfied());
+    assertEquals(3, profile.unlock().requiredLevel());
+    assertTrue(profile.unlock().previousBadgeSatisfied());
   }
 
   @Test
@@ -80,7 +83,31 @@ class GymLeaderQueryServiceTest {
     fixtures.grantBadge(userId, first.getBadgeCode());
     fixtures.changeLevel(userId, 3);
 
-    assertTrue(gymLeaderResponseOf(second).unlock().unlocked());
+    assertTrue(gymLeaderProfileOf(second).unlock().unlocked());
+    assertTrue(gymLeaderResponseOf(second).unlocked());
+  }
+
+  @Test
+  void exposesThumbnailInListAndImageInDetail() {
+    fixtures.changeGymLeaderImages(
+        first.getId(), "public/gym-leader-thumbnail/a.png", "public/gym-leader/a.png");
+
+    assertTrue(
+        gymLeaderResponseOf(first).thumbnailUrl().endsWith("public/gym-leader-thumbnail/a.png"));
+    assertTrue(gymLeaderProfileOf(first).imageUrl().endsWith("public/gym-leader/a.png"));
+  }
+
+  @Test
+  void omitsDetailFieldsFromListResponse() {
+    List<String> componentNames =
+        List.of(GymLeaderResponse.class.getRecordComponents()).stream()
+            .map(java.lang.reflect.RecordComponent::getName)
+            .toList();
+
+    assertFalse(componentNames.contains("code"));
+    assertFalse(componentNames.contains("badgeCode"));
+    assertFalse(componentNames.contains("imageUrl"));
+    assertFalse(componentNames.contains("unlock"));
   }
 
   @Test
@@ -114,5 +141,9 @@ class GymLeaderQueryServiceTest {
         .filter(response -> response.gymLeaderId().equals(gymLeader.getId()))
         .findFirst()
         .orElseThrow();
+  }
+
+  private GymLeaderProfileResponse gymLeaderProfileOf(GymLeader gymLeader) {
+    return gymLeaderQueryService.getGymLeader(userId, gymLeader.getId()).gymLeader();
   }
 }

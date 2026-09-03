@@ -4,6 +4,7 @@ public enum DevelopAssetTarget {
   ACHIEVEMENT("achievement"),
   BADGE("badge"),
   GYM_LEADER("gym-leader"),
+  GYM_LEADER_THUMBNAIL("gym-leader-thumbnail"),
   GYM_LEADER_ANIMAL("gym-leader-animal");
 
   private final String purpose;

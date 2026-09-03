@@ -82,6 +82,14 @@ public class BattleFixtures {
     return animalRepository.saveAndFlush(Animal.create(capture.getId(), space.getId(), 0, 0));
   }
 
+  public void changeGymLeaderImages(Long gymLeaderId, String thumbnailKey, String imageKey) {
+    jdbcTemplate.update(
+        "update gym_leaders set thumbnail_key = ?, image_key = ? where id = ?",
+        thumbnailKey,
+        imageKey,
+        gymLeaderId);
+  }
+
   public void markResting(Long animalId, Instant restEndsAt) {
     jdbcTemplate.update("update animals set rest_ends_at = ? where id = ?", restEndsAt, animalId);
   }
@@ -97,6 +105,7 @@ public class BattleFixtures {
                 "관장" + challengeOrder,
                 challengeOrder,
                 badgeCode,
+                null,
                 null));
     for (int orderNo = 1; orderNo <= animalCount; orderNo++) {
       gymLeaderAnimalRepository.saveAndFlush(

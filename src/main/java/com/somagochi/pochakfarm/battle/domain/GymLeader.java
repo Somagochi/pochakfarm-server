@@ -53,21 +53,39 @@ public class GymLeader extends BaseEntity {
   @Column(name = "badge_code", nullable = false, length = 64)
   private String badgeCode;
 
+  @Column(name = "thumbnail_key")
+  private String thumbnailKey;
+
   @Column(name = "image_key")
   private String imageKey;
 
   private GymLeader(
-      String code, String name, Integer challengeOrder, String badgeCode, String imageKey) {
+      String code,
+      String name,
+      Integer challengeOrder,
+      String badgeCode,
+      String thumbnailKey,
+      String imageKey) {
     this.code = Objects.requireNonNull(code);
     this.name = Objects.requireNonNull(name);
     this.challengeOrder = validateChallengeOrder(challengeOrder);
     this.badgeCode = Objects.requireNonNull(badgeCode);
+    this.thumbnailKey = thumbnailKey;
     this.imageKey = imageKey;
   }
 
   public static GymLeader create(
-      String code, String name, Integer challengeOrder, String badgeCode, String imageKey) {
-    return new GymLeader(code, name, challengeOrder, badgeCode, imageKey);
+      String code,
+      String name,
+      Integer challengeOrder,
+      String badgeCode,
+      String thumbnailKey,
+      String imageKey) {
+    return new GymLeader(code, name, challengeOrder, badgeCode, thumbnailKey, imageKey);
+  }
+
+  public void changeThumbnailKey(String thumbnailKey) {
+    this.thumbnailKey = thumbnailKey;
   }
 
   public void changeImageKey(String imageKey) {

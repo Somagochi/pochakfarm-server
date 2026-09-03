@@ -26,7 +26,7 @@ class GlobalExceptionHandlerTest {
     assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     assertEquals(400, response.getBody().status());
     assertEquals("BAD_REQUEST", response.getBody().code());
-    assertEquals("Invalid request", response.getBody().message());
+    assertEquals("잘못된 요청입니다.", response.getBody().message());
   }
 
   @Test
@@ -40,7 +40,7 @@ class GlobalExceptionHandlerTest {
     assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
     assertEquals(404, response.getBody().status());
     assertEquals("NOT_FOUND", response.getBody().code());
-    assertEquals("Resource not found", response.getBody().message());
+    assertEquals("요청한 리소스를 찾을 수 없습니다.", response.getBody().message());
   }
 
   @Test
@@ -54,7 +54,7 @@ class GlobalExceptionHandlerTest {
     assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
     assertEquals(409, response.getBody().status());
     assertEquals("CONCURRENCY_CONFLICT", response.getBody().code());
-    assertEquals("Concurrent modification conflict", response.getBody().message());
+    assertEquals("동시에 처리된 요청이 있습니다. 잠시 후 다시 시도해 주세요.", response.getBody().message());
   }
 
   @Test
@@ -66,7 +66,7 @@ class GlobalExceptionHandlerTest {
     assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
     assertEquals(500, response.getBody().status());
     assertEquals("INTERNAL_SERVER_ERROR", response.getBody().code());
-    assertEquals("Unexpected server error", response.getBody().message());
+    assertEquals("서버 오류가 발생했습니다.", response.getBody().message());
   }
 
   @Test
@@ -80,7 +80,7 @@ class GlobalExceptionHandlerTest {
     assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     assertEquals(400, response.getBody().status());
     assertEquals("INVALID_PARAMETER", response.getBody().code());
-    assertEquals("keyword is required", response.getBody().message());
+    assertEquals("keyword은(는) 필수 값입니다.", response.getBody().message());
   }
 
   @Test
@@ -95,7 +95,7 @@ class GlobalExceptionHandlerTest {
     assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     assertEquals(400, response.getBody().status());
     assertEquals("INVALID_PARAMETER", response.getBody().code());
-    assertEquals("theme must be one of [GROUND, SKY, SPACE, SEA]", response.getBody().message());
+    assertEquals("theme은(는) [GROUND, SKY, SPACE, SEA] 중 하나여야 합니다.", response.getBody().message());
   }
 
   @Test
@@ -109,6 +109,6 @@ class GlobalExceptionHandlerTest {
 
     assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     assertEquals("INVALID_PARAMETER", response.getBody().code());
-    assertEquals("page has an invalid value", response.getBody().message());
+    assertEquals("page의 값이 올바르지 않습니다.", response.getBody().message());
   }
 }
