@@ -45,7 +45,7 @@ class SecurityConfigTest {
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.status").value(401))
         .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
-        .andExpect(jsonPath("$.message").value("Authentication is required"));
+        .andExpect(jsonPath("$.message").value("로그인이 필요합니다."));
   }
 
   @Test
