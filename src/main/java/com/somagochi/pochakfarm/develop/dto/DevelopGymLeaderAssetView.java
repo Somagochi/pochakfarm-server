@@ -8,6 +8,8 @@ public record DevelopGymLeaderAssetView(
     String code,
     String name,
     Integer challengeOrder,
+    String thumbnailKey,
+    String thumbnailUrl,
     String imageKey,
     String imageUrl,
     String badgeCode,
@@ -17,6 +19,7 @@ public record DevelopGymLeaderAssetView(
 
   public static DevelopGymLeaderAssetView of(
       GymLeader gymLeader,
+      String thumbnailUrl,
       String imageUrl,
       String badgeName,
       String badgeImageUrl,
@@ -26,6 +29,8 @@ public record DevelopGymLeaderAssetView(
         gymLeader.getCode(),
         gymLeader.getName(),
         gymLeader.getChallengeOrder(),
+        gymLeader.getThumbnailKey(),
+        thumbnailUrl,
         gymLeader.getImageKey(),
         imageUrl,
         gymLeader.getBadgeCode(),

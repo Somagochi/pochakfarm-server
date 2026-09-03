@@ -147,15 +147,23 @@
     </div>
 
     <div class="section">
-      <div class="section-title">관장 이미지</div>
-      <form class="upload-form" th:action="@{/api/dev/assets/gym-leaders/{id}/image(id=${gymLeader.id})}" method="post">
+      <div class="section-title">관장 이미지 (썸네일: 목록용 / 원본: 상세용)</div>
+      <form class="upload-form" th:action="@{/api/dev/assets/gym-leaders/{id}/images(id=${gymLeader.id})}" method="post">
         <div class="asset-row">
           <div class="asset-cell">
-            <span class="label">초상</span>
+            <span class="label">썸네일</span>
+            <img class="preview" th:if="${gymLeader.thumbnailUrl}" th:src="${gymLeader.thumbnailUrl}" alt="관장 썸네일">
+            <div class="no-image" th:unless="${gymLeader.thumbnailUrl}">없음</div>
+            <input type="file" data-target="GYM_LEADER_THUMBNAIL" data-key-field="thumbnailKey" data-content-type-field="thumbnailContentType" accept="image/png,image/jpeg,image/webp">
+          </div>
+          <div class="asset-cell">
+            <span class="label">원본</span>
             <img class="preview" th:if="${gymLeader.imageUrl}" th:src="${gymLeader.imageUrl}" alt="관장 이미지">
             <div class="no-image" th:unless="${gymLeader.imageUrl}">없음</div>
             <input type="file" data-target="GYM_LEADER" data-key-field="imageKey" data-content-type-field="imageContentType" accept="image/png,image/jpeg,image/webp">
           </div>
+          <input type="hidden" name="thumbnailKey">
+          <input type="hidden" name="thumbnailContentType">
           <input type="hidden" name="imageKey">
           <input type="hidden" name="imageContentType">
           <button type="submit">이미지 저장</button>

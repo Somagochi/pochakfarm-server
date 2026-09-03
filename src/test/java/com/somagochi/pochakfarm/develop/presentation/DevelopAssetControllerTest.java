@@ -118,18 +118,39 @@ class DevelopAssetControllerTest {
   }
 
   @Test
-  void updatesGymLeaderImageAndRedirectsToGymLeaderTab() throws Exception {
+  void updatesGymLeaderImagesAndRedirectsToGymLeaderTab() throws Exception {
     mockMvc
         .perform(
-            post("/api/dev/assets/gym-leaders/1/image")
+            post("/api/dev/assets/gym-leaders/1/images")
                 .with(httpBasic("dev-admin", "dev-password"))
+                .param("thumbnailKey", "public/gym-leader-thumbnail/a.png")
+                .param("thumbnailContentType", "image/png")
                 .param("imageKey", "public/gym-leader/a.png")
                 .param("imageContentType", "image/png"))
         .andExpect(status().is3xxRedirection())
         .andExpect(redirectedUrl("/api/dev/assets?tab=gym-leader"));
 
     verify(developGymLeaderAssetService)
-        .updateGymLeaderImage(1L, "public/gym-leader/a.png", "image/png");
+        .updateGymLeaderImages(
+            1L,
+            "public/gym-leader-thumbnail/a.png",
+            "image/png",
+            "public/gym-leader/a.png",
+            "image/png");
+  }
+
+  @Test
+  void updatesOnlySelectedGymLeaderImage() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/dev/assets/gym-leaders/1/images")
+                .with(httpBasic("dev-admin", "dev-password"))
+                .param("thumbnailKey", "public/gym-leader-thumbnail/a.png")
+                .param("thumbnailContentType", "image/png"))
+        .andExpect(status().is3xxRedirection());
+
+    verify(developGymLeaderAssetService)
+        .updateGymLeaderImages(1L, "public/gym-leader-thumbnail/a.png", "image/png", null, null);
   }
 
   @Test
@@ -181,6 +202,8 @@ class DevelopAssetControllerTest {
                     "새싹 관장 두더",
                     1,
                     null,
+                    "https://cdn/gym-thumbnail.png",
+                    null,
                     "https://cdn/gym.png",
                     "BDG006",
                     "새싹 뱃지",
@@ -206,6 +229,8 @@ class DevelopAssetControllerTest {
         .andExpect(content().string(org.hamcrest.Matchers.containsString("ACH001")))
         .andExpect(content().string(org.hamcrest.Matchers.containsString("BDG001 · 첫 포착 뱃지")))
         .andExpect(content().string(org.hamcrest.Matchers.containsString("GYM_01")))
+        .andExpect(
+            content().string(org.hamcrest.Matchers.containsString("https://cdn/gym-thumbnail.png")))
         .andExpect(content().string(org.hamcrest.Matchers.containsString("BDG006 · 새싹 뱃지")))
         .andExpect(content().string(org.hamcrest.Matchers.containsString("도톨")))
         .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"skill stable\"")))
@@ -219,13 +244,13 @@ class DevelopAssetControllerTest {
 
     mockMvc
         .perform(
-            post("/api/dev/assets/gym-leaders/1/image")
+            post("/api/dev/assets/gym-leaders/1/images")
                 .param("imageKey", "public/gym-leader/a.png")
                 .param("imageContentType", "image/png"))
         .andExpect(status().isUnauthorized());
 
     verify(developGymLeaderAssetService, never())
-        .updateGymLeaderImage(anyLong(), anyString(), anyString());
+        .updateGymLeaderImages(anyLong(), any(), any(), anyString(), anyString());
     verify(imageUploadService, never()).createPublicPresign(any(), any());
     verify(imageUploadService, never()).createPublicPresign(eq("achievement"), any());
   }

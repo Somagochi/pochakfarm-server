@@ -1,7 +1,7 @@
 -- 대전 코어 스키마 마이그레이션 (SOMA-208)
 -- 신규 테이블: gym_leaders, gym_leader_animals, battles, battle_entries
 -- 기존 테이블 변경: animals.rest_ends_at 컬럼 추가
--- 실행 순서: 이 스크립트 -> battle-progress-schema.sql -> gym-leader-seed.sql
+-- 실행 순서: 이 스크립트 -> battle-progress-schema.sql -> gym-leader-thumbnail-schema.sql -> gym-leader-seed.sql
 -- 컬럼 정의는 JPA 매핑이 MySQLDialect 로 생성하는 DDL 과 동일하다.
 --   운영 프로파일의 ddl-auto 가 validate 이므로 타입이 어긋나면 기동이 실패한다.
 --   CardSkill / CardType / Tier 상수를 추가하면 아래 enum 목록도 함께 갱신해야 한다.

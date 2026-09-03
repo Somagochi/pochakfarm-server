@@ -13,7 +13,7 @@ class GymLeaderTest {
 
   @Test
   void createsWithChallengeOrderInRange() {
-    GymLeader leader = GymLeader.create("GYM001", "돌바위 관장", 1, "BDG101", null);
+    GymLeader leader = GymLeader.create("GYM001", "돌바위 관장", 1, "BDG101", null, null);
 
     assertEquals("GYM001", leader.getCode());
     assertEquals(1, leader.getChallengeOrder());
@@ -23,9 +23,11 @@ class GymLeaderTest {
   @Test
   void rejectsChallengeOrderOutOfRange() {
     assertThrows(
-        IllegalArgumentException.class, () -> GymLeader.create("GYM000", "이름", 0, "BDG100", null));
+        IllegalArgumentException.class,
+        () -> GymLeader.create("GYM000", "이름", 0, "BDG100", null, null));
     assertThrows(
-        IllegalArgumentException.class, () -> GymLeader.create("GYM009", "이름", 9, "BDG109", null));
+        IllegalArgumentException.class,
+        () -> GymLeader.create("GYM009", "이름", 9, "BDG109", null, null));
   }
 
   @Test
