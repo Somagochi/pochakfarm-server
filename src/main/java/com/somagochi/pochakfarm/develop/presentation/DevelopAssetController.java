@@ -96,18 +96,20 @@ public class DevelopAssetController {
                 rewardId, badgeImageKey, badgeImageContentType));
   }
 
-  @PostMapping("/gym-leaders/{gymLeaderId}/image")
-  public String updateGymLeaderImage(
+  @PostMapping("/gym-leaders/{gymLeaderId}/images")
+  public String updateGymLeaderImages(
       @PathVariable Long gymLeaderId,
-      @RequestParam String imageKey,
-      @RequestParam String imageContentType,
+      @RequestParam(required = false) String thumbnailKey,
+      @RequestParam(required = false) String thumbnailContentType,
+      @RequestParam(required = false) String imageKey,
+      @RequestParam(required = false) String imageContentType,
       RedirectAttributes redirectAttributes) {
     return handle(
         GYM_LEADER_TAB,
         redirectAttributes,
         () ->
-            developGymLeaderAssetService.updateGymLeaderImage(
-                gymLeaderId, imageKey, imageContentType));
+            developGymLeaderAssetService.updateGymLeaderImages(
+                gymLeaderId, thumbnailKey, thumbnailContentType, imageKey, imageContentType));
   }
 
   @PostMapping("/gym-leaders/{gymLeaderId}/badge-image")

@@ -134,6 +134,6 @@ final class BattleFixture {
             : challengeOrder;
     String unique = UUID.randomUUID().toString();
     return GymLeader.create(
-        "leader-" + unique, "관장", resolvedChallengeOrder, "badge-" + unique, null);
+        "leader-" + unique, "관장", resolvedChallengeOrder, "badge-" + unique, null, null);
   }
 }

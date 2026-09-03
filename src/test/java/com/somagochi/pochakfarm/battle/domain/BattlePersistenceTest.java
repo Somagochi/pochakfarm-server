@@ -328,7 +328,7 @@ class BattlePersistenceTest {
 
   private GymLeader gymLeader(int challengeOrder) {
     String suffix = UUID.randomUUID().toString();
-    return GymLeader.create("GYM-" + suffix, "관장", challengeOrder, "BDG-" + suffix, null);
+    return GymLeader.create("GYM-" + suffix, "관장", challengeOrder, "BDG-" + suffix, null, null);
   }
 
   private GymLeaderAnimal gymLeaderAnimal(Long gymLeaderId, int orderNo) {

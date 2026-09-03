@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 @Profile({"local", "dev"})
@@ -45,10 +46,21 @@ public class DevelopGymLeaderAssetService {
   }
 
   @Transactional
-  public void updateGymLeaderImage(Long gymLeaderId, String imageKey, String imageContentType) {
+  public void updateGymLeaderImages(
+      Long gymLeaderId,
+      String thumbnailKey,
+      String thumbnailContentType,
+      String imageKey,
+      String imageContentType) {
     GymLeader gymLeader = findGymLeader(gymLeaderId);
-    imageUploadService.validatePublicObject(imageKey, imageContentType);
-    gymLeader.changeImageKey(imageKey);
+    if (StringUtils.hasText(thumbnailKey)) {
+      imageUploadService.validatePublicObject(thumbnailKey, thumbnailContentType);
+      gymLeader.changeThumbnailKey(thumbnailKey);
+    }
+    if (StringUtils.hasText(imageKey)) {
+      imageUploadService.validatePublicObject(imageKey, imageContentType);
+      gymLeader.changeImageKey(imageKey);
+    }
   }
 
   @Transactional
@@ -93,6 +105,7 @@ public class DevelopGymLeaderAssetService {
             .toList();
     return DevelopGymLeaderAssetView.of(
         gymLeader,
+        buildUrlOrNull(gymLeader.getThumbnailKey()),
         buildUrlOrNull(gymLeader.getImageKey()),
         badge == null ? null : badge.getName(),
         badge == null ? null : buildUrlOrNull(badge.getImageKey()),
