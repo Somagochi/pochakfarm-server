@@ -148,7 +148,7 @@ class AnimalControllerTest {
                 .with(authentication(userAuthentication())))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value(ErrorCode.INVALID_PARAMETER.getCode()))
-        .andExpect(jsonPath("$.message").value("keyword is required"));
+        .andExpect(jsonPath("$.message").value("keyword은(는) 필수 값입니다."));
   }
 
   @Test
