@@ -2,7 +2,6 @@ package com.somagochi.pochakfarm.battle.application;
 
 import com.somagochi.pochakfarm.battle.domain.Battle;
 import com.somagochi.pochakfarm.battle.domain.BattleAction;
-import com.somagochi.pochakfarm.battle.domain.BattleActionPolicy;
 import com.somagochi.pochakfarm.battle.domain.BattleEntry;
 import com.somagochi.pochakfarm.battle.domain.BattlePolicy;
 import com.somagochi.pochakfarm.battle.domain.BattleSide;
@@ -29,7 +28,6 @@ public class BattleStateQueryService {
   private final BattleActionRepository battleActionRepository;
   private final BattleBroadcastEventRepository battleBroadcastEventRepository;
   private final BattlePolicy battlePolicy;
-  private final BattleActionPolicy battleActionPolicy;
   private final BattleFinalRoundService battleFinalRoundService;
   private final BattleRewardService battleRewardService;
   private final Clock clock;
@@ -40,7 +38,6 @@ public class BattleStateQueryService {
       BattleActionRepository battleActionRepository,
       BattleBroadcastEventRepository battleBroadcastEventRepository,
       BattlePolicy battlePolicy,
-      BattleActionPolicy battleActionPolicy,
       BattleFinalRoundService battleFinalRoundService,
       BattleRewardService battleRewardService,
       Clock clock) {
@@ -49,7 +46,6 @@ public class BattleStateQueryService {
     this.battleActionRepository = battleActionRepository;
     this.battleBroadcastEventRepository = battleBroadcastEventRepository;
     this.battlePolicy = battlePolicy;
-    this.battleActionPolicy = battleActionPolicy;
     this.battleFinalRoundService = battleFinalRoundService;
     this.battleRewardService = battleRewardService;
     this.clock = clock;
@@ -85,9 +81,6 @@ public class BattleStateQueryService {
         BattlePolicy.TOTAL_ACTION_COUNT,
         currentEntryOrder,
         nextActionSeq,
-        nextActionSeq == null
-            ? null
-            : battleActionPolicy.selectionExpiresAt(battle.lastProgressAt()),
         BattleEntryResponse.from(entry(battleId, BattleSide.USER, currentEntryOrder), battlePolicy),
         BattleEntryResponse.from(entry(battleId, BattleSide.NPC, currentEntryOrder), battlePolicy),
         BattleFinalRoundStateResponse.from(battle, battlePolicy),
