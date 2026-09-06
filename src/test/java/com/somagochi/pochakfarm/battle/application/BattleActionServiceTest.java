@@ -12,7 +12,6 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import com.somagochi.pochakfarm.battle.domain.BattleActionPolicy;
 import com.somagochi.pochakfarm.battle.domain.BattleEventCode;
 import com.somagochi.pochakfarm.battle.domain.BattlePolicy;
 import com.somagochi.pochakfarm.battle.domain.BattleResult;
@@ -229,19 +228,15 @@ class BattleActionServiceTest {
   }
 
   @Test
-  void rejectsSkillSelectionArrivedAfterServerDeadlineButAcceptsNoSelection() {
+  void acceptsSkillSelectionRegardlessOfElapsedServerTime() {
     Long battleId = startBattle();
-    randomValues(PERCENTAGE_BOUND - 1);
+    activateUserOnly();
     now = STARTED_AT.plusSeconds(4);
 
-    assertBusinessException(
-        ErrorCode.BATTLE_ACTION_SELECTION_CLOSED, () -> select(battleId, 1, USER_STABLE_SKILL));
+    BattleActionResponse response = select(battleId, 1, USER_STABLE_SKILL);
 
-    BattleActionResponse response = select(battleId, 1, null);
-
-    assertEquals(SkillActivationStatus.NOT_SELECTED, response.user().status());
-    assertEquals(
-        now.plus(BattleActionPolicy.SKILL_SELECTION_TIME_LIMIT), response.nextSelectionExpiresAt());
+    assertEquals(USER_STABLE_SKILL, response.user().skill());
+    assertEquals(SkillActivationStatus.ACTIVATED, response.user().status());
   }
 
   @Test
@@ -258,7 +253,6 @@ class BattleActionServiceTest {
     assertEquals(BattleStatus.FINISHED, response.battleStatus());
     assertEquals(BattleResult.WIN, response.battleResult());
     assertNull(response.nextActionSeq());
-    assertNull(response.nextSelectionExpiresAt());
     assertBusinessException(
         ErrorCode.BATTLE_NOT_IN_PROGRESS, () -> select(battleId, 6, USER_GAMBLE_SKILL));
     assertEquals(5, battleActionRepository.countByBattleId(battleId));
