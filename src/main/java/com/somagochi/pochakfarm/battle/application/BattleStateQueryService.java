@@ -8,6 +8,7 @@ import com.somagochi.pochakfarm.battle.domain.BattleSide;
 import com.somagochi.pochakfarm.battle.dto.BattleBroadcastEventResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleEntryResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleFinalRoundStateResponse;
+import com.somagochi.pochakfarm.battle.dto.BattleStateNpcEntryResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleStateResponse;
 import com.somagochi.pochakfarm.battle.infrastructure.persistence.BattleActionRepository;
 import com.somagochi.pochakfarm.battle.infrastructure.persistence.BattleBroadcastEventRepository;
@@ -81,8 +82,9 @@ public class BattleStateQueryService {
         BattlePolicy.TOTAL_ACTION_COUNT,
         currentEntryOrder,
         nextActionSeq,
-        BattleEntryResponse.from(entry(battleId, BattleSide.USER, currentEntryOrder), battlePolicy),
-        BattleEntryResponse.from(entry(battleId, BattleSide.NPC, currentEntryOrder), battlePolicy),
+        BattleEntryResponse.fromUser(
+            entry(battleId, BattleSide.USER, currentEntryOrder), battlePolicy),
+        BattleStateNpcEntryResponse.from(entry(battleId, BattleSide.NPC, currentEntryOrder)),
         BattleFinalRoundStateResponse.from(battle, battlePolicy),
         battle.isInProgress() ? null : battleRewardService.findResult(battle),
         BattleBroadcastEventResponse.from(

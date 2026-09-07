@@ -13,6 +13,7 @@ import com.somagochi.pochakfarm.battle.domain.GymLeaderAnimal;
 import com.somagochi.pochakfarm.battle.domain.GymLeaderUnlock;
 import com.somagochi.pochakfarm.battle.dto.BattleEntryRequest;
 import com.somagochi.pochakfarm.battle.dto.BattleNpcEntryResponse;
+import com.somagochi.pochakfarm.battle.dto.BattleNpcSkillResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleRestResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleSkillResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleStartRequest;
@@ -231,7 +232,10 @@ public class BattleStartService {
         entry.getTier(),
         gymLeaderAnimal == null || gymLeaderAnimal.getImageKey() == null
             ? null
-            : fileStorage.buildUrl(gymLeaderAnimal.getImageKey()));
+            : fileStorage.buildUrl(gymLeaderAnimal.getImageKey()),
+        List.of(
+            BattleNpcSkillResponse.from(entry.getSkill1()),
+            BattleNpcSkillResponse.from(entry.getSkill2())));
   }
 
   private BattleSkillResponse toSkillResponse(CardSkill skill) {

@@ -98,7 +98,9 @@ class BattleStateQueryServiceTest {
     assertEquals(2, state.userEntry().skills().size());
     assertEquals(BattleSide.NPC, state.npcEntry().side());
     assertEquals("관장2", state.npcEntry().animalName());
-    assertNull(state.npcEntry().skills());
+    assertEquals(2, state.npcEntry().skills().size());
+    assertEquals(NPC_STABLE_SKILL.displayName(), state.npcEntry().skills().getFirst().name());
+    assertEquals(NPC_STABLE_SKILL.battleType(), state.npcEntry().skills().getFirst().battleType());
 
     List<BattleBroadcastEventResponse> events = state.broadcastEvents();
     assertEquals(

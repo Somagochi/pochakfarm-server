@@ -79,7 +79,7 @@ class BattleStartServiceTest {
   }
 
   @Test
-  void exposesUserSkillPointsButNotNpcSkills() {
+  void exposesUserSkillDetailsAndNpcSkillPreviews() {
     BattleStartResponse response =
         battleStartService.start(userId, request(firstGymLeader.getId(), myAnimals), NOW);
 
@@ -87,6 +87,11 @@ class BattleStartServiceTest {
     assertNotNull(response.userEntry().skill1().battleType());
     assertEquals(80, response.userEntry().skill1().triggerPercentage());
     assertEquals(1, response.userEntry().skill1().point());
+    assertEquals(2, response.npcEntry().skills().size());
+    assertEquals("나뭇잎 방어", response.npcEntry().skills().getFirst().name());
+    assertEquals(
+        CardSkill.GROUND_LEAF_GUARD.battleType(),
+        response.npcEntry().skills().getFirst().battleType());
   }
 
   @Test
