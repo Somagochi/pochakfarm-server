@@ -10,6 +10,7 @@ import com.somagochi.pochakfarm.battle.domain.GymLeader;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderDetailResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderProfileResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderResponse;
+import com.somagochi.pochakfarm.characterization.domain.CardType;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -95,6 +96,31 @@ class GymLeaderQueryServiceTest {
     assertTrue(
         gymLeaderResponseOf(first).thumbnailUrl().endsWith("public/gym-leader-thumbnail/a.png"));
     assertTrue(gymLeaderProfileOf(first).imageUrl().endsWith("public/gym-leader/a.png"));
+  }
+
+  @Test
+  void exposesLeaderContentWithSuggestTypeCounteringLeaderType() {
+    fixtures.changeGymLeaderContent(
+        first.getId(), CardType.GROUND, "초보", "모루는 땅 타입만 데리고 나와요", "단단한 방어와 꾸준한 공격이 특징이에요");
+
+    GymLeaderProfileResponse profile = gymLeaderProfileOf(first);
+
+    assertEquals("땅", profile.leaderType());
+    assertEquals("초보", profile.difficulty());
+    assertEquals("모루는 땅 타입만 데리고 나와요", profile.leaderDescription());
+    assertEquals("단단한 방어와 꾸준한 공격이 특징이에요", profile.tipDescription());
+    assertEquals("하늘", profile.suggestType());
+  }
+
+  @Test
+  void leavesLeaderContentNullWhenNotConfigured() {
+    GymLeaderProfileResponse profile = gymLeaderProfileOf(second);
+
+    assertNull(profile.leaderType());
+    assertNull(profile.difficulty());
+    assertNull(profile.leaderDescription());
+    assertNull(profile.tipDescription());
+    assertNull(profile.suggestType());
   }
 
   @Test

@@ -1,8 +1,11 @@
 package com.somagochi.pochakfarm.battle.domain;
 
+import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -58,6 +61,19 @@ public class GymLeader extends BaseEntity {
 
   @Column(name = "image_key")
   private String imageKey;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "leader_type")
+  private CardType leaderType;
+
+  @Column(name = "difficulty")
+  private String difficulty;
+
+  @Column(name = "leader_description")
+  private String leaderDescription;
+
+  @Column(name = "tip_description")
+  private String tipDescription;
 
   private GymLeader(
       String code,

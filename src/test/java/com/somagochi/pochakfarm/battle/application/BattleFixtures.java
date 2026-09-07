@@ -90,6 +90,22 @@ public class BattleFixtures {
         gymLeaderId);
   }
 
+  public void changeGymLeaderContent(
+      Long gymLeaderId,
+      CardType leaderType,
+      String difficulty,
+      String leaderDescription,
+      String tipDescription) {
+    jdbcTemplate.update(
+        "update gym_leaders set leader_type = ?, difficulty = ?, leader_description = ?,"
+            + " tip_description = ? where id = ?",
+        leaderType.name(),
+        difficulty,
+        leaderDescription,
+        tipDescription,
+        gymLeaderId);
+  }
+
   public void markResting(Long animalId, Instant restEndsAt) {
     jdbcTemplate.update("update animals set rest_ends_at = ? where id = ?", restEndsAt, animalId);
   }
