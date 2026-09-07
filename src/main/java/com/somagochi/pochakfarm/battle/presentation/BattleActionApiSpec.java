@@ -71,8 +71,8 @@ public interface BattleActionApiSpec {
           "재접속 시 대전 화면을 복원하기 위한 진행 상태를 조회한다. "
               + "현재 출전 중인 동물, 진행된 행동 횟수와 다음 행동 순번, 승부 바 위치와 정책상 최소·최댓값, "
               + "지금까지 발생한 중계 이벤트 전체를 반환한다. "
-              + "관장 동물의 스킬은 대전 전에 공개하지 않는 정책이라 npcEntry.skills 는 항상 null 이며, "
-              + "NPC 가 사용한 스킬은 중계 이벤트로만 공개된다.")
+              + "npcEntry.skills 에는 관장 동물의 보유 스킬 이름과 전투 유형을 반환하며, "
+              + "발동 확률과 승부 포인트는 포함하지 않는다.")
   @SecurityRequirement(name = "bearerAuth")
   @Parameter(
       in = ParameterIn.PATH,

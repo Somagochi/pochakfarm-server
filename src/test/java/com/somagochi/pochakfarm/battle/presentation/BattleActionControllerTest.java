@@ -25,7 +25,9 @@ import com.somagochi.pochakfarm.battle.dto.BattleFinalRoundResultRequest;
 import com.somagochi.pochakfarm.battle.dto.BattleFinalRoundResultResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleFinalRoundStartResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleFinalRoundStateResponse;
+import com.somagochi.pochakfarm.battle.dto.BattleNpcSkillResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleSkillOutcomeResponse;
+import com.somagochi.pochakfarm.battle.dto.BattleStateNpcEntryResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleStateResponse;
 import com.somagochi.pochakfarm.capture.domain.Tier;
 import com.somagochi.pochakfarm.characterization.domain.CardSkill;
@@ -175,7 +177,12 @@ class BattleActionControllerTest {
         .andExpect(jsonPath("$.data.nextActionSeq").value(5))
         .andExpect(jsonPath("$.data.nextSelectionExpiresAt").doesNotExist())
         .andExpect(jsonPath("$.data.userEntry.skills.length()").value(1))
-        .andExpect(jsonPath("$.data.npcEntry.skills").isEmpty())
+        .andExpect(jsonPath("$.data.npcEntry.skills.length()").value(2))
+        .andExpect(jsonPath("$.data.npcEntry.skills[0].name").value("NPC 안정 스킬"))
+        .andExpect(jsonPath("$.data.npcEntry.skills[0].battleType").value("STABLE"))
+        .andExpect(jsonPath("$.data.npcEntry.skills[0].skill").doesNotExist())
+        .andExpect(jsonPath("$.data.npcEntry.skills[0].triggerPercentage").doesNotExist())
+        .andExpect(jsonPath("$.data.npcEntry.skills[0].point").doesNotExist())
         .andExpect(jsonPath("$.data.broadcastEvents.length()").value(1));
   }
 
@@ -327,7 +334,16 @@ class BattleActionControllerTest {
                     SkillBattleType.GAMBLE,
                     30,
                     3))),
-        new BattleEntryResponse(BattleSide.NPC, 2, null, "관장2", CardType.SPACE, Tier.B, null),
+        new BattleStateNpcEntryResponse(
+            BattleSide.NPC,
+            2,
+            null,
+            "관장2",
+            CardType.SPACE,
+            Tier.B,
+            List.of(
+                new BattleNpcSkillResponse("NPC 안정 스킬", SkillBattleType.STABLE),
+                new BattleNpcSkillResponse("NPC 승부 스킬", SkillBattleType.GAMBLE))),
         noFinalRound(),
         null,
         List.of(battlePointAppliedEvent()));

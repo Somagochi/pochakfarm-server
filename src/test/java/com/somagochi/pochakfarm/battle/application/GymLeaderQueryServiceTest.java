@@ -10,6 +10,7 @@ import com.somagochi.pochakfarm.battle.domain.GymLeader;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderDetailResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderProfileResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderResponse;
+import com.somagochi.pochakfarm.characterization.domain.CardSkill;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
@@ -145,21 +146,15 @@ class GymLeaderQueryServiceTest {
   }
 
   @Test
-  void exposesGymLeaderAnimalsWithoutSkillInformation() {
+  void exposesGymLeaderAnimalSkillNamesAndBattleTypes() {
     GymLeaderDetailResponse response = gymLeaderQueryService.getGymLeader(userId, first.getId());
 
     assertEquals(BattlePolicy.ENTRY_COUNT, response.animals().size());
-    List<String> componentNames =
-        List.of(
-                com.somagochi.pochakfarm.battle.dto.GymLeaderAnimalResponse.class
-                    .getRecordComponents())
-            .stream()
-            .map(java.lang.reflect.RecordComponent::getName)
-            .toList();
-    assertFalse(componentNames.contains("skill1"));
-    assertFalse(componentNames.contains("skill2"));
-    assertFalse(componentNames.contains("triggerPercentage"));
-    assertFalse(componentNames.contains("point"));
+    assertEquals(2, response.animals().getFirst().skills().size());
+    assertEquals("나뭇잎 방어", response.animals().getFirst().skills().getFirst().name());
+    assertEquals(
+        CardSkill.GROUND_LEAF_GUARD.battleType(),
+        response.animals().getFirst().skills().getFirst().battleType());
   }
 
   private GymLeaderResponse gymLeaderResponseOf(GymLeader gymLeader) {

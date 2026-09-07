@@ -6,6 +6,7 @@ import com.somagochi.pochakfarm.battle.domain.GymLeader;
 import com.somagochi.pochakfarm.battle.domain.GymLeaderAnimal;
 import com.somagochi.pochakfarm.battle.domain.GymLeaderUnlock;
 import com.somagochi.pochakfarm.battle.domain.GymLeaderUnlockResolver;
+import com.somagochi.pochakfarm.battle.dto.BattleNpcSkillResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderAnimalResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderDetailResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderProfileResponse;
@@ -144,7 +145,10 @@ public class GymLeaderQueryService {
         gymLeaderAnimal.getAnimalName(),
         gymLeaderAnimal.getCardType(),
         gymLeaderAnimal.getTier(),
-        buildUrlOrNull(gymLeaderAnimal.getImageKey()));
+        buildUrlOrNull(gymLeaderAnimal.getImageKey()),
+        List.of(
+            BattleNpcSkillResponse.from(gymLeaderAnimal.getSkill1()),
+            BattleNpcSkillResponse.from(gymLeaderAnimal.getSkill2())));
   }
 
   private CardType suggestTypeOf(GymLeader gymLeader) {

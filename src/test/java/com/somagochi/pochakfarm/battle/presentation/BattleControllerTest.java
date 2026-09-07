@@ -13,6 +13,7 @@ import com.somagochi.pochakfarm.battle.application.BattleStartService;
 import com.somagochi.pochakfarm.battle.application.GymLeaderQueryService;
 import com.somagochi.pochakfarm.battle.domain.BattlePolicy;
 import com.somagochi.pochakfarm.battle.dto.BattleNpcEntryResponse;
+import com.somagochi.pochakfarm.battle.dto.BattleNpcSkillResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleRestResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleSkillResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleStartResponse;
@@ -111,22 +112,33 @@ class BattleControllerTest {
   }
 
   @Test
-  void hidesGymLeaderAnimalSkillsInDetailResponse() throws Exception {
+  void exposesOnlyGymLeaderAnimalSkillNamesAndBattleTypesInDetailResponse() throws Exception {
     given(gymLeaderQueryService.getGymLeader(USER_ID, 4L))
         .willReturn(
             new GymLeaderDetailResponse(
                 gymLeaderProfileResponse(true, true, "BDG008", true),
-                List.of(new GymLeaderAnimalResponse(1, "별콩", CardType.SPACE, Tier.B, null))));
+                List.of(
+                    new GymLeaderAnimalResponse(
+                        1,
+                        "별콩",
+                        CardType.SPACE,
+                        Tier.B,
+                        null,
+                        List.of(
+                            new BattleNpcSkillResponse("구름 숨기", SkillBattleType.STABLE),
+                            new BattleNpcSkillResponse("몸통박치기", SkillBattleType.GAMBLE))))));
 
     mockMvc
         .perform(get("/api/battles/gym-leaders/4").with(authentication(userAuthentication())))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.animals[0].animalName").value("별콩"))
         .andExpect(jsonPath("$.data.animals[0].tier").value("B"))
-        .andExpect(jsonPath("$.data.animals[0].skill1").doesNotExist())
-        .andExpect(jsonPath("$.data.animals[0].skill2").doesNotExist())
-        .andExpect(jsonPath("$.data.animals[0].triggerPercentage").doesNotExist())
-        .andExpect(jsonPath("$.data.animals[0].point").doesNotExist());
+        .andExpect(jsonPath("$.data.animals[0].skills.length()").value(2))
+        .andExpect(jsonPath("$.data.animals[0].skills[0].name").value("구름 숨기"))
+        .andExpect(jsonPath("$.data.animals[0].skills[0].battleType").value("STABLE"))
+        .andExpect(jsonPath("$.data.animals[0].skills[0].skill").doesNotExist())
+        .andExpect(jsonPath("$.data.animals[0].skills[0].triggerPercentage").doesNotExist())
+        .andExpect(jsonPath("$.data.animals[0].skills[0].point").doesNotExist());
   }
 
   @Test
@@ -147,7 +159,15 @@ class BattleControllerTest {
                     Tier.A,
                     new BattleSkillResponse("깃털 방어", SkillBattleType.STABLE, 80, 1),
                     new BattleSkillResponse("순풍 타기", SkillBattleType.BALANCED, 45, 2)),
-                new BattleNpcEntryResponse(1, "별콩", CardType.SPACE, Tier.B, null),
+                new BattleNpcEntryResponse(
+                    1,
+                    "별콩",
+                    CardType.SPACE,
+                    Tier.B,
+                    null,
+                    List.of(
+                        new BattleNpcSkillResponse("구름 숨기", SkillBattleType.STABLE),
+                        new BattleNpcSkillResponse("몸통박치기", SkillBattleType.GAMBLE))),
                 List.of(new BattleRestResponse(31L, Instant.parse("2026-08-25T05:30:00Z")))));
 
     mockMvc
@@ -173,7 +193,12 @@ class BattleControllerTest {
         .andExpect(jsonPath("$.data.minBarPosition").value(-15))
         .andExpect(jsonPath("$.data.maxBarPosition").value(15))
         .andExpect(jsonPath("$.data.userEntry.skill1.point").value(1))
-        .andExpect(jsonPath("$.data.npcEntry.skill1").doesNotExist())
+        .andExpect(jsonPath("$.data.npcEntry.skills.length()").value(2))
+        .andExpect(jsonPath("$.data.npcEntry.skills[0].name").value("구름 숨기"))
+        .andExpect(jsonPath("$.data.npcEntry.skills[0].battleType").value("STABLE"))
+        .andExpect(jsonPath("$.data.npcEntry.skills[0].skill").doesNotExist())
+        .andExpect(jsonPath("$.data.npcEntry.skills[0].triggerPercentage").doesNotExist())
+        .andExpect(jsonPath("$.data.npcEntry.skills[0].point").doesNotExist())
         .andExpect(jsonPath("$.data.rests[0].restEndsAt").exists());
   }
 
