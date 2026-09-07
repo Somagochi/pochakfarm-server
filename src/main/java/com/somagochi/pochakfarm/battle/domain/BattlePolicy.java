@@ -6,6 +6,7 @@ import com.somagochi.pochakfarm.characterization.domain.SkillBattleType;
 import com.somagochi.pochakfarm.common.properties.BattleProperties;
 import java.time.Duration;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -40,6 +41,9 @@ public class BattlePolicy {
           CardType.SKY, CardType.GROUND,
           CardType.GROUND, CardType.SEA,
           CardType.SEA, CardType.SPACE);
+  private static final Map<CardType, CardType> TYPE_COUNTERS =
+      TYPE_ADVANTAGES.entrySet().stream()
+          .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
   private static final Map<Tier, Integer> TIER_STEPS =
       Map.of(
           Tier.C, 0,
@@ -75,6 +79,10 @@ public class BattlePolicy {
 
   public int tierPointDifference(Tier userTier, Tier npcTier) {
     return tierMoveDistance(userTier, npcTier) - tierMoveDistance(npcTier, userTier);
+  }
+
+  public CardType counterTypeOf(CardType cardType) {
+    return TYPE_COUNTERS.get(cardType);
   }
 
   public boolean hasTypeAdvantage(CardType cardType, CardType opponentCardType) {

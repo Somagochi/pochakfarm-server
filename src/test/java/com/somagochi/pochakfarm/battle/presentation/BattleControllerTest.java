@@ -211,6 +211,11 @@ class BattleControllerTest {
         "노바",
         4,
         "https://cdn/image.png",
+        "우주",
+        "보통",
+        "노바는 우주 타입을 주력으로 데리고 나와요",
+        "우주 타입에 강한 바다 타입을 준비해 보세요",
+        "바다",
         "BDG009",
         false,
         new GymLeaderUnlockResponse(

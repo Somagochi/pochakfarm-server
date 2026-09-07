@@ -74,6 +74,17 @@ class BattlePolicyTest {
   }
 
   @Test
+  void counterTypeIsTheTypeHoldingAdvantageOverTheGivenType() {
+    for (CardType cardType : CardType.values()) {
+      assertTrue(battlePolicy.hasTypeAdvantage(battlePolicy.counterTypeOf(cardType), cardType));
+    }
+    assertEquals(CardType.SKY, battlePolicy.counterTypeOf(CardType.GROUND));
+    assertEquals(CardType.SPACE, battlePolicy.counterTypeOf(CardType.SKY));
+    assertEquals(CardType.SEA, battlePolicy.counterTypeOf(CardType.SPACE));
+    assertEquals(CardType.GROUND, battlePolicy.counterTypeOf(CardType.SEA));
+  }
+
+  @Test
   void everyTypeBeatsExactlyOneTypeAndLosesToExactlyOne() {
     for (CardType cardType : CardType.values()) {
       long beaten =
