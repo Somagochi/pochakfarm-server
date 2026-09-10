@@ -8,6 +8,7 @@ import com.somagochi.pochakfarm.badge.infrastructure.persistence.BadgeRepository
 import com.somagochi.pochakfarm.badge.infrastructure.persistence.UserBadgeRepository;
 import com.somagochi.pochakfarm.battle.domain.GymLeader;
 import com.somagochi.pochakfarm.battle.domain.GymLeaderAnimal;
+import com.somagochi.pochakfarm.battle.domain.GymLeaderType;
 import com.somagochi.pochakfarm.battle.infrastructure.persistence.GymLeaderAnimalRepository;
 import com.somagochi.pochakfarm.battle.infrastructure.persistence.GymLeaderRepository;
 import com.somagochi.pochakfarm.capture.domain.Capture;
@@ -87,6 +88,22 @@ public class BattleFixtures {
         "update gym_leaders set thumbnail_key = ?, image_key = ? where id = ?",
         thumbnailKey,
         imageKey,
+        gymLeaderId);
+  }
+
+  public void changeGymLeaderContent(
+      Long gymLeaderId,
+      GymLeaderType leaderType,
+      String difficulty,
+      String leaderDescription,
+      String tipDescription) {
+    jdbcTemplate.update(
+        "update gym_leaders set leader_type = ?, difficulty = ?, leader_description = ?,"
+            + " tip_description = ? where id = ?",
+        leaderType.name(),
+        difficulty,
+        leaderDescription,
+        tipDescription,
         gymLeaderId);
   }
 

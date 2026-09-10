@@ -4,6 +4,8 @@ import com.somagochi.pochakfarm.badge.domain.Badge;
 import com.somagochi.pochakfarm.badge.dto.BadgeResponse;
 import com.somagochi.pochakfarm.badge.infrastructure.persistence.BadgeRepository;
 import com.somagochi.pochakfarm.badge.infrastructure.persistence.UserBadgeRepository;
+import com.somagochi.pochakfarm.common.exception.BusinessException;
+import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
 import java.util.Collection;
 import java.util.Map;
@@ -28,6 +30,14 @@ public class BadgeQueryService {
     }
     return badgeRepository.findByCodeIn(codes).stream()
         .collect(Collectors.toMap(Badge::getCode, this::toResponse));
+  }
+
+  @Transactional(readOnly = true)
+  public BadgeResponse getByCode(String code) {
+    return badgeRepository
+        .findByCode(code)
+        .map(this::toResponse)
+        .orElseThrow(() -> new BusinessException(ErrorCode.BADGE_NOT_FOUND));
   }
 
   @Transactional(readOnly = true)

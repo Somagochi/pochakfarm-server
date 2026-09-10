@@ -1,10 +1,13 @@
 package com.somagochi.pochakfarm.battle.application;
 
 import com.somagochi.pochakfarm.badge.application.BadgeQueryService;
+import com.somagochi.pochakfarm.battle.domain.BattlePolicy;
 import com.somagochi.pochakfarm.battle.domain.GymLeader;
 import com.somagochi.pochakfarm.battle.domain.GymLeaderAnimal;
+import com.somagochi.pochakfarm.battle.domain.GymLeaderType;
 import com.somagochi.pochakfarm.battle.domain.GymLeaderUnlock;
 import com.somagochi.pochakfarm.battle.domain.GymLeaderUnlockResolver;
+import com.somagochi.pochakfarm.battle.dto.BattleNpcSkillResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderAnimalResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderDetailResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderProfileResponse;
@@ -29,6 +32,7 @@ public class GymLeaderQueryService {
   private final GymLeaderRepository gymLeaderRepository;
   private final GymLeaderAnimalRepository gymLeaderAnimalRepository;
   private final GymLeaderUnlockResolver gymLeaderUnlockResolver;
+  private final BattlePolicy battlePolicy;
   private final BadgeQueryService badgeQueryService;
   private final UserQueryService userQueryService;
   private final FileStorage fileStorage;
@@ -121,7 +125,13 @@ public class GymLeaderQueryService {
         gymLeader.getName(),
         gymLeader.getChallengeOrder(),
         buildUrlOrNull(gymLeader.getImageKey()),
-        gymLeader.getBadgeCode(),
+        leaderTypeLabelOrNull(gymLeader.getLeaderType()),
+        gymLeader.getDifficulty(),
+        gymLeader.getLeaderDescription(),
+        gymLeader.getTipDescription(),
+        suggestTypeLabelOrNull(gymLeader.getLeaderType()),
+        battlePolicy.gymLeaderCoinReward(gymLeader.getChallengeOrder()),
+        battlePolicy.gymLeaderExperienceReward(gymLeader.getChallengeOrder()),
         ownedBadgeCodes.contains(gymLeader.getBadgeCode()),
         GymLeaderUnlockResponse.of(
             unlock.requiredLevel(),
@@ -136,7 +146,18 @@ public class GymLeaderQueryService {
         gymLeaderAnimal.getAnimalName(),
         gymLeaderAnimal.getCardType(),
         gymLeaderAnimal.getTier(),
-        buildUrlOrNull(gymLeaderAnimal.getImageKey()));
+        buildUrlOrNull(gymLeaderAnimal.getImageKey()),
+        List.of(
+            BattleNpcSkillResponse.from(gymLeaderAnimal.getSkill1()),
+            BattleNpcSkillResponse.from(gymLeaderAnimal.getSkill2())));
+  }
+
+  private String suggestTypeLabelOrNull(GymLeaderType leaderType) {
+    return leaderType == null ? null : leaderType.counter().label();
+  }
+
+  private String leaderTypeLabelOrNull(GymLeaderType leaderType) {
+    return leaderType == null ? null : leaderType.label();
   }
 
   private String buildUrlOrNull(String key) {

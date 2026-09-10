@@ -4,8 +4,15 @@ import com.somagochi.pochakfarm.animal.application.AnimalQueryService;
 import com.somagochi.pochakfarm.animal.application.AnimalRestService;
 import com.somagochi.pochakfarm.animal.dto.AnimalBattleProfile;
 import com.somagochi.pochakfarm.battle.domain.Battle;
+import com.somagochi.pochakfarm.battle.domain.BattleAdvantageResolver;
+import com.somagochi.pochakfarm.battle.domain.BattleBroadcastEvent;
+import com.somagochi.pochakfarm.battle.domain.BattleBroadcastEventGenerator;
+import com.somagochi.pochakfarm.battle.domain.BattleBroadcastEventSpec;
 import com.somagochi.pochakfarm.battle.domain.BattleEntry;
+import com.somagochi.pochakfarm.battle.domain.BattleEventCode;
 import com.somagochi.pochakfarm.battle.domain.BattlePolicy;
+import com.somagochi.pochakfarm.battle.domain.BattlePosition;
+import com.somagochi.pochakfarm.battle.domain.BattlePositionChange;
 import com.somagochi.pochakfarm.battle.domain.BattleSide;
 import com.somagochi.pochakfarm.battle.domain.BattleStatus;
 import com.somagochi.pochakfarm.battle.domain.GymLeader;
@@ -13,11 +20,13 @@ import com.somagochi.pochakfarm.battle.domain.GymLeaderAnimal;
 import com.somagochi.pochakfarm.battle.domain.GymLeaderUnlock;
 import com.somagochi.pochakfarm.battle.dto.BattleEntryRequest;
 import com.somagochi.pochakfarm.battle.dto.BattleNpcEntryResponse;
+import com.somagochi.pochakfarm.battle.dto.BattleNpcSkillResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleRestResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleSkillResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleStartRequest;
 import com.somagochi.pochakfarm.battle.dto.BattleStartResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleUserEntryResponse;
+import com.somagochi.pochakfarm.battle.infrastructure.persistence.BattleBroadcastEventRepository;
 import com.somagochi.pochakfarm.battle.infrastructure.persistence.BattleEntryRepository;
 import com.somagochi.pochakfarm.battle.infrastructure.persistence.BattleRepository;
 import com.somagochi.pochakfarm.battle.infrastructure.persistence.GymLeaderAnimalRepository;
@@ -44,11 +53,14 @@ public class BattleStartService {
 
   private final BattleRepository battleRepository;
   private final BattleEntryRepository battleEntryRepository;
+  private final BattleBroadcastEventRepository battleBroadcastEventRepository;
   private final GymLeaderAnimalRepository gymLeaderAnimalRepository;
   private final GymLeaderQueryService gymLeaderQueryService;
   private final AnimalQueryService animalQueryService;
   private final AnimalRestService animalRestService;
   private final BattlePolicy battlePolicy;
+  private final BattleAdvantageResolver battleAdvantageResolver;
+  private final BattleBroadcastEventGenerator battleBroadcastEventGenerator;
   private final BattleFinalRoundService battleFinalRoundService;
   private final FileStorage fileStorage;
 
@@ -111,7 +123,49 @@ public class BattleStartService {
     }
     battleEntryRepository.saveAll(battleEntries);
 
+    applyFirstEntryAdvantages(battle, battleEntries);
+
     return toResponse(battle);
+  }
+
+  private void applyFirstEntryAdvantages(Battle battle, List<BattleEntry> entries) {
+    BattleEntry userEntry = firstEntry(entries, BattleSide.USER);
+    BattleEntry npcEntry = firstEntry(entries, BattleSide.NPC);
+    List<BattleBroadcastEvent> events = new ArrayList<>();
+
+    BattlePositionChange tierChange =
+        battleAdvantageResolver.resolveTier(
+            BattlePosition.of(battle.getBarPosition()), userEntry.getTier(), npcEntry.getTier());
+    recordAdvantageEvents(battle.getId(), events, BattleEventCode.TIER_ADVANTAGE, tierChange);
+
+    BattlePositionChange typeChange =
+        battleAdvantageResolver.resolveType(
+            tierChange.after(), userEntry.getCardType(), npcEntry.getCardType());
+    recordAdvantageEvents(battle.getId(), events, BattleEventCode.TYPE_ADVANTAGE, typeChange);
+
+    battle.applyEntryAdvantage(typeChange.after().value());
+    battleBroadcastEventRepository.saveAll(events);
+  }
+
+  private void recordAdvantageEvents(
+      Long battleId,
+      List<BattleBroadcastEvent> events,
+      BattleEventCode eventCode,
+      BattlePositionChange change) {
+    for (BattleBroadcastEventSpec spec :
+        battleBroadcastEventGenerator.advantage(eventCode, change)) {
+      events.add(
+          BattleBroadcastEvent.record(
+              battleId,
+              events.size() + 1,
+              null,
+              1,
+              spec.eventCode(),
+              spec.animalSide(),
+              spec.skill(),
+              spec.winnerSide(),
+              spec.points()));
+    }
   }
 
   private void validateRequest(BattleStartRequest request) {
@@ -231,7 +285,10 @@ public class BattleStartService {
         entry.getTier(),
         gymLeaderAnimal == null || gymLeaderAnimal.getImageKey() == null
             ? null
-            : fileStorage.buildUrl(gymLeaderAnimal.getImageKey()));
+            : fileStorage.buildUrl(gymLeaderAnimal.getImageKey()),
+        List.of(
+            BattleNpcSkillResponse.from(entry.getSkill1()),
+            BattleNpcSkillResponse.from(entry.getSkill2())));
   }
 
   private BattleSkillResponse toSkillResponse(CardSkill skill) {

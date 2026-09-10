@@ -6,6 +6,8 @@ import com.somagochi.pochakfarm.achievement.dto.AchievementRewardResponse;
 import com.somagochi.pochakfarm.achievement.infrastructure.persistence.AchievementRewardRepository;
 import com.somagochi.pochakfarm.badge.application.BadgeQueryService;
 import com.somagochi.pochakfarm.badge.dto.BadgeResponse;
+import com.somagochi.pochakfarm.common.exception.BusinessException;
+import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -27,8 +29,35 @@ public class AchievementRewardCatalog {
   private final BadgeQueryService badgeQueryService;
 
   @Transactional(readOnly = true)
-  public List<AchievementReward> findByAchievementId(Long achievementId) {
-    return validRewards(achievementRewardRepository.findByAchievementId(achievementId));
+  public List<AchievementReward> findGrantableByAchievementId(Long achievementId) {
+    List<AchievementReward> rewards =
+        achievementRewardRepository.findByAchievementId(achievementId);
+    if (rewards.isEmpty()) {
+      log.warn("지급할 보상이 없어 업적 수령 실패 achievementId={}", achievementId);
+      throw new BusinessException(ErrorCode.ACHIEVEMENT_REWARD_NOT_GRANTABLE);
+    }
+    for (AchievementReward reward : rewards) {
+      if (!reward.isDefinitionValid()) {
+        log.warn(
+            "유효하지 않은 보상 정의로 업적 수령 실패 rewardId={} achievementId={} rewardType={}",
+            reward.getId(),
+            achievementId,
+            reward.getRewardType());
+        throw new BusinessException(ErrorCode.ACHIEVEMENT_REWARD_NOT_GRANTABLE);
+      }
+    }
+    Map<String, BadgeResponse> badges = findBadges(rewards);
+    for (AchievementReward reward : rewards) {
+      if (reward.getRewardType() == RewardType.BADGE && badgeOf(badges, reward) == null) {
+        log.warn(
+            "존재하지 않는 뱃지를 참조해 업적 수령 실패 rewardId={} achievementId={} referenceCode={}",
+            reward.getId(),
+            achievementId,
+            reward.getReferenceCode());
+        throw new BusinessException(ErrorCode.ACHIEVEMENT_REWARD_NOT_GRANTABLE);
+      }
+    }
+    return rewards;
   }
 
   @Transactional(readOnly = true)

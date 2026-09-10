@@ -7,9 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.somagochi.pochakfarm.battle.domain.BattlePolicy;
 import com.somagochi.pochakfarm.battle.domain.GymLeader;
+import com.somagochi.pochakfarm.battle.domain.GymLeaderType;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderDetailResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderProfileResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderResponse;
+import com.somagochi.pochakfarm.characterization.domain.CardSkill;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -98,6 +100,42 @@ class GymLeaderQueryServiceTest {
   }
 
   @Test
+  void exposesLeaderContentWithSuggestTypeCounteringLeaderType() {
+    fixtures.changeGymLeaderContent(
+        first.getId(), GymLeaderType.GROUND, "초보", "모루는 땅 타입만 데리고 나와요", "단단한 방어와 꾸준한 공격이 특징이에요");
+
+    GymLeaderProfileResponse profile = gymLeaderProfileOf(first);
+
+    assertEquals("땅", profile.leaderType());
+    assertEquals("초보", profile.difficulty());
+    assertEquals("모루는 땅 타입만 데리고 나와요", profile.leaderDescription());
+    assertEquals("단단한 방어와 꾸준한 공격이 특징이에요", profile.tipDescription());
+    assertEquals("하늘", profile.suggestType());
+  }
+
+  @Test
+  void exposesMixedLabelAsSuggestTypeWhenLeaderTypeIsMixed() {
+    fixtures.changeGymLeaderContent(
+        first.getId(), GymLeaderType.MIXED, "중급", "라온은 여러 타입을 섞어 데리고 나와요", "자리마다 다른 타입으로 맞서세요");
+
+    GymLeaderProfileResponse profile = gymLeaderProfileOf(first);
+
+    assertEquals("복합", profile.leaderType());
+    assertEquals("복합", profile.suggestType());
+  }
+
+  @Test
+  void leavesLeaderContentNullWhenNotConfigured() {
+    GymLeaderProfileResponse profile = gymLeaderProfileOf(second);
+
+    assertNull(profile.leaderType());
+    assertNull(profile.difficulty());
+    assertNull(profile.leaderDescription());
+    assertNull(profile.tipDescription());
+    assertNull(profile.suggestType());
+  }
+
+  @Test
   void omitsDetailFieldsFromListResponse() {
     List<String> componentNames =
         List.of(GymLeaderResponse.class.getRecordComponents()).stream()
@@ -111,6 +149,27 @@ class GymLeaderQueryServiceTest {
   }
 
   @Test
+  void exposesFirstClearRewardsByChallengeOrder() {
+    GymLeaderProfileResponse firstProfile = gymLeaderProfileOf(first);
+    GymLeaderProfileResponse secondProfile = gymLeaderProfileOf(second);
+
+    assertEquals(300, firstProfile.coinReward());
+    assertEquals(20, firstProfile.experienceReward());
+    assertEquals(500, secondProfile.coinReward());
+    assertEquals(30, secondProfile.experienceReward());
+  }
+
+  @Test
+  void omitsBadgeCodeFromProfileResponse() {
+    List<String> componentNames =
+        List.of(GymLeaderProfileResponse.class.getRecordComponents()).stream()
+            .map(java.lang.reflect.RecordComponent::getName)
+            .toList();
+
+    assertFalse(componentNames.contains("badgeCode"));
+  }
+
+  @Test
   void marksClearedByOwningGymLeaderBadge() {
     fixtures.grantBadge(userId, first.getBadgeCode());
 
@@ -119,21 +178,15 @@ class GymLeaderQueryServiceTest {
   }
 
   @Test
-  void exposesGymLeaderAnimalsWithoutSkillInformation() {
+  void exposesGymLeaderAnimalSkillNamesAndBattleTypes() {
     GymLeaderDetailResponse response = gymLeaderQueryService.getGymLeader(userId, first.getId());
 
     assertEquals(BattlePolicy.ENTRY_COUNT, response.animals().size());
-    List<String> componentNames =
-        List.of(
-                com.somagochi.pochakfarm.battle.dto.GymLeaderAnimalResponse.class
-                    .getRecordComponents())
-            .stream()
-            .map(java.lang.reflect.RecordComponent::getName)
-            .toList();
-    assertFalse(componentNames.contains("skill1"));
-    assertFalse(componentNames.contains("skill2"));
-    assertFalse(componentNames.contains("triggerPercentage"));
-    assertFalse(componentNames.contains("point"));
+    assertEquals(2, response.animals().getFirst().skills().size());
+    assertEquals("나뭇잎 방어", response.animals().getFirst().skills().getFirst().name());
+    assertEquals(
+        CardSkill.GROUND_LEAF_GUARD.battleType(),
+        response.animals().getFirst().skills().getFirst().battleType());
   }
 
   private GymLeaderResponse gymLeaderResponseOf(GymLeader gymLeader) {

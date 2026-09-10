@@ -16,10 +16,9 @@ public record BattleEntryResponse(
     @Schema(description = "동물 이름", example = "솜구름") String animalName,
     @Schema(description = "카드 타입", example = "SEA") CardType cardType,
     @Schema(description = "티어", example = "A") Tier tier,
-    @Schema(description = "보유 스킬 2개. 관장 동물의 스킬은 공개하지 않으므로 NPC 진영은 null")
-        List<BattleEntrySkillResponse> skills) {
+    @Schema(description = "보유 스킬 2개") List<BattleEntrySkillResponse> skills) {
 
-  public static BattleEntryResponse from(BattleEntry entry, BattlePolicy battlePolicy) {
+  public static BattleEntryResponse fromUser(BattleEntry entry, BattlePolicy battlePolicy) {
     return new BattleEntryResponse(
         entry.getSide(),
         entry.getOrderNo(),
@@ -27,10 +26,8 @@ public record BattleEntryResponse(
         entry.getAnimalName(),
         entry.getCardType(),
         entry.getTier(),
-        entry.isUserSide()
-            ? List.of(
-                BattleEntrySkillResponse.of(entry.getSkill1(), battlePolicy),
-                BattleEntrySkillResponse.of(entry.getSkill2(), battlePolicy))
-            : null);
+        List.of(
+            BattleEntrySkillResponse.of(entry.getSkill1(), battlePolicy),
+            BattleEntrySkillResponse.of(entry.getSkill2(), battlePolicy)));
   }
 }

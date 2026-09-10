@@ -2,7 +2,6 @@ package com.somagochi.pochakfarm.battle.application;
 
 import com.somagochi.pochakfarm.battle.domain.Battle;
 import com.somagochi.pochakfarm.battle.domain.BattleAction;
-import com.somagochi.pochakfarm.battle.domain.BattleActionPolicy;
 import com.somagochi.pochakfarm.battle.domain.BattleAdvantageResolver;
 import com.somagochi.pochakfarm.battle.domain.BattleBroadcastEvent;
 import com.somagochi.pochakfarm.battle.domain.BattleBroadcastEventGenerator;
@@ -52,7 +51,6 @@ public class BattleActionService {
   private final NpcSkillSelector npcSkillSelector;
   private final BattlePolicy battlePolicy;
   private final BattleRewardService battleRewardService;
-  private final BattleActionPolicy battleActionPolicy;
   private final Clock clock;
 
   public BattleActionService(
@@ -66,7 +64,6 @@ public class BattleActionService {
       NpcSkillSelector npcSkillSelector,
       BattlePolicy battlePolicy,
       BattleRewardService battleRewardService,
-      BattleActionPolicy battleActionPolicy,
       Clock clock) {
     this.battleRepository = battleRepository;
     this.battleEntryRepository = battleEntryRepository;
@@ -78,7 +75,6 @@ public class BattleActionService {
     this.npcSkillSelector = npcSkillSelector;
     this.battlePolicy = battlePolicy;
     this.battleRewardService = battleRewardService;
-    this.battleActionPolicy = battleActionPolicy;
     this.clock = clock;
   }
 
@@ -106,11 +102,6 @@ public class BattleActionService {
     }
 
     Instant now = clock.instant();
-    if (request.skill() != null
-        && battleActionPolicy.isSelectionClosed(battle.lastProgressAt(), now)) {
-      throw new BusinessException(ErrorCode.BATTLE_ACTION_SELECTION_CLOSED);
-    }
-
     int entryOrder = BattleAction.entryOrderOf(actionSeq);
     BattleEntry userEntry = entry(battleId, BattleSide.USER, entryOrder);
     BattleEntry npcEntry = entry(battleId, BattleSide.NPC, entryOrder);
@@ -188,9 +179,6 @@ public class BattleActionService {
         battle.getStatus(),
         battle.getResult(),
         nextActionSeq,
-        nextActionSeq == null
-            ? null
-            : battleActionPolicy.selectionExpiresAt(battle.lastProgressAt()),
         BattleFinalRoundStateResponse.from(battle, battlePolicy),
         battle.isInProgress() ? null : battleRewardService.findResult(battle),
         BattleBroadcastEventResponse.from(events));

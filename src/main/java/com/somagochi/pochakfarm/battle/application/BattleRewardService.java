@@ -1,6 +1,7 @@
 package com.somagochi.pochakfarm.battle.application;
 
 import com.somagochi.pochakfarm.badge.application.BadgeGrantService;
+import com.somagochi.pochakfarm.badge.application.BadgeQueryService;
 import com.somagochi.pochakfarm.battle.domain.Battle;
 import com.somagochi.pochakfarm.battle.domain.BattlePolicy;
 import com.somagochi.pochakfarm.battle.domain.GymLeader;
@@ -30,6 +31,7 @@ public class BattleRewardService {
   private final UserRepository userRepository;
   private final UserCoinService userCoinService;
   private final BadgeGrantService badgeGrantService;
+  private final BadgeQueryService badgeQueryService;
   private final BattlePolicy battlePolicy;
   private final LevelRewardPolicy levelRewardPolicy;
 
@@ -38,7 +40,7 @@ public class BattleRewardService {
     User user = userForUpdate(battle.getUserId());
     return gymLeaderClearRepository
         .findByBattleId(battle.getId())
-        .map(BattleRewardResponse::granted)
+        .map(this::grantedResponse)
         .orElseGet(() -> grantWhenNotCleared(battle, user));
   }
 
@@ -46,7 +48,7 @@ public class BattleRewardService {
   public BattleRewardResponse findResult(Battle battle) {
     return gymLeaderClearRepository
         .findByBattleId(battle.getId())
-        .map(BattleRewardResponse::granted)
+        .map(this::grantedResponse)
         .orElseGet(
             () -> {
               User user = user(battle.getUserId());
@@ -90,7 +92,12 @@ public class BattleRewardService {
                 levelReward.requiredExperienceForNextLevel(),
                 levelReward.coinReward(),
                 user.getCoins()));
-    return BattleRewardResponse.granted(clear);
+    return grantedResponse(clear);
+  }
+
+  private BattleRewardResponse grantedResponse(GymLeaderClear clear) {
+    return BattleRewardResponse.granted(
+        clear, badgeQueryService.getByCode(clear.getBadgeCode()).imageUrl());
   }
 
   private GymLeader gymLeader(Long gymLeaderId) {

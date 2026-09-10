@@ -5,13 +5,11 @@ import static com.somagochi.pochakfarm.battle.application.BattleFixture.NPC_STAB
 import static com.somagochi.pochakfarm.battle.application.BattleFixture.USER_GAMBLE_SKILL;
 import static com.somagochi.pochakfarm.battle.application.BattleFixture.USER_STABLE_SKILL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.BDDMockito.given;
 
-import com.somagochi.pochakfarm.battle.domain.BattleActionPolicy;
 import com.somagochi.pochakfarm.battle.domain.BattlePolicy;
 import com.somagochi.pochakfarm.battle.domain.BattleSide;
 import com.somagochi.pochakfarm.battle.domain.BattleStatus;
@@ -94,15 +92,15 @@ class BattleStateQueryServiceTest {
     assertEquals(BattlePolicy.TOTAL_ACTION_COUNT, state.totalActionCount());
     assertEquals(2, state.currentEntryOrder());
     assertEquals(5, state.nextActionSeq());
-    assertEquals(
-        now.plus(BattleActionPolicy.SKILL_SELECTION_TIME_LIMIT), state.nextSelectionExpiresAt());
     assertEquals(BattleSide.USER, state.userEntry().side());
     assertEquals(2, state.userEntry().orderNo());
     assertEquals("유저2", state.userEntry().animalName());
     assertEquals(2, state.userEntry().skills().size());
     assertEquals(BattleSide.NPC, state.npcEntry().side());
     assertEquals("관장2", state.npcEntry().animalName());
-    assertNull(state.npcEntry().skills());
+    assertEquals(2, state.npcEntry().skills().size());
+    assertEquals(NPC_STABLE_SKILL.displayName(), state.npcEntry().skills().getFirst().name());
+    assertEquals(NPC_STABLE_SKILL.battleType(), state.npcEntry().skills().getFirst().battleType());
 
     List<BattleBroadcastEventResponse> events = state.broadcastEvents();
     assertEquals(
@@ -124,7 +122,6 @@ class BattleStateQueryServiceTest {
     assertEquals(0, state.completedActionCount());
     assertEquals(1, state.currentEntryOrder());
     assertEquals(1, state.nextActionSeq());
-    assertNotNull(state.nextSelectionExpiresAt());
     assertEquals(BattlePolicy.INITIAL_BAR_POSITION, state.barPosition());
     assertTrue(state.broadcastEvents().isEmpty());
   }

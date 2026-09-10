@@ -44,12 +44,13 @@ public class AchievementClaimService {
             .findByUserIdAndAchievementId(userId, achievement.getId())
             .orElseGet(() -> recordAchieved(userId, achievement));
 
+    List<AchievementReward> rewards =
+        achievementRewardCatalog.findGrantableByAchievementId(achievement.getId());
+
     if (userAchievementRepository.markClaimed(record.getId(), Instant.now(clock)) == 0) {
       throw new BusinessException(ErrorCode.ACHIEVEMENT_REWARD_ALREADY_CLAIMED);
     }
 
-    List<AchievementReward> rewards =
-        achievementRewardCatalog.findByAchievementId(achievement.getId());
     User user = userQueryService.getForUpdate(userId);
     rewards.forEach(reward -> rewardGranterResolver.grant(user, reward));
 
