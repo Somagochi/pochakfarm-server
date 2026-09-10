@@ -74,10 +74,17 @@ class BattleControllerTest {
   @MockitoBean private BattleStartService battleStartService;
 
   @Test
-  void returnsGymLeaderListWithThumbnailAndUnlockedOnly() throws Exception {
+  void returnsGymLeaderListWithThumbnailAndUnlockConditions() throws Exception {
     given(gymLeaderQueryService.getGymLeaders(USER_ID))
         .willReturn(
-            List.of(new GymLeaderResponse(4L, "노바", 4, "https://cdn/thumb.png", false, false)));
+            List.of(
+                new GymLeaderResponse(
+                    4L,
+                    "노바",
+                    4,
+                    "https://cdn/thumb.png",
+                    false,
+                    new GymLeaderUnlockResponse(false, 12, true, "BDG008", false))));
 
     mockMvc
         .perform(get("/api/battles/gym-leaders").with(authentication(userAuthentication())))
@@ -85,11 +92,15 @@ class BattleControllerTest {
         .andExpect(jsonPath("$.data[0].gymLeaderId").value(4))
         .andExpect(jsonPath("$.data[0].thumbnailUrl").value("https://cdn/thumb.png"))
         .andExpect(jsonPath("$.data[0].cleared").value(false))
-        .andExpect(jsonPath("$.data[0].unlocked").value(false))
+        .andExpect(jsonPath("$.data[0].unlocked").doesNotExist())
+        .andExpect(jsonPath("$.data[0].unlock.unlocked").value(false))
+        .andExpect(jsonPath("$.data[0].unlock.requiredLevel").value(12))
+        .andExpect(jsonPath("$.data[0].unlock.levelSatisfied").value(true))
+        .andExpect(jsonPath("$.data[0].unlock.previousBadgeCode").value("BDG008"))
+        .andExpect(jsonPath("$.data[0].unlock.previousBadgeSatisfied").value(false))
         .andExpect(jsonPath("$.data[0].code").doesNotExist())
         .andExpect(jsonPath("$.data[0].badgeCode").doesNotExist())
-        .andExpect(jsonPath("$.data[0].imageUrl").doesNotExist())
-        .andExpect(jsonPath("$.data[0].unlock").doesNotExist());
+        .andExpect(jsonPath("$.data[0].imageUrl").doesNotExist());
   }
 
   @Test

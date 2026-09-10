@@ -109,7 +109,7 @@ public class GymLeaderQueryService {
         gymLeader.getChallengeOrder(),
         buildUrlOrNull(gymLeader.getThumbnailKey()),
         ownedBadgeCodes.contains(gymLeader.getBadgeCode()),
-        unlock.isUnlocked());
+        toUnlockResponse(unlock));
   }
 
   private GymLeaderProfileResponse toProfileResponse(
@@ -133,11 +133,15 @@ public class GymLeaderQueryService {
         battlePolicy.gymLeaderCoinReward(gymLeader.getChallengeOrder()),
         battlePolicy.gymLeaderExperienceReward(gymLeader.getChallengeOrder()),
         ownedBadgeCodes.contains(gymLeader.getBadgeCode()),
-        GymLeaderUnlockResponse.of(
-            unlock.requiredLevel(),
-            unlock.levelSatisfied(),
-            unlock.previousBadgeCode(),
-            unlock.previousBadgeSatisfied()));
+        toUnlockResponse(unlock));
+  }
+
+  private GymLeaderUnlockResponse toUnlockResponse(GymLeaderUnlock unlock) {
+    return GymLeaderUnlockResponse.of(
+        unlock.requiredLevel(),
+        unlock.levelSatisfied(),
+        unlock.previousBadgeCode(),
+        unlock.previousBadgeSatisfied());
   }
 
   private GymLeaderAnimalResponse toAnimalResponse(GymLeaderAnimal gymLeaderAnimal) {
