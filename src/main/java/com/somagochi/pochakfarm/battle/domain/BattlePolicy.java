@@ -18,8 +18,7 @@ public class BattlePolicy {
   public static final int INITIAL_BAR_POSITION = 0;
   public static final int MAX_BAR_POSITION = 15;
 
-  public static final int MAX_TIER_MOVE_DISTANCE = 2;
-  public static final int TIER_STEP_FOR_MAX_MOVE_DISTANCE = 3;
+  public static final int MAX_TIER_MOVE_DISTANCE = 3;
   public static final int TYPE_ADVANTAGE_MOVE_DISTANCE = 1;
 
   public static final int FINAL_ROUND_ONE_POINT_TAP_COUNT = 5;
@@ -70,7 +69,7 @@ public class BattlePolicy {
     if (step <= 0) {
       return 0;
     }
-    return step >= TIER_STEP_FOR_MAX_MOVE_DISTANCE ? MAX_TIER_MOVE_DISTANCE : 1;
+    return Math.min(step, MAX_TIER_MOVE_DISTANCE);
   }
 
   public int tierPointDifference(Tier userTier, Tier npcTier) {
