@@ -7,11 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.somagochi.pochakfarm.battle.domain.BattlePolicy;
 import com.somagochi.pochakfarm.battle.domain.GymLeader;
+import com.somagochi.pochakfarm.battle.domain.GymLeaderType;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderDetailResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderProfileResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderResponse;
 import com.somagochi.pochakfarm.characterization.domain.CardSkill;
-import com.somagochi.pochakfarm.characterization.domain.CardType;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -102,7 +102,7 @@ class GymLeaderQueryServiceTest {
   @Test
   void exposesLeaderContentWithSuggestTypeCounteringLeaderType() {
     fixtures.changeGymLeaderContent(
-        first.getId(), CardType.GROUND, "초보", "모루는 땅 타입만 데리고 나와요", "단단한 방어와 꾸준한 공격이 특징이에요");
+        first.getId(), GymLeaderType.GROUND, "초보", "모루는 땅 타입만 데리고 나와요", "단단한 방어와 꾸준한 공격이 특징이에요");
 
     GymLeaderProfileResponse profile = gymLeaderProfileOf(first);
 
@@ -111,6 +111,17 @@ class GymLeaderQueryServiceTest {
     assertEquals("모루는 땅 타입만 데리고 나와요", profile.leaderDescription());
     assertEquals("단단한 방어와 꾸준한 공격이 특징이에요", profile.tipDescription());
     assertEquals("하늘", profile.suggestType());
+  }
+
+  @Test
+  void exposesMixedLabelAsSuggestTypeWhenLeaderTypeIsMixed() {
+    fixtures.changeGymLeaderContent(
+        first.getId(), GymLeaderType.MIXED, "중급", "라온은 여러 타입을 섞어 데리고 나와요", "자리마다 다른 타입으로 맞서세요");
+
+    GymLeaderProfileResponse profile = gymLeaderProfileOf(first);
+
+    assertEquals("복합", profile.leaderType());
+    assertEquals("복합", profile.suggestType());
   }
 
   @Test

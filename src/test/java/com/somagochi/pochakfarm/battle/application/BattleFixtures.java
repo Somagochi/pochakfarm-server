@@ -8,6 +8,7 @@ import com.somagochi.pochakfarm.badge.infrastructure.persistence.BadgeRepository
 import com.somagochi.pochakfarm.badge.infrastructure.persistence.UserBadgeRepository;
 import com.somagochi.pochakfarm.battle.domain.GymLeader;
 import com.somagochi.pochakfarm.battle.domain.GymLeaderAnimal;
+import com.somagochi.pochakfarm.battle.domain.GymLeaderType;
 import com.somagochi.pochakfarm.battle.infrastructure.persistence.GymLeaderAnimalRepository;
 import com.somagochi.pochakfarm.battle.infrastructure.persistence.GymLeaderRepository;
 import com.somagochi.pochakfarm.capture.domain.Capture;
@@ -92,7 +93,7 @@ public class BattleFixtures {
 
   public void changeGymLeaderContent(
       Long gymLeaderId,
-      CardType leaderType,
+      GymLeaderType leaderType,
       String difficulty,
       String leaderDescription,
       String tipDescription) {
