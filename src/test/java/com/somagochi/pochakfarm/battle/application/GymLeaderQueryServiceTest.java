@@ -68,6 +68,19 @@ class GymLeaderQueryServiceTest {
   }
 
   @Test
+  void exposesSameUnlockConditionsInListAsInDetail() {
+    fixtures.changeLevel(userId, 1);
+
+    GymLeaderResponse listed = gymLeaderResponseOf(second);
+
+    assertEquals(gymLeaderProfileOf(second).unlock(), listed.unlock());
+    assertFalse(listed.unlock().levelSatisfied());
+    assertEquals(first.getBadgeCode(), listed.unlock().previousBadgeCode());
+    assertFalse(listed.unlock().previousBadgeSatisfied());
+    assertEquals(listed.unlocked(), listed.unlock().unlocked());
+  }
+
+  @Test
   void reportsInsufficientLevelSeparatelyFromBadge() {
     fixtures.grantBadge(userId, first.getBadgeCode());
     fixtures.changeLevel(userId, 1);
@@ -145,7 +158,6 @@ class GymLeaderQueryServiceTest {
     assertFalse(componentNames.contains("code"));
     assertFalse(componentNames.contains("badgeCode"));
     assertFalse(componentNames.contains("imageUrl"));
-    assertFalse(componentNames.contains("unlock"));
   }
 
   @Test

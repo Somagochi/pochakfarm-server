@@ -22,8 +22,8 @@ public interface BattleApiSpec {
       summary = "관장 목록 조회",
       description =
           "NPC 관장 8명을 도전 순서 오름차순으로 조회한다. "
-              + "목록에는 썸네일과 클리어·해금 여부만 내려주고, "
-              + "관장 코드·뱃지 코드·해금 조건 상세와 관장 동물은 관장 상세 API 로 조회한다.")
+              + "목록에는 썸네일과 클리어·해금 여부, 요구 레벨·직전 관장 뱃지 두 해금 조건의 충족 여부를 내려주고, "
+              + "관장 코드·뱃지 코드와 관장 동물은 관장 상세 API 로 조회한다.")
   @SecurityRequirement(name = "bearerAuth")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(

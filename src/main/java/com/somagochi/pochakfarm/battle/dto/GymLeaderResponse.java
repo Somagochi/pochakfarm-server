@@ -9,5 +9,5 @@ public record GymLeaderResponse(
     @Schema(description = "도전 순서", example = "4") int challengeOrder,
     @Schema(description = "관장 썸네일 이미지 URL. 에셋 미확정이면 null") String thumbnailUrl,
     @Schema(description = "클리어 여부. 해당 관장의 뱃지 보유 여부와 같다", example = "false") boolean cleared,
-    @Schema(description = "해금 여부. 해금 조건 상세는 관장 상세 API 로 조회한다", example = "false")
-        boolean unlocked) {}
+    @Schema(description = "해금 여부. unlock.unlocked 와 같다", example = "false") boolean unlocked,
+    @Schema(description = "해금 조건과 충족 여부") GymLeaderUnlockResponse unlock) {}
