@@ -10,7 +10,7 @@ public record BattleRewardResponse(
     boolean rewardGranted,
     long gymLeaderCoins,
     long experience,
-    String badgeCode,
+    String badgeImageUrl,
     boolean levelUp,
     int levelBefore,
     int levelAfter,
@@ -19,13 +19,13 @@ public record BattleRewardResponse(
     long levelUpCoins,
     long coinsAfter) {
 
-  public static BattleRewardResponse granted(GymLeaderClear clear) {
+  public static BattleRewardResponse granted(GymLeaderClear clear, String badgeImageUrl) {
     return new BattleRewardResponse(
         true,
         true,
         clear.getGymLeaderCoinReward(),
         clear.getExperienceReward(),
-        clear.getBadgeCode(),
+        badgeImageUrl,
         clear.getLevelAfter() > clear.getLevelBefore(),
         clear.getLevelBefore(),
         clear.getLevelAfter(),

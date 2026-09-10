@@ -128,7 +128,6 @@ public class GymLeaderQueryService {
         gymLeader.getLeaderDescription(),
         gymLeader.getTipDescription(),
         suggestTypeLabelOrNull(gymLeader.getLeaderType()),
-        gymLeader.getBadgeCode(),
         ownedBadgeCodes.contains(gymLeader.getBadgeCode()),
         GymLeaderUnlockResponse.of(
             unlock.requiredLevel(),

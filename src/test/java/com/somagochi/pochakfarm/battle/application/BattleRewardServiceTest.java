@@ -81,12 +81,14 @@ class BattleRewardServiceTest {
     user.gainExperience(35, levelRewardPolicy);
     Battle battle = startFirstGymBattle();
     GymLeader gymLeader = gymLeaderRepository.findById(battle.getGymLeaderId()).orElseThrow();
-    badgeRepository.save(Badge.create(gymLeader.getBadgeCode(), "관장 도전장", "첫 번째 관장 승리", null));
+    badgeRepository.save(
+        Badge.create(gymLeader.getBadgeCode(), "관장 도전장", "첫 번째 관장 승리", "public/badge/bdg101.png"));
     flushAndClear();
 
     BattleRewardResponse response = battleRewardService.grantFirstClear(battle);
 
     assertTrue(response.firstClear());
+    assertTrue(response.badgeImageUrl().endsWith("public/badge/bdg101.png"));
     assertTrue(response.rewardGranted());
     assertEquals(300, response.gymLeaderCoins());
     assertEquals(20, response.experience());
