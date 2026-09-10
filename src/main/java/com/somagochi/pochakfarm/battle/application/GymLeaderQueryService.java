@@ -1,6 +1,7 @@
 package com.somagochi.pochakfarm.battle.application;
 
 import com.somagochi.pochakfarm.badge.application.BadgeQueryService;
+import com.somagochi.pochakfarm.battle.domain.BattlePolicy;
 import com.somagochi.pochakfarm.battle.domain.GymLeader;
 import com.somagochi.pochakfarm.battle.domain.GymLeaderAnimal;
 import com.somagochi.pochakfarm.battle.domain.GymLeaderType;
@@ -31,6 +32,7 @@ public class GymLeaderQueryService {
   private final GymLeaderRepository gymLeaderRepository;
   private final GymLeaderAnimalRepository gymLeaderAnimalRepository;
   private final GymLeaderUnlockResolver gymLeaderUnlockResolver;
+  private final BattlePolicy battlePolicy;
   private final BadgeQueryService badgeQueryService;
   private final UserQueryService userQueryService;
   private final FileStorage fileStorage;
@@ -128,6 +130,8 @@ public class GymLeaderQueryService {
         gymLeader.getLeaderDescription(),
         gymLeader.getTipDescription(),
         suggestTypeLabelOrNull(gymLeader.getLeaderType()),
+        battlePolicy.gymLeaderCoinReward(gymLeader.getChallengeOrder()),
+        battlePolicy.gymLeaderExperienceReward(gymLeader.getChallengeOrder()),
         ownedBadgeCodes.contains(gymLeader.getBadgeCode()),
         GymLeaderUnlockResponse.of(
             unlock.requiredLevel(),

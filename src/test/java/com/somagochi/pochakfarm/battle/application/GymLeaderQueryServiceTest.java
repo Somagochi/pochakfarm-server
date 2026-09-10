@@ -149,6 +149,17 @@ class GymLeaderQueryServiceTest {
   }
 
   @Test
+  void exposesFirstClearRewardsByChallengeOrder() {
+    GymLeaderProfileResponse firstProfile = gymLeaderProfileOf(first);
+    GymLeaderProfileResponse secondProfile = gymLeaderProfileOf(second);
+
+    assertEquals(300, firstProfile.coinReward());
+    assertEquals(20, firstProfile.experienceReward());
+    assertEquals(500, secondProfile.coinReward());
+    assertEquals(30, secondProfile.experienceReward());
+  }
+
+  @Test
   void omitsBadgeCodeFromProfileResponse() {
     List<String> componentNames =
         List.of(GymLeaderProfileResponse.class.getRecordComponents()).stream()
