@@ -1,14 +1,23 @@
 package com.somagochi.pochakfarm.battle.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.BDDMockito.given;
 
 import com.somagochi.pochakfarm.animal.domain.Animal;
 import com.somagochi.pochakfarm.animal.infrastructure.persistence.AnimalRepository;
+import com.somagochi.pochakfarm.battle.domain.BattleEventCode;
 import com.somagochi.pochakfarm.battle.domain.BattlePolicy;
+import com.somagochi.pochakfarm.battle.domain.BattleResult;
+import com.somagochi.pochakfarm.battle.domain.BattleSide;
+import com.somagochi.pochakfarm.battle.domain.BattleStatus;
 import com.somagochi.pochakfarm.battle.domain.GymLeader;
+import com.somagochi.pochakfarm.battle.dto.BattleActionRequest;
+import com.somagochi.pochakfarm.battle.dto.BattleActionResponse;
+import com.somagochi.pochakfarm.battle.dto.BattleBroadcastEventResponse;
 import com.somagochi.pochakfarm.battle.dto.BattleEntryRequest;
 import com.somagochi.pochakfarm.battle.dto.BattleStartRequest;
 import com.somagochi.pochakfarm.battle.dto.BattleStartResponse;
@@ -17,6 +26,7 @@ import com.somagochi.pochakfarm.characterization.domain.CardSkill;
 import com.somagochi.pochakfarm.characterization.domain.CardType;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
+import com.somagochi.pochakfarm.common.random.RandomProvider;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -26,6 +36,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @SpringBootTest
 class BattleStartServiceTest {
@@ -33,8 +44,11 @@ class BattleStartServiceTest {
   private static final Instant NOW = Instant.parse("2026-08-25T05:00:00Z");
 
   @Autowired private BattleStartService battleStartService;
+  @Autowired private BattleActionService battleActionService;
+  @Autowired private BattleStateQueryService battleStateQueryService;
   @Autowired private AnimalRepository animalRepository;
   @Autowired private BattleFixtures fixtures;
+  @MockitoBean private RandomProvider randomProvider;
 
   private Long userId;
   private GymLeader firstGymLeader;
@@ -63,12 +77,38 @@ class BattleStartServiceTest {
         battleStartService.start(userId, request(firstGymLeader.getId(), myAnimals), NOW);
 
     assertNotNull(response.battleId());
-    assertEquals(BattlePolicy.INITIAL_BAR_POSITION, response.barPosition());
+    assertEquals(2, response.barPosition());
     assertEquals(BattlePolicy.MIN_BAR_POSITION, response.minBarPosition());
     assertEquals(BattlePolicy.MAX_BAR_POSITION, response.maxBarPosition());
     assertEquals(1, response.userEntry().orderNo());
     assertEquals(1, response.npcEntry().orderNo());
     assertEquals(BattlePolicy.ENTRY_COUNT, response.rests().size());
+
+    var state = battleStateQueryService.getBattle(userId, response.battleId());
+    assertEquals(2, state.barPosition());
+    assertEquals(4, state.broadcastEvents().size());
+    assertEquals(BattleEventCode.TIER_ADVANTAGE, state.broadcastEvents().get(0).eventCode());
+    assertEquals(BattleEventCode.BATTLE_POINT_APPLIED, state.broadcastEvents().get(1).eventCode());
+    assertEquals(BattleSide.USER, state.broadcastEvents().get(1).winnerSide());
+    assertEquals(BattleEventCode.TYPE_ADVANTAGE, state.broadcastEvents().get(2).eventCode());
+    assertEquals(BattleEventCode.BATTLE_POINT_APPLIED, state.broadcastEvents().get(3).eventCode());
+    state
+        .broadcastEvents()
+        .forEach(
+            event -> {
+              assertNull(event.actionSeq());
+              assertEquals(1, event.entryOrder());
+            });
+
+    var action =
+        battleActionService.selectSkill(
+            userId, response.battleId(), new BattleActionRequest(1, CardSkill.SKY_FEATHER_GUARD));
+    assertFalse(
+        action.broadcastEvents().stream()
+            .anyMatch(
+                event ->
+                    event.eventCode() == BattleEventCode.TIER_ADVANTAGE
+                        || event.eventCode() == BattleEventCode.TYPE_ADVANTAGE));
 
     Instant expectedRestEndsAt = NOW.plus(Duration.ofMinutes(30));
     for (Animal animal : myAnimals) {
@@ -95,13 +135,74 @@ class BattleStartServiceTest {
   }
 
   @Test
+  void simulatesBattleFromInitialStateThroughAllThreeEntries() {
+    given(randomProvider.nextInt(100)).willReturn(99);
+    BattleStartResponse started =
+        battleStartService.start(userId, request(firstGymLeader.getId(), myAnimals), NOW);
+    List<CardSkill> skills =
+        List.of(CardSkill.SKY_FEATHER_GUARD, CardSkill.SKY_TAILWIND, CardSkill.SKY_CLOUD_CUSHION);
+
+    var initialState = battleStateQueryService.getBattle(userId, started.battleId());
+    assertEquals(
+        List.of(
+            BattleEventCode.TIER_ADVANTAGE,
+            BattleEventCode.BATTLE_POINT_APPLIED,
+            BattleEventCode.TYPE_ADVANTAGE,
+            BattleEventCode.BATTLE_POINT_APPLIED),
+        eventCodes(initialState.broadcastEvents()));
+
+    BattleActionResponse response = null;
+    for (int actionSeq = 1; actionSeq <= BattlePolicy.TOTAL_ACTION_COUNT; actionSeq++) {
+      CardSkill skill = skills.get((actionSeq - 1) / BattlePolicy.ACTIONS_PER_ENTRY);
+      response =
+          battleActionService.selectSkill(
+              userId, started.battleId(), new BattleActionRequest(actionSeq, skill));
+
+      if (actionSeq == 1) {
+        assertEquals(
+            List.of(BattleEventCode.SKILL_FAILED, BattleEventCode.SKILL_FAILED),
+            eventCodes(response.broadcastEvents()));
+      }
+      if (actionSeq == 3) {
+        assertEquals(
+            List.of(
+                BattleEventCode.SKILL_FAILED,
+                BattleEventCode.SKILL_FAILED,
+                BattleEventCode.TIER_ADVANTAGE,
+                BattleEventCode.BATTLE_POINT_APPLIED,
+                BattleEventCode.TYPE_ADVANTAGE,
+                BattleEventCode.BATTLE_POINT_APPLIED),
+            eventCodes(response.broadcastEvents()));
+      }
+      if (actionSeq == 6) {
+        assertEquals(
+            List.of(
+                BattleEventCode.SKILL_FAILED,
+                BattleEventCode.SKILL_FAILED,
+                BattleEventCode.TYPE_ADVANTAGE,
+                BattleEventCode.BATTLE_POINT_APPLIED),
+            eventCodes(response.broadcastEvents()));
+      }
+    }
+
+    assertNotNull(response);
+    assertEquals(5, response.barPosition());
+    assertEquals(BattleStatus.FINISHED, response.battleStatus());
+    assertEquals(BattleResult.WIN, response.battleResult());
+
+    var finalState = battleStateQueryService.getBattle(userId, started.battleId());
+    assertEquals(BattlePolicy.TOTAL_ACTION_COUNT, finalState.completedActionCount());
+    assertEquals(28, finalState.broadcastEvents().size());
+  }
+
+  @Test
   void returnsFirstResultForRepeatedClientRequestId() {
     BattleStartRequest request = request(firstGymLeader.getId(), myAnimals);
 
     BattleStartResponse first = battleStartService.start(userId, request, NOW);
     BattleStartResponse second = battleStartService.start(userId, request, NOW);
 
-    assertEquals(first.battleId(), second.battleId());
+    assertEquals(first, second);
   }
 
   @Test
@@ -218,5 +319,9 @@ class BattleStartServiceTest {
             .mapToObj(index -> new BattleEntryRequest(animals.get(index).getId(), index + 1))
             .toList();
     return new BattleStartRequest(gymLeaderId, UUID.randomUUID().toString(), entries);
+  }
+
+  private List<BattleEventCode> eventCodes(List<BattleBroadcastEventResponse> events) {
+    return events.stream().map(event -> event.eventCode()).toList();
   }
 }
