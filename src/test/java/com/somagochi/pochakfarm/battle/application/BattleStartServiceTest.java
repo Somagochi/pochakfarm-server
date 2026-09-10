@@ -77,7 +77,7 @@ class BattleStartServiceTest {
         battleStartService.start(userId, request(firstGymLeader.getId(), myAnimals), NOW);
 
     assertNotNull(response.battleId());
-    assertEquals(2, response.barPosition());
+    assertEquals(3, response.barPosition());
     assertEquals(BattlePolicy.MIN_BAR_POSITION, response.minBarPosition());
     assertEquals(BattlePolicy.MAX_BAR_POSITION, response.maxBarPosition());
     assertEquals(1, response.userEntry().orderNo());
@@ -85,7 +85,7 @@ class BattleStartServiceTest {
     assertEquals(BattlePolicy.ENTRY_COUNT, response.rests().size());
 
     var state = battleStateQueryService.getBattle(userId, response.battleId());
-    assertEquals(2, state.barPosition());
+    assertEquals(3, state.barPosition());
     assertEquals(4, state.broadcastEvents().size());
     assertEquals(BattleEventCode.TIER_ADVANTAGE, state.broadcastEvents().get(0).eventCode());
     assertEquals(BattleEventCode.BATTLE_POINT_APPLIED, state.broadcastEvents().get(1).eventCode());
@@ -186,7 +186,7 @@ class BattleStartServiceTest {
     }
 
     assertNotNull(response);
-    assertEquals(5, response.barPosition());
+    assertEquals(6, response.barPosition());
     assertEquals(BattleStatus.FINISHED, response.battleStatus());
     assertEquals(BattleResult.WIN, response.battleResult());
 

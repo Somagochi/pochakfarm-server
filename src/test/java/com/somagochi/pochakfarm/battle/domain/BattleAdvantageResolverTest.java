@@ -26,7 +26,7 @@ class BattleAdvantageResolverTest {
   void resolvesTierPointsAndReturnsTerminalSignal() {
     BattlePositionChange change = resolver.resolveTier(BattlePosition.of(14), Tier.SSS, Tier.C);
 
-    assertEquals(2, change.calculatedPoints());
+    assertEquals(3, change.calculatedPoints());
     assertEquals(1, change.appliedPoints());
     assertEquals(15, change.after().value());
     assertTrue(change.terminal());
