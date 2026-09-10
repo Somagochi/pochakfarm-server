@@ -34,13 +34,13 @@ class BattlePolicyTest {
     assertEquals(0, battlePolicy.tierMoveDistance(Tier.C, Tier.C));
     assertEquals(0, battlePolicy.tierMoveDistance(Tier.C, Tier.SSS));
     assertEquals(1, battlePolicy.tierMoveDistance(Tier.B, Tier.C));
-    assertEquals(1, battlePolicy.tierMoveDistance(Tier.A, Tier.C));
-    assertEquals(2, battlePolicy.tierMoveDistance(Tier.S, Tier.C));
-    assertEquals(2, battlePolicy.tierMoveDistance(Tier.SSS, Tier.C));
+    assertEquals(2, battlePolicy.tierMoveDistance(Tier.A, Tier.C));
+    assertEquals(3, battlePolicy.tierMoveDistance(Tier.S, Tier.C));
+    assertEquals(3, battlePolicy.tierMoveDistance(Tier.SSS, Tier.C));
   }
 
   @Test
-  void tierMoveDistanceNeverExceedsTwo() {
+  void tierMoveDistanceNeverExceedsThree() {
     for (Tier tier : Tier.values()) {
       for (Tier opponentTier : Tier.values()) {
         int distance = battlePolicy.tierMoveDistance(tier, opponentTier);
@@ -55,10 +55,10 @@ class BattlePolicyTest {
   void tierPointDifferenceUsesUserPositiveAndNpcNegative() {
     assertEquals(0, battlePolicy.tierPointDifference(Tier.C, Tier.C));
     assertEquals(1, battlePolicy.tierPointDifference(Tier.B, Tier.C));
-    assertEquals(1, battlePolicy.tierPointDifference(Tier.A, Tier.C));
-    assertEquals(2, battlePolicy.tierPointDifference(Tier.SSS, Tier.C));
+    assertEquals(2, battlePolicy.tierPointDifference(Tier.A, Tier.C));
+    assertEquals(3, battlePolicy.tierPointDifference(Tier.SSS, Tier.C));
     assertEquals(-1, battlePolicy.tierPointDifference(Tier.C, Tier.B));
-    assertEquals(-2, battlePolicy.tierPointDifference(Tier.C, Tier.SSS));
+    assertEquals(-3, battlePolicy.tierPointDifference(Tier.C, Tier.SSS));
   }
 
   @Test
