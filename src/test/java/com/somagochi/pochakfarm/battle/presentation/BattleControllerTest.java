@@ -84,7 +84,6 @@ class BattleControllerTest {
                     4,
                     "https://cdn/thumb.png",
                     false,
-                    false,
                     new GymLeaderUnlockResponse(false, 12, true, "BDG008", false))));
 
     mockMvc
@@ -93,7 +92,7 @@ class BattleControllerTest {
         .andExpect(jsonPath("$.data[0].gymLeaderId").value(4))
         .andExpect(jsonPath("$.data[0].thumbnailUrl").value("https://cdn/thumb.png"))
         .andExpect(jsonPath("$.data[0].cleared").value(false))
-        .andExpect(jsonPath("$.data[0].unlocked").value(false))
+        .andExpect(jsonPath("$.data[0].unlocked").doesNotExist())
         .andExpect(jsonPath("$.data[0].unlock.unlocked").value(false))
         .andExpect(jsonPath("$.data[0].unlock.requiredLevel").value(12))
         .andExpect(jsonPath("$.data[0].unlock.levelSatisfied").value(true))

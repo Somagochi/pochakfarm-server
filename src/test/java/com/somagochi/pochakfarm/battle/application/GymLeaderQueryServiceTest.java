@@ -51,7 +51,7 @@ class GymLeaderQueryServiceTest {
     assertTrue(profile.unlock().levelSatisfied());
     assertNull(profile.unlock().previousBadgeCode());
     assertTrue(profile.unlock().previousBadgeSatisfied());
-    assertTrue(gymLeaderResponseOf(first).unlocked());
+    assertTrue(gymLeaderResponseOf(first).unlock().unlocked());
   }
 
   @Test
@@ -64,7 +64,7 @@ class GymLeaderQueryServiceTest {
     assertTrue(profile.unlock().levelSatisfied());
     assertEquals(first.getBadgeCode(), profile.unlock().previousBadgeCode());
     assertFalse(profile.unlock().previousBadgeSatisfied());
-    assertFalse(gymLeaderResponseOf(second).unlocked());
+    assertFalse(gymLeaderResponseOf(second).unlock().unlocked());
   }
 
   @Test
@@ -77,7 +77,6 @@ class GymLeaderQueryServiceTest {
     assertFalse(listed.unlock().levelSatisfied());
     assertEquals(first.getBadgeCode(), listed.unlock().previousBadgeCode());
     assertFalse(listed.unlock().previousBadgeSatisfied());
-    assertEquals(listed.unlocked(), listed.unlock().unlocked());
   }
 
   @Test
@@ -99,7 +98,7 @@ class GymLeaderQueryServiceTest {
     fixtures.changeLevel(userId, 3);
 
     assertTrue(gymLeaderProfileOf(second).unlock().unlocked());
-    assertTrue(gymLeaderResponseOf(second).unlocked());
+    assertTrue(gymLeaderResponseOf(second).unlock().unlocked());
   }
 
   @Test
@@ -158,6 +157,7 @@ class GymLeaderQueryServiceTest {
     assertFalse(componentNames.contains("code"));
     assertFalse(componentNames.contains("badgeCode"));
     assertFalse(componentNames.contains("imageUrl"));
+    assertFalse(componentNames.contains("unlocked"));
   }
 
   @Test

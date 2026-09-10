@@ -109,7 +109,6 @@ public class GymLeaderQueryService {
         gymLeader.getChallengeOrder(),
         buildUrlOrNull(gymLeader.getThumbnailKey()),
         ownedBadgeCodes.contains(gymLeader.getBadgeCode()),
-        unlock.isUnlocked(),
         toUnlockResponse(unlock));
   }
 
