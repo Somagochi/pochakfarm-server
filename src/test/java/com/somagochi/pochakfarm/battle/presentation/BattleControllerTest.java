@@ -104,6 +104,8 @@ class BattleControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.gymLeader.gymLeaderId").value(4))
         .andExpect(jsonPath("$.data.gymLeader.imageUrl").value("https://cdn/image.png"))
+        .andExpect(jsonPath("$.data.gymLeader.coinReward").value(1_000))
+        .andExpect(jsonPath("$.data.gymLeader.experienceReward").value(75))
         .andExpect(jsonPath("$.data.gymLeader.unlock.unlocked").value(false))
         .andExpect(jsonPath("$.data.gymLeader.unlock.requiredLevel").value(12))
         .andExpect(jsonPath("$.data.gymLeader.unlock.levelSatisfied").value(true))
@@ -241,6 +243,8 @@ class BattleControllerTest {
         "노바는 우주 타입을 주력으로 데리고 나와요",
         "우주 타입에 강한 바다 타입을 준비해 보세요",
         "바다",
+        1_000,
+        75,
         false,
         new GymLeaderUnlockResponse(
             unlocked, 12, levelSatisfied, previousBadgeCode, badgeSatisfied));

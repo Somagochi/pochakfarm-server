@@ -19,5 +19,7 @@ public record GymLeaderProfileResponse(
             description = "추천 타입 라벨. 관장 주력 타입에 상성 우위인 타입이고 주력 타입이 복합이면 복합이며 주력 타입이 없으면 null",
             example = "하늘")
         String suggestType,
+    @Schema(description = "최초 클리어 시 지급되는 코인", example = "1000") long coinReward,
+    @Schema(description = "최초 클리어 시 지급되는 경험치", example = "75") long experienceReward,
     @Schema(description = "클리어 여부. 해당 관장의 뱃지 보유 여부와 같다", example = "false") boolean cleared,
     @Schema(description = "해금 조건과 충족 여부") GymLeaderUnlockResponse unlock) {}
