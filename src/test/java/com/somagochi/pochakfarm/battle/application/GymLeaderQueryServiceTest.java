@@ -149,6 +149,16 @@ class GymLeaderQueryServiceTest {
   }
 
   @Test
+  void omitsBadgeCodeFromProfileResponse() {
+    List<String> componentNames =
+        List.of(GymLeaderProfileResponse.class.getRecordComponents()).stream()
+            .map(java.lang.reflect.RecordComponent::getName)
+            .toList();
+
+    assertFalse(componentNames.contains("badgeCode"));
+  }
+
+  @Test
   void marksClearedByOwningGymLeaderBadge() {
     fixtures.grantBadge(userId, first.getBadgeCode());
 
