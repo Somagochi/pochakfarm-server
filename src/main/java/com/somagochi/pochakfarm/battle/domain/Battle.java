@@ -112,6 +112,11 @@ public class Battle extends BaseEntity {
     this.lastActionAt = Objects.requireNonNull(actionAt);
   }
 
+  public void applyEntryAdvantage(int barPosition) {
+    requireInProgress();
+    this.barPosition = barPosition;
+  }
+
   public void prepareFinalRound(Instant finalReadyAt) {
     requireInProgress();
     this.finalReadyAt = Objects.requireNonNull(finalReadyAt);
