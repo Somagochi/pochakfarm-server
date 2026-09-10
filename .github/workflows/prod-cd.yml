@@ -46,7 +46,7 @@ jobs:
           echo "password=$PASSWORD" >> "$GITHUB_OUTPUT"
 
       - name: Copy deploy files to server
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@v1.0.0
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
