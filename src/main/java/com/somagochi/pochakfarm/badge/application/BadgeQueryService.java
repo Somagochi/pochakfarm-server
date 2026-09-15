@@ -2,12 +2,14 @@ package com.somagochi.pochakfarm.badge.application;
 
 import com.somagochi.pochakfarm.badge.domain.Badge;
 import com.somagochi.pochakfarm.badge.dto.BadgeResponse;
+import com.somagochi.pochakfarm.badge.dto.OwnedBadgeResponse;
 import com.somagochi.pochakfarm.badge.infrastructure.persistence.BadgeRepository;
 import com.somagochi.pochakfarm.badge.infrastructure.persistence.UserBadgeRepository;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -43,6 +45,22 @@ public class BadgeQueryService {
   @Transactional(readOnly = true)
   public Set<String> findOwnedBadgeCodes(Long userId) {
     return Set.copyOf(userBadgeRepository.findOwnedBadgeCodes(userId));
+  }
+
+  @Transactional(readOnly = true)
+  public List<OwnedBadgeResponse> getOwnedBadges(Long userId) {
+    return userBadgeRepository.findOwnedBadges(userId).stream()
+        .map(
+            owned -> {
+              BadgeResponse badge = toResponse(owned.getBadge());
+              return new OwnedBadgeResponse(
+                  badge.code(),
+                  badge.name(),
+                  badge.description(),
+                  badge.imageUrl(),
+                  owned.getAcquiredAt());
+            })
+        .toList();
   }
 
   private BadgeResponse toResponse(Badge badge) {
