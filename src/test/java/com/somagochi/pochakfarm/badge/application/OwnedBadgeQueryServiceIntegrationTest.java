@@ -9,6 +9,8 @@ import com.somagochi.pochakfarm.badge.domain.UserBadge;
 import com.somagochi.pochakfarm.badge.dto.OwnedBadgeResponse;
 import com.somagochi.pochakfarm.badge.infrastructure.persistence.BadgeRepository;
 import com.somagochi.pochakfarm.badge.infrastructure.persistence.UserBadgeRepository;
+import com.somagochi.pochakfarm.battle.domain.GymLeader;
+import com.somagochi.pochakfarm.battle.infrastructure.persistence.GymLeaderRepository;
 import com.somagochi.pochakfarm.common.response.CursorPage;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
 import jakarta.persistence.EntityManager;
@@ -22,11 +24,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
 @Transactional
-class BadgeQueryServiceIntegrationTest {
+class OwnedBadgeQueryServiceIntegrationTest {
   private static final Long USER_ID = 101L;
 
-  @Autowired private BadgeQueryService service;
+  @Autowired private OwnedBadgeQueryService service;
   @Autowired private BadgeRepository badges;
+  @Autowired private GymLeaderRepository gymLeaders;
   @Autowired private UserBadgeRepository userBadges;
   @Autowired private FileStorage fileStorage;
   @Autowired private EntityManager entityManager;
@@ -49,6 +52,7 @@ class BadgeQueryServiceIntegrationTest {
                         owned.getName(),
                         owned.getDescription(),
                         fileStorage.buildUrl(owned.getImageKey()),
+                        null,
                         acquisition.getAcquiredAt())),
                 null,
                 false));
@@ -167,6 +171,40 @@ class BadgeQueryServiceIntegrationTest {
         .extracting(OwnedBadgeResponse::code)
         .containsExactly("TEST_012", "TEST_014", "TEST_016", "TEST_018", "TEST_020", "TEST_022");
     assertThat(page.hasNext()).isFalse();
+  }
+
+  @Test
+  void includesGymLeaderThumbnailOnlyForGymLeaderBadges() {
+    acquire("TEST_ACH", BadgeCategory.ACHIEVEMENT);
+    acquire("TEST_GYM", BadgeCategory.GYM_LEADER);
+    acquire("TEST_GYM_NO_THUMB", BadgeCategory.GYM_LEADER);
+    gymLeader("GYM_T1", 1, "TEST_GYM", "public/gym-leader-thumbnail/t1.png");
+    gymLeader("GYM_T2", 2, "TEST_GYM_NO_THUMB", null);
+    entityManager.clear();
+
+    assertThat(service.getOwnedBadges(USER_ID, null, null).content())
+        .extracting(OwnedBadgeResponse::code, OwnedBadgeResponse::thumbnailImageUrl)
+        .containsExactly(
+            tuple("TEST_ACH", null),
+            tuple("TEST_GYM", fileStorage.buildUrl("public/gym-leader-thumbnail/t1.png")),
+            tuple("TEST_GYM_NO_THUMB", null));
+  }
+
+  @Test
+  void doesNotUseGymLeaderThumbnailForAchievementBadgeWithSameCode() {
+    acquire("TEST_SHARED", BadgeCategory.ACHIEVEMENT);
+    gymLeader("GYM_T3", 1, "TEST_SHARED", "public/gym-leader-thumbnail/t3.png");
+    entityManager.clear();
+
+    assertThat(service.getOwnedBadges(USER_ID, null, null).content())
+        .singleElement()
+        .extracting(OwnedBadgeResponse::thumbnailImageUrl)
+        .isNull();
+  }
+
+  private void gymLeader(String code, int challengeOrder, String badgeCode, String thumbnailKey) {
+    gymLeaders.saveAndFlush(
+        GymLeader.create(code, "관장", challengeOrder, badgeCode, thumbnailKey, null));
   }
 
   private Badge acquire(String code, BadgeCategory category) {

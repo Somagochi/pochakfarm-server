@@ -19,8 +19,11 @@ import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
 import com.somagochi.pochakfarm.user.application.UserQueryService;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,6 +67,19 @@ public class GymLeaderQueryService {
 
     return new GymLeaderDetailResponse(
         toProfileResponse(gymLeader, findPrevious(gymLeader), userLevel, ownedBadgeCodes), animals);
+  }
+
+  @Transactional(readOnly = true)
+  public Map<String, String> findThumbnailUrlsByBadgeCodes(Collection<String> badgeCodes) {
+    if (badgeCodes.isEmpty()) {
+      return Map.of();
+    }
+    return gymLeaderRepository.findByBadgeCodeIn(badgeCodes).stream()
+        .filter(gymLeader -> gymLeader.getThumbnailKey() != null)
+        .collect(
+            Collectors.toMap(
+                GymLeader::getBadgeCode,
+                gymLeader -> fileStorage.buildUrl(gymLeader.getThumbnailKey())));
   }
 
   @Transactional(readOnly = true)

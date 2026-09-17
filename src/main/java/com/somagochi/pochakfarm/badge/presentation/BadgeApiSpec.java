@@ -22,7 +22,8 @@ public interface BadgeApiSpec {
               + "category 를 지정하면 해당 카테고리(ACHIEVEMENT: 업적 뱃지, GYM_LEADER: 관장 뱃지)만, 생략하면 전체를 반환하며 대소문자를 구분하지 않는다. "
               + "cursor 에 이전 응답의 nextCursor(마지막 항목의 뱃지 id)를 넘기면 다음 페이지를 반환한다. "
               + "보유한 뱃지가 없으면 content 는 빈 배열이다. "
-              + "각 항목에는 code, category, name, description, imageUrl, acquiredAt(획득 일시)이 포함된다. "
+              + "각 항목에는 code, category, name, description, imageUrl, thumbnailImageUrl, acquiredAt(획득 일시)이 포함된다. "
+              + "thumbnailImageUrl 은 관장 뱃지(GYM_LEADER)일 때 해당 관장의 썸네일 이미지이며, 업적 뱃지이거나 관장 썸네일이 없으면 null 이다. "
               + "이미지 키가 없으면 imageUrl은 null이며, 삭제된 뱃지와 획득 기록은 제외한다.")
   @SecurityRequirement(name = "bearerAuth")
   @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공")

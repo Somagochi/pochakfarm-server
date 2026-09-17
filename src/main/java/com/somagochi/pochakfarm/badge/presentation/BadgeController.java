@@ -1,6 +1,6 @@
 package com.somagochi.pochakfarm.badge.presentation;
 
-import com.somagochi.pochakfarm.badge.application.BadgeQueryService;
+import com.somagochi.pochakfarm.badge.application.OwnedBadgeQueryService;
 import com.somagochi.pochakfarm.badge.domain.BadgeCategory;
 import com.somagochi.pochakfarm.badge.dto.OwnedBadgeResponse;
 import com.somagochi.pochakfarm.common.response.ApiResponse;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/badges")
 @RequiredArgsConstructor
 public class BadgeController implements BadgeApiSpec {
-  private final BadgeQueryService badgeQueryService;
+  private final OwnedBadgeQueryService ownedBadgeQueryService;
 
   @Override
   @GetMapping
@@ -25,6 +25,7 @@ public class BadgeController implements BadgeApiSpec {
       @RequestParam(name = "category", required = false) BadgeCategory category,
       @RequestParam(name = "cursor", required = false) Long cursor,
       @AuthenticationPrincipal UserPrincipal principal) {
-    return ApiResponse.success(badgeQueryService.getOwnedBadges(principal.id(), category, cursor));
+    return ApiResponse.success(
+        ownedBadgeQueryService.getOwnedBadges(principal.id(), category, cursor));
   }
 }
