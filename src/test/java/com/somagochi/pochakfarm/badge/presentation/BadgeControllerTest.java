@@ -11,10 +11,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.somagochi.pochakfarm.badge.application.BadgeQueryService;
 import com.somagochi.pochakfarm.badge.domain.BadgeCategory;
-import com.somagochi.pochakfarm.badge.dto.OwnedBadgePage;
 import com.somagochi.pochakfarm.badge.dto.OwnedBadgeResponse;
 import com.somagochi.pochakfarm.common.config.SecurityConfig;
 import com.somagochi.pochakfarm.common.exception.GlobalExceptionHandler;
+import com.somagochi.pochakfarm.common.response.CursorPage;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationFilter;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationToken;
 import com.somagochi.pochakfarm.common.security.SecurityAccessDeniedHandler;
@@ -51,10 +51,10 @@ class BadgeControllerTest {
   @MockitoBean private BadgeQueryService service;
 
   @Test
-  void returnsOwnedBadgePageForAuthenticatedUser() throws Exception {
+  void returnsOwnedBadgeCursorPageForAuthenticatedUser() throws Exception {
     given(service.getOwnedBadges(USER_ID, null, null))
         .willReturn(
-            new OwnedBadgePage(
+            CursorPage.of(
                 List.of(
                     new OwnedBadgeResponse(
                         "BDG001",
@@ -63,7 +63,7 @@ class BadgeControllerTest {
                         "첫 업적 보상",
                         "https://cdn.test/badge.png",
                         Instant.parse("2026-09-15T00:00:00Z"))),
-                "BDG001",
+                1L,
                 true));
     mockMvc
         .perform(
@@ -76,24 +76,37 @@ class BadgeControllerTest {
         .andExpect(jsonPath("$.data.content[0].description").value("첫 업적 보상"))
         .andExpect(jsonPath("$.data.content[0].imageUrl").value("https://cdn.test/badge.png"))
         .andExpect(jsonPath("$.data.content[0].acquiredAt").value("2026-09-15T00:00:00Z"))
-        .andExpect(jsonPath("$.data.nextCursor").value("BDG001"))
+        .andExpect(jsonPath("$.data.nextCursor").value(1))
         .andExpect(jsonPath("$.data.hasNext").value(true));
     verify(service).getOwnedBadges(USER_ID, null, null);
   }
 
   @Test
   void passesCategoryAndCursorToService() throws Exception {
-    given(service.getOwnedBadges(USER_ID, BadgeCategory.GYM_LEADER, "BDG006"))
-        .willReturn(new OwnedBadgePage(List.of(), null, false));
+    given(service.getOwnedBadges(USER_ID, BadgeCategory.GYM_LEADER, 6L))
+        .willReturn(CursorPage.of(List.of(), null, false));
     mockMvc
         .perform(
             get("/api/badges")
                 .param("category", "GYM_LEADER")
-                .param("cursor", "BDG006")
+                .param("cursor", "6")
                 .with(authentication(userAuthentication())))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.hasNext").value(false));
-    verify(service).getOwnedBadges(USER_ID, BadgeCategory.GYM_LEADER, "BDG006");
+    verify(service).getOwnedBadges(USER_ID, BadgeCategory.GYM_LEADER, 6L);
+  }
+
+  @Test
+  void acceptsCategoryRegardlessOfCase() throws Exception {
+    given(service.getOwnedBadges(USER_ID, BadgeCategory.GYM_LEADER, null))
+        .willReturn(CursorPage.of(List.of(), null, false));
+    mockMvc
+        .perform(
+            get("/api/badges")
+                .param("category", "gym_leader")
+                .with(authentication(userAuthentication())))
+        .andExpect(status().isOk());
+    verify(service).getOwnedBadges(USER_ID, BadgeCategory.GYM_LEADER, null);
   }
 
   @Test
@@ -110,7 +123,7 @@ class BadgeControllerTest {
   @Test
   void returnsEmptyContentArray() throws Exception {
     given(service.getOwnedBadges(USER_ID, null, null))
-        .willReturn(new OwnedBadgePage(List.of(), null, false));
+        .willReturn(CursorPage.of(List.of(), null, false));
     mockMvc
         .perform(get("/api/badges").with(authentication(userAuthentication())))
         .andExpect(status().isOk())
@@ -124,7 +137,7 @@ class BadgeControllerTest {
   void includesExplicitNullImageUrl() throws Exception {
     given(service.getOwnedBadges(USER_ID, null, null))
         .willReturn(
-            new OwnedBadgePage(
+            CursorPage.of(
                 List.of(
                     new OwnedBadgeResponse(
                         "BDG001", BadgeCategory.ACHIEVEMENT, "첫 걸음", null, null, Instant.EPOCH)),

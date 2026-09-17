@@ -16,12 +16,12 @@ public interface UserBadgeRepository extends JpaRepository<UserBadge, Long> {
   @Query(
       "select b as badge, ub.createdAt as acquiredAt from UserBadge ub, Badge b "
           + "where ub.badgeId = b.id and ub.userId = :userId "
-          + "and b.category in :categories and b.code > :cursor "
-          + "order by b.code asc")
+          + "and b.category in :categories and b.id > :cursor "
+          + "order by b.id asc")
   List<OwnedBadgeView> findOwnedBadges(
       @Param("userId") Long userId,
       @Param("categories") Collection<BadgeCategory> categories,
-      @Param("cursor") String cursor,
+      @Param("cursor") Long cursor,
       Limit limit);
 
   interface OwnedBadgeView {

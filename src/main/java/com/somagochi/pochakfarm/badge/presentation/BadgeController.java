@@ -2,8 +2,9 @@ package com.somagochi.pochakfarm.badge.presentation;
 
 import com.somagochi.pochakfarm.badge.application.BadgeQueryService;
 import com.somagochi.pochakfarm.badge.domain.BadgeCategory;
-import com.somagochi.pochakfarm.badge.dto.OwnedBadgePage;
+import com.somagochi.pochakfarm.badge.dto.OwnedBadgeResponse;
 import com.somagochi.pochakfarm.common.response.ApiResponse;
+import com.somagochi.pochakfarm.common.response.CursorPage;
 import com.somagochi.pochakfarm.common.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,9 +21,9 @@ public class BadgeController implements BadgeApiSpec {
 
   @Override
   @GetMapping
-  public ApiResponse<OwnedBadgePage> getOwnedBadges(
+  public ApiResponse<CursorPage<OwnedBadgeResponse>> getOwnedBadges(
       @RequestParam(name = "category", required = false) BadgeCategory category,
-      @RequestParam(name = "cursor", required = false) String cursor,
+      @RequestParam(name = "cursor", required = false) Long cursor,
       @AuthenticationPrincipal UserPrincipal principal) {
     return ApiResponse.success(badgeQueryService.getOwnedBadges(principal.id(), category, cursor));
   }

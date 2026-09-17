@@ -3,13 +3,13 @@ package com.somagochi.pochakfarm.badge.application;
 import com.somagochi.pochakfarm.badge.domain.Badge;
 import com.somagochi.pochakfarm.badge.domain.BadgeCategory;
 import com.somagochi.pochakfarm.badge.dto.BadgeResponse;
-import com.somagochi.pochakfarm.badge.dto.OwnedBadgePage;
 import com.somagochi.pochakfarm.badge.dto.OwnedBadgeResponse;
 import com.somagochi.pochakfarm.badge.infrastructure.persistence.BadgeRepository;
 import com.somagochi.pochakfarm.badge.infrastructure.persistence.UserBadgeRepository;
 import com.somagochi.pochakfarm.badge.infrastructure.persistence.UserBadgeRepository.OwnedBadgeView;
 import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
+import com.somagochi.pochakfarm.common.response.CursorPage;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -55,18 +55,18 @@ public class BadgeQueryService {
   }
 
   @Transactional(readOnly = true)
-  public OwnedBadgePage getOwnedBadges(Long userId, BadgeCategory category, String cursor) {
+  public CursorPage<OwnedBadgeResponse> getOwnedBadges(
+      Long userId, BadgeCategory category, Long cursor) {
     List<OwnedBadgeView> fetched =
         userBadgeRepository.findOwnedBadges(
             userId,
             category == null ? EnumSet.allOf(BadgeCategory.class) : EnumSet.of(category),
-            cursor == null ? "" : cursor,
+            cursor == null ? Long.MIN_VALUE : cursor,
             Limit.of(PAGE_SIZE + 1));
     boolean hasNext = fetched.size() > PAGE_SIZE;
     List<OwnedBadgeView> page = hasNext ? fetched.subList(0, PAGE_SIZE) : fetched;
-    String nextCursor = hasNext ? page.get(page.size() - 1).getBadge().getCode() : null;
-    return new OwnedBadgePage(
-        page.stream().map(this::toOwnedResponse).toList(), nextCursor, hasNext);
+    Long nextCursor = hasNext ? page.get(page.size() - 1).getBadge().getId() : null;
+    return CursorPage.of(page.stream().map(this::toOwnedResponse).toList(), nextCursor, hasNext);
   }
 
   private OwnedBadgeResponse toOwnedResponse(OwnedBadgeView owned) {

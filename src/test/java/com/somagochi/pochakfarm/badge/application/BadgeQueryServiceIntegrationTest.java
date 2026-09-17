@@ -6,10 +6,10 @@ import static org.assertj.core.api.Assertions.tuple;
 import com.somagochi.pochakfarm.badge.domain.Badge;
 import com.somagochi.pochakfarm.badge.domain.BadgeCategory;
 import com.somagochi.pochakfarm.badge.domain.UserBadge;
-import com.somagochi.pochakfarm.badge.dto.OwnedBadgePage;
 import com.somagochi.pochakfarm.badge.dto.OwnedBadgeResponse;
 import com.somagochi.pochakfarm.badge.infrastructure.persistence.BadgeRepository;
 import com.somagochi.pochakfarm.badge.infrastructure.persistence.UserBadgeRepository;
+import com.somagochi.pochakfarm.common.response.CursorPage;
 import com.somagochi.pochakfarm.storage.domain.FileStorage;
 import jakarta.persistence.EntityManager;
 import java.time.Instant;
@@ -41,7 +41,7 @@ class BadgeQueryServiceIntegrationTest {
 
     assertThat(service.getOwnedBadges(USER_ID, null, null))
         .isEqualTo(
-            new OwnedBadgePage(
+            CursorPage.of(
                 List.of(
                     new OwnedBadgeResponse(
                         owned.getCode(),
@@ -58,7 +58,7 @@ class BadgeQueryServiceIntegrationTest {
   void returnsEmptyPageWhenNoBadgesAreOwned() {
     badge("TEST_UNOWNED", BadgeCategory.ACHIEVEMENT, null);
     assertThat(service.getOwnedBadges(USER_ID, null, null))
-        .isEqualTo(new OwnedBadgePage(List.of(), null, false));
+        .isEqualTo(CursorPage.of(List.<OwnedBadgeResponse>of(), null, false));
   }
 
   @Test
@@ -84,9 +84,12 @@ class BadgeQueryServiceIntegrationTest {
   }
 
   @Test
-  void sortsByBadgeCodeRegardlessOfAcquisitionOrder() {
-    for (String code : List.of("TEST_003", "TEST_001", "TEST_002")) {
-      acquire(code, BadgeCategory.ACHIEVEMENT);
+  void sortsByBadgeIdRegardlessOfAcquisitionOrder() {
+    Badge first = badge("TEST_001", BadgeCategory.ACHIEVEMENT, null);
+    Badge second = badge("TEST_002", BadgeCategory.ACHIEVEMENT, null);
+    Badge third = badge("TEST_003", BadgeCategory.ACHIEVEMENT, null);
+    for (Badge badge : List.of(third, first, second)) {
+      userBadges.saveAndFlush(UserBadge.acquire(USER_ID, badge.getId()));
     }
     entityManager.clear();
     assertThat(service.getOwnedBadges(USER_ID, null, null).content())
@@ -111,18 +114,21 @@ class BadgeQueryServiceIntegrationTest {
   }
 
   @Test
-  void pagesTwentyBadgesPerPageUsingLastBadgeCodeAsCursor() {
-    IntStream.rangeClosed(1, 25)
-        .forEach(i -> acquire("TEST_%03d".formatted(i), BadgeCategory.ACHIEVEMENT));
+  void pagesTwentyBadgesPerPageUsingLastBadgeIdAsCursor() {
+    List<Badge> acquired =
+        IntStream.rangeClosed(1, 25)
+            .mapToObj(i -> acquire("TEST_%03d".formatted(i), BadgeCategory.ACHIEVEMENT))
+            .toList();
     entityManager.clear();
 
-    OwnedBadgePage first = service.getOwnedBadges(USER_ID, null, null);
+    CursorPage<OwnedBadgeResponse> first = service.getOwnedBadges(USER_ID, null, null);
     assertThat(first.content()).hasSize(20);
     assertThat(first.content().getFirst().code()).isEqualTo("TEST_001");
     assertThat(first.hasNext()).isTrue();
-    assertThat(first.nextCursor()).isEqualTo("TEST_020");
+    assertThat(first.nextCursor()).isEqualTo(acquired.get(19).getId());
 
-    OwnedBadgePage second = service.getOwnedBadges(USER_ID, null, first.nextCursor());
+    CursorPage<OwnedBadgeResponse> second =
+        service.getOwnedBadges(USER_ID, null, first.nextCursor());
     assertThat(second.content())
         .extracting(OwnedBadgeResponse::code)
         .containsExactly("TEST_021", "TEST_022", "TEST_023", "TEST_024", "TEST_025");
@@ -136,7 +142,8 @@ class BadgeQueryServiceIntegrationTest {
         .forEach(i -> acquire("TEST_%03d".formatted(i), BadgeCategory.GYM_LEADER));
     entityManager.clear();
 
-    OwnedBadgePage page = service.getOwnedBadges(USER_ID, BadgeCategory.GYM_LEADER, null);
+    CursorPage<OwnedBadgeResponse> page =
+        service.getOwnedBadges(USER_ID, BadgeCategory.GYM_LEADER, null);
     assertThat(page.content()).hasSize(20);
     assertThat(page.hasNext()).isFalse();
     assertThat(page.nextCursor()).isNull();
@@ -144,24 +151,28 @@ class BadgeQueryServiceIntegrationTest {
 
   @Test
   void appliesCategoryFilterAcrossCursorPages() {
-    IntStream.rangeClosed(1, 22)
-        .forEach(
-            i ->
-                acquire(
-                    "TEST_%03d".formatted(i),
-                    i % 2 == 0 ? BadgeCategory.GYM_LEADER : BadgeCategory.ACHIEVEMENT));
+    List<Badge> acquired =
+        IntStream.rangeClosed(1, 22)
+            .mapToObj(
+                i ->
+                    acquire(
+                        "TEST_%03d".formatted(i),
+                        i % 2 == 0 ? BadgeCategory.GYM_LEADER : BadgeCategory.ACHIEVEMENT))
+            .toList();
     entityManager.clear();
 
-    OwnedBadgePage page = service.getOwnedBadges(USER_ID, BadgeCategory.GYM_LEADER, "TEST_010");
+    CursorPage<OwnedBadgeResponse> page =
+        service.getOwnedBadges(USER_ID, BadgeCategory.GYM_LEADER, acquired.get(9).getId());
     assertThat(page.content())
         .extracting(OwnedBadgeResponse::code)
         .containsExactly("TEST_012", "TEST_014", "TEST_016", "TEST_018", "TEST_020", "TEST_022");
     assertThat(page.hasNext()).isFalse();
   }
 
-  private void acquire(String code, BadgeCategory category) {
+  private Badge acquire(String code, BadgeCategory category) {
     Badge badge = badge(code, category, null);
     userBadges.saveAndFlush(UserBadge.acquire(USER_ID, badge.getId()));
+    return badge;
   }
 
   private Badge badge(String code, BadgeCategory category, String imageKey) {
