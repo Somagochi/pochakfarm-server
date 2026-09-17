@@ -10,6 +10,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.somagochi.pochakfarm.badge.application.BadgeQueryService;
+import com.somagochi.pochakfarm.badge.domain.BadgeCategory;
+import com.somagochi.pochakfarm.badge.dto.OwnedBadgePage;
 import com.somagochi.pochakfarm.badge.dto.OwnedBadgeResponse;
 import com.somagochi.pochakfarm.common.config.SecurityConfig;
 import com.somagochi.pochakfarm.common.exception.GlobalExceptionHandler;
@@ -49,48 +51,90 @@ class BadgeControllerTest {
   @MockitoBean private BadgeQueryService service;
 
   @Test
-  void returnsOwnedBadgesForAuthenticatedUser() throws Exception {
-    given(service.getOwnedBadges(USER_ID))
+  void returnsOwnedBadgePageForAuthenticatedUser() throws Exception {
+    given(service.getOwnedBadges(USER_ID, null, null))
         .willReturn(
-            List.of(
-                new OwnedBadgeResponse(
-                    "BDG001",
-                    "첫 걸음",
-                    "첫 업적 보상",
-                    "https://cdn.test/badge.png",
-                    Instant.parse("2026-09-15T00:00:00Z"))));
+            new OwnedBadgePage(
+                List.of(
+                    new OwnedBadgeResponse(
+                        "BDG001",
+                        BadgeCategory.ACHIEVEMENT,
+                        "첫 걸음",
+                        "첫 업적 보상",
+                        "https://cdn.test/badge.png",
+                        Instant.parse("2026-09-15T00:00:00Z"))),
+                "BDG001",
+                true));
     mockMvc
         .perform(
             get("/api/badges").param("userId", "999").with(authentication(userAuthentication())))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data.length()").value(1))
-        .andExpect(jsonPath("$.data[0].code").value("BDG001"))
-        .andExpect(jsonPath("$.data[0].name").value("첫 걸음"))
-        .andExpect(jsonPath("$.data[0].description").value("첫 업적 보상"))
-        .andExpect(jsonPath("$.data[0].imageUrl").value("https://cdn.test/badge.png"))
-        .andExpect(jsonPath("$.data[0].acquiredAt").value("2026-09-15T00:00:00Z"));
-    verify(service).getOwnedBadges(USER_ID);
+        .andExpect(jsonPath("$.data.content.length()").value(1))
+        .andExpect(jsonPath("$.data.content[0].code").value("BDG001"))
+        .andExpect(jsonPath("$.data.content[0].category").value("ACHIEVEMENT"))
+        .andExpect(jsonPath("$.data.content[0].name").value("첫 걸음"))
+        .andExpect(jsonPath("$.data.content[0].description").value("첫 업적 보상"))
+        .andExpect(jsonPath("$.data.content[0].imageUrl").value("https://cdn.test/badge.png"))
+        .andExpect(jsonPath("$.data.content[0].acquiredAt").value("2026-09-15T00:00:00Z"))
+        .andExpect(jsonPath("$.data.nextCursor").value("BDG001"))
+        .andExpect(jsonPath("$.data.hasNext").value(true));
+    verify(service).getOwnedBadges(USER_ID, null, null);
   }
 
   @Test
-  void returnsEmptyArray() throws Exception {
-    given(service.getOwnedBadges(USER_ID)).willReturn(List.of());
+  void passesCategoryAndCursorToService() throws Exception {
+    given(service.getOwnedBadges(USER_ID, BadgeCategory.GYM_LEADER, "BDG006"))
+        .willReturn(new OwnedBadgePage(List.of(), null, false));
+    mockMvc
+        .perform(
+            get("/api/badges")
+                .param("category", "GYM_LEADER")
+                .param("cursor", "BDG006")
+                .with(authentication(userAuthentication())))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.hasNext").value(false));
+    verify(service).getOwnedBadges(USER_ID, BadgeCategory.GYM_LEADER, "BDG006");
+  }
+
+  @Test
+  void rejectsUnsupportedCategory() throws Exception {
+    mockMvc
+        .perform(
+            get("/api/badges")
+                .param("category", "UNKNOWN")
+                .with(authentication(userAuthentication())))
+        .andExpect(status().isBadRequest());
+    verifyNoInteractions(service);
+  }
+
+  @Test
+  void returnsEmptyContentArray() throws Exception {
+    given(service.getOwnedBadges(USER_ID, null, null))
+        .willReturn(new OwnedBadgePage(List.of(), null, false));
     mockMvc
         .perform(get("/api/badges").with(authentication(userAuthentication())))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data").isArray())
-        .andExpect(jsonPath("$.data").isEmpty());
+        .andExpect(jsonPath("$.data.content").isArray())
+        .andExpect(jsonPath("$.data.content").isEmpty())
+        .andExpect(jsonPath("$.data.nextCursor").value(nullValue()))
+        .andExpect(jsonPath("$.data.hasNext").value(false));
   }
 
   @Test
   void includesExplicitNullImageUrl() throws Exception {
-    given(service.getOwnedBadges(USER_ID))
-        .willReturn(List.of(new OwnedBadgeResponse("BDG001", "첫 걸음", null, null, Instant.EPOCH)));
+    given(service.getOwnedBadges(USER_ID, null, null))
+        .willReturn(
+            new OwnedBadgePage(
+                List.of(
+                    new OwnedBadgeResponse(
+                        "BDG001", BadgeCategory.ACHIEVEMENT, "첫 걸음", null, null, Instant.EPOCH)),
+                null,
+                false));
     mockMvc
         .perform(get("/api/badges").with(authentication(userAuthentication())))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data[0].imageUrl").hasJsonPath())
-        .andExpect(jsonPath("$.data[0].imageUrl").value(nullValue()));
+        .andExpect(jsonPath("$.data.content[0].imageUrl").hasJsonPath())
+        .andExpect(jsonPath("$.data.content[0].imageUrl").value(nullValue()));
   }
 
   @Test

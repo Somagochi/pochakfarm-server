@@ -3,6 +3,8 @@ package com.somagochi.pochakfarm.badge.domain;
 import com.somagochi.pochakfarm.common.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -33,6 +35,10 @@ public class Badge extends BaseEntity {
   @Column(name = "code", nullable = false, updatable = false, length = 64)
   private String code;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "category", nullable = false, length = 32)
+  private BadgeCategory category;
+
   @Column(name = "name", nullable = false, length = 100)
   private String name;
 
@@ -42,15 +48,18 @@ public class Badge extends BaseEntity {
   @Column(name = "image_key")
   private String imageKey;
 
-  private Badge(String code, String name, String description, String imageKey) {
+  private Badge(
+      String code, BadgeCategory category, String name, String description, String imageKey) {
     this.code = Objects.requireNonNull(code);
+    this.category = Objects.requireNonNull(category);
     this.name = Objects.requireNonNull(name);
     this.description = description;
     this.imageKey = imageKey;
   }
 
-  public static Badge create(String code, String name, String description, String imageKey) {
-    return new Badge(code, name, description, imageKey);
+  public static Badge create(
+      String code, BadgeCategory category, String name, String description, String imageKey) {
+    return new Badge(code, category, name, description, imageKey);
   }
 
   public void changeImageKey(String imageKey) {

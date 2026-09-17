@@ -3,6 +3,7 @@ package com.somagochi.pochakfarm.battle.application;
 import com.somagochi.pochakfarm.animal.domain.Animal;
 import com.somagochi.pochakfarm.animal.infrastructure.persistence.AnimalRepository;
 import com.somagochi.pochakfarm.badge.domain.Badge;
+import com.somagochi.pochakfarm.badge.domain.BadgeCategory;
 import com.somagochi.pochakfarm.badge.domain.UserBadge;
 import com.somagochi.pochakfarm.badge.infrastructure.persistence.BadgeRepository;
 import com.somagochi.pochakfarm.badge.infrastructure.persistence.UserBadgeRepository;
@@ -114,7 +115,12 @@ public class BattleFixtures {
   public GymLeader createGymLeader(int challengeOrder, int animalCount) {
     String badgeCode = "BDG%03d".formatted(100 + challengeOrder);
     badgeRepository.saveAndFlush(
-        Badge.create(badgeCode, "뱃지" + challengeOrder, "설명" + challengeOrder, null));
+        Badge.create(
+            badgeCode,
+            BadgeCategory.GYM_LEADER,
+            "뱃지" + challengeOrder,
+            "설명" + challengeOrder,
+            null));
     GymLeader gymLeader =
         gymLeaderRepository.saveAndFlush(
             GymLeader.create(

@@ -14,6 +14,7 @@ import com.somagochi.pochakfarm.achievement.domain.AchievementReward;
 import com.somagochi.pochakfarm.achievement.infrastructure.persistence.AchievementRepository;
 import com.somagochi.pochakfarm.achievement.infrastructure.persistence.AchievementRewardRepository;
 import com.somagochi.pochakfarm.badge.domain.Badge;
+import com.somagochi.pochakfarm.badge.domain.BadgeCategory;
 import com.somagochi.pochakfarm.badge.infrastructure.persistence.BadgeRepository;
 import com.somagochi.pochakfarm.badge.infrastructure.persistence.UserBadgeRepository;
 import com.somagochi.pochakfarm.common.security.JwtAuthenticationToken;
@@ -163,7 +164,8 @@ class AchievementClaimE2eTest {
   @DisplayName("뱃지 이미지가 등록되어 있으면 수령 후 목록 imageUrl 이 뱃지 이미지로 바뀐다")
   void showsBadgeImageAfterClaimWhenBadgeImageExists() throws Exception {
     Achievement achievement = persistAchievement();
-    badgeRepository.save(Badge.create(BADGE_CODE, "E2E 뱃지", null, BADGE_IMAGE_KEY));
+    badgeRepository.save(
+        Badge.create(BADGE_CODE, BadgeCategory.ACHIEVEMENT, "E2E 뱃지", null, BADGE_IMAGE_KEY));
     achievementRewardRepository.save(AchievementReward.ofBadge(achievement.getId(), BADGE_CODE));
 
     listAchievements()
@@ -183,7 +185,7 @@ class AchievementClaimE2eTest {
   @DisplayName("뱃지 이미지가 비어 있으면 수령 후에도 목록 imageUrl 이 업적 이미지로 남는다")
   void fallsBackToAchievementImageAfterClaimWhenBadgeImageIsMissing() throws Exception {
     Achievement achievement = persistAchievement();
-    badgeRepository.save(Badge.create(BADGE_CODE, "E2E 뱃지", null, null));
+    badgeRepository.save(Badge.create(BADGE_CODE, BadgeCategory.ACHIEVEMENT, "E2E 뱃지", null, null));
     achievementRewardRepository.save(AchievementReward.ofBadge(achievement.getId(), BADGE_CODE));
 
     claim().andExpect(status().isOk());
