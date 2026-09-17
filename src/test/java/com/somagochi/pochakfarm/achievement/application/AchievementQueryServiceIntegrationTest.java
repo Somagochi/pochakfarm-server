@@ -17,6 +17,7 @@ import com.somagochi.pochakfarm.achievement.infrastructure.persistence.Achieveme
 import com.somagochi.pochakfarm.achievement.infrastructure.persistence.AchievementRewardRepository;
 import com.somagochi.pochakfarm.achievement.infrastructure.persistence.UserAchievementRepository;
 import com.somagochi.pochakfarm.badge.domain.Badge;
+import com.somagochi.pochakfarm.badge.domain.BadgeCategory;
 import com.somagochi.pochakfarm.badge.infrastructure.persistence.BadgeRepository;
 import com.somagochi.pochakfarm.common.response.CursorPage;
 import com.somagochi.pochakfarm.common.social.SocialProvider;
@@ -265,7 +266,8 @@ class AchievementQueryServiceIntegrationTest {
   void describesCoinAndBadgeRewardsWithBadgeMetadata() {
     Achievement achievement =
         persistAchievement("TEST_SQUAD", AchievementMetric.PRE_REGISTRATION_CONVERTED, 1);
-    badgeRepository.save(Badge.create("TEST_BADGE", "첫 걸음", "설명", "badges/first.png"));
+    badgeRepository.save(
+        Badge.create("TEST_BADGE", BadgeCategory.ACHIEVEMENT, "첫 걸음", "설명", "badges/first.png"));
     achievementRewardRepository.save(AchievementReward.ofCoin(achievement.getId(), 100));
     achievementRewardRepository.save(AchievementReward.ofBadge(achievement.getId(), "TEST_BADGE"));
 
