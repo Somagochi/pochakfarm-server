@@ -9,7 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.somagochi.pochakfarm.badge.application.BadgeQueryService;
+import com.somagochi.pochakfarm.badge.application.OwnedBadgeQueryService;
 import com.somagochi.pochakfarm.badge.domain.BadgeCategory;
 import com.somagochi.pochakfarm.badge.dto.OwnedBadgeResponse;
 import com.somagochi.pochakfarm.common.config.SecurityConfig;
@@ -48,7 +48,7 @@ import org.springframework.test.web.servlet.MockMvc;
 class BadgeControllerTest {
   private static final Long USER_ID = 1L;
   @Autowired private MockMvc mockMvc;
-  @MockitoBean private BadgeQueryService service;
+  @MockitoBean private OwnedBadgeQueryService service;
 
   @Test
   void returnsOwnedBadgeCursorPageForAuthenticatedUser() throws Exception {
@@ -58,10 +58,11 @@ class BadgeControllerTest {
                 List.of(
                     new OwnedBadgeResponse(
                         "BDG001",
-                        BadgeCategory.ACHIEVEMENT,
+                        BadgeCategory.GYM_LEADER,
                         "첫 걸음",
                         "첫 업적 보상",
                         "https://cdn.test/badge.png",
+                        "https://cdn.test/gym-leader-thumbnail.png",
                         Instant.parse("2026-09-15T00:00:00Z"))),
                 1L,
                 true));
@@ -71,10 +72,13 @@ class BadgeControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.content.length()").value(1))
         .andExpect(jsonPath("$.data.content[0].code").value("BDG001"))
-        .andExpect(jsonPath("$.data.content[0].category").value("ACHIEVEMENT"))
+        .andExpect(jsonPath("$.data.content[0].category").value("GYM_LEADER"))
         .andExpect(jsonPath("$.data.content[0].name").value("첫 걸음"))
         .andExpect(jsonPath("$.data.content[0].description").value("첫 업적 보상"))
         .andExpect(jsonPath("$.data.content[0].imageUrl").value("https://cdn.test/badge.png"))
+        .andExpect(
+            jsonPath("$.data.content[0].thumbnailImageUrl")
+                .value("https://cdn.test/gym-leader-thumbnail.png"))
         .andExpect(jsonPath("$.data.content[0].acquiredAt").value("2026-09-15T00:00:00Z"))
         .andExpect(jsonPath("$.data.nextCursor").value(1))
         .andExpect(jsonPath("$.data.hasNext").value(true));
@@ -140,14 +144,22 @@ class BadgeControllerTest {
             CursorPage.of(
                 List.of(
                     new OwnedBadgeResponse(
-                        "BDG001", BadgeCategory.ACHIEVEMENT, "첫 걸음", null, null, Instant.EPOCH)),
+                        "BDG001",
+                        BadgeCategory.ACHIEVEMENT,
+                        "첫 걸음",
+                        null,
+                        null,
+                        null,
+                        Instant.EPOCH)),
                 null,
                 false));
     mockMvc
         .perform(get("/api/badges").with(authentication(userAuthentication())))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.content[0].imageUrl").hasJsonPath())
-        .andExpect(jsonPath("$.data.content[0].imageUrl").value(nullValue()));
+        .andExpect(jsonPath("$.data.content[0].imageUrl").value(nullValue()))
+        .andExpect(jsonPath("$.data.content[0].thumbnailImageUrl").hasJsonPath())
+        .andExpect(jsonPath("$.data.content[0].thumbnailImageUrl").value(nullValue()));
   }
 
   @Test

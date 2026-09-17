@@ -9,4 +9,5 @@ public record OwnedBadgeResponse(
     String name,
     String description,
     String imageUrl,
+    String thumbnailImageUrl,
     Instant acquiredAt) {}
