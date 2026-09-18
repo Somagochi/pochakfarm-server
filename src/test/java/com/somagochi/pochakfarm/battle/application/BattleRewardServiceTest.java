@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.somagochi.pochakfarm.badge.domain.Badge;
+import com.somagochi.pochakfarm.badge.domain.BadgeCategory;
 import com.somagochi.pochakfarm.badge.infrastructure.persistence.BadgeRepository;
 import com.somagochi.pochakfarm.badge.infrastructure.persistence.UserBadgeRepository;
 import com.somagochi.pochakfarm.battle.domain.Battle;
@@ -82,7 +83,12 @@ class BattleRewardServiceTest {
     Battle battle = startFirstGymBattle();
     GymLeader gymLeader = gymLeaderRepository.findById(battle.getGymLeaderId()).orElseThrow();
     badgeRepository.save(
-        Badge.create(gymLeader.getBadgeCode(), "관장 도전장", "첫 번째 관장 승리", "public/badge/bdg101.png"));
+        Badge.create(
+            gymLeader.getBadgeCode(),
+            BadgeCategory.GYM_LEADER,
+            "관장 도전장",
+            "첫 번째 관장 승리",
+            "public/badge/bdg101.png"));
     flushAndClear();
 
     BattleRewardResponse response = battleRewardService.grantFirstClear(battle);
@@ -107,7 +113,9 @@ class BattleRewardServiceTest {
   void retryOfSameBattleReturnsStoredRewardAndRematchWinGrantsNothing() {
     Battle firstBattle = startFirstGymBattle();
     GymLeader gymLeader = gymLeaderRepository.findById(firstBattle.getGymLeaderId()).orElseThrow();
-    badgeRepository.save(Badge.create(gymLeader.getBadgeCode(), "관장 도전장", "첫 번째 관장 승리", null));
+    badgeRepository.save(
+        Badge.create(
+            gymLeader.getBadgeCode(), BadgeCategory.GYM_LEADER, "관장 도전장", "첫 번째 관장 승리", null));
     flushAndClear();
 
     BattleRewardResponse first = battleRewardService.grantFirstClear(firstBattle);
@@ -131,7 +139,9 @@ class BattleRewardServiceTest {
   void sumsEveryLevelUpCoinWhenOneRewardRaisesMultipleLevels() {
     Battle battle = startGymBattle(8);
     GymLeader gymLeader = gymLeaderRepository.findById(battle.getGymLeaderId()).orElseThrow();
-    badgeRepository.save(Badge.create(gymLeader.getBadgeCode(), "관장 도전장", "여덟 번째 관장 승리", null));
+    badgeRepository.save(
+        Badge.create(
+            gymLeader.getBadgeCode(), BadgeCategory.GYM_LEADER, "관장 도전장", "여덟 번째 관장 승리", null));
     flushAndClear();
 
     BattleRewardResponse response = battleRewardService.grantFirstClear(battle);

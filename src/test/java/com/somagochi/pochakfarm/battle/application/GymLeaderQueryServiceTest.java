@@ -13,6 +13,8 @@ import com.somagochi.pochakfarm.battle.dto.GymLeaderProfileResponse;
 import com.somagochi.pochakfarm.battle.dto.GymLeaderResponse;
 import com.somagochi.pochakfarm.characterization.domain.CardSkill;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -109,6 +111,22 @@ class GymLeaderQueryServiceTest {
     assertTrue(
         gymLeaderResponseOf(first).thumbnailUrl().endsWith("public/gym-leader-thumbnail/a.png"));
     assertTrue(gymLeaderProfileOf(first).imageUrl().endsWith("public/gym-leader/a.png"));
+  }
+
+  @Test
+  void findsThumbnailUrlsByBadgeCodeSkippingMissingThumbnails() {
+    fixtures.changeGymLeaderImages(
+        first.getId(), "public/gym-leader-thumbnail/a.png", "public/gym-leader/a.png");
+    fixtures.changeGymLeaderImages(second.getId(), null, null);
+
+    Map<String, String> thumbnailUrls =
+        gymLeaderQueryService.findThumbnailUrlsByBadgeCodes(
+            List.of(first.getBadgeCode(), second.getBadgeCode(), "BDG_UNKNOWN"));
+
+    assertEquals(Set.of(first.getBadgeCode()), thumbnailUrls.keySet());
+    assertTrue(
+        thumbnailUrls.get(first.getBadgeCode()).endsWith("public/gym-leader-thumbnail/a.png"));
+    assertTrue(gymLeaderQueryService.findThumbnailUrlsByBadgeCodes(List.of()).isEmpty());
   }
 
   @Test
