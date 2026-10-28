@@ -200,7 +200,7 @@ class CaptureGenerationWorkerTest {
             "image/jpeg",
             Instant.parse("2026-07-24T01:05:00Z"));
     ReflectionTestUtils.setField(capture, "id", 123L);
-    capture.markProcessing();
+    capture.markProcessing(Instant.parse("2026-07-24T01:00:00Z"));
     return capture;
   }
 }
