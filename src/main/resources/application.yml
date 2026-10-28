@@ -161,6 +161,11 @@ app:
       enabled: ${secret.characterization.reaper.enabled:false}
       interval: ${secret.characterization.reaper.interval:PT1M}
       stale-threshold: ${secret.characterization.reaper.stale-threshold:PT15M}
+  capture:
+    reaper:
+      enabled: ${secret.capture.reaper.enabled:true}
+      interval: ${secret.capture.reaper.interval:PT1M}
+      stale-threshold: ${secret.capture.reaper.stale-threshold:PT30M}
   battle:
     rest-duration: ${secret.battle.rest-duration:PT30M}
     abandon-threshold: ${secret.battle.abandon-threshold:PT30M}

@@ -69,7 +69,7 @@ class CaptureCompleteServiceTest {
   @Test
   void returnsCurrentStatusWithoutSubmittingWhenAlreadyProcessing() {
     Capture capture = capture();
-    capture.markProcessing();
+    capture.markProcessing(Instant.parse("2026-07-24T01:00:00Z"));
     ThreadPoolTaskExecutor executor = directExecutor();
     CaptureCompleteService service = service(executor);
     when(captureRepository.findByIdForUpdate(CAPTURE_ID)).thenReturn(Optional.of(capture));

@@ -8,6 +8,7 @@ import com.somagochi.pochakfarm.common.exception.BusinessException;
 import com.somagochi.pochakfarm.common.exception.ErrorCode;
 import com.somagochi.pochakfarm.common.transaction.AfterCommitExecutor;
 import com.somagochi.pochakfarm.storage.application.ImageUploadService;
+import java.time.Instant;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskRejectedException;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -46,7 +47,7 @@ public class CaptureCompleteService {
 
     imageUploadService.validateUploadedObject(
         userId, capture.getOriginalImageKey(), capture.getOriginalImageContentType());
-    capture.markProcessing();
+    capture.markProcessing(Instant.now());
     CaptureGenerationCommand command = commandFrom(capture);
     try {
       AfterCommitExecutor.executeTimedAsyncAfterCommit(

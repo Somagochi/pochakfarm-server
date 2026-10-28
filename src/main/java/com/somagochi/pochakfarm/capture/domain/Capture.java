@@ -86,6 +86,9 @@ public class Capture extends BaseEntity {
   @Column(name = "generation_status", nullable = false)
   private GenerationStatus generationStatus;
 
+  @Column(name = "processing_started_at")
+  private Instant processingStartedAt;
+
   @Column(name = "elapsed_ms")
   private Integer elapsedMs;
 
@@ -233,9 +236,16 @@ public class Capture extends BaseEntity {
     this.grantedExperience = grantedExperience;
   }
 
-  public void markProcessing() {
+  public void markProcessing(Instant now) {
     this.generationStatus = GenerationStatus.PROCESSING;
+    this.processingStartedAt = Objects.requireNonNull(now);
     this.failureReason = null;
+  }
+
+  public boolean isProcessingStartedBefore(Instant threshold) {
+    return generationStatus == GenerationStatus.PROCESSING
+        && processingStartedAt != null
+        && processingStartedAt.isBefore(threshold);
   }
 
   public void cardNoAssigned(String cardNo) {

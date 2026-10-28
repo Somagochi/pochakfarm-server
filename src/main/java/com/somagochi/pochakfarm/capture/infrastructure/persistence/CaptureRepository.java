@@ -1,8 +1,10 @@
 package com.somagochi.pochakfarm.capture.infrastructure.persistence;
 
 import com.somagochi.pochakfarm.capture.domain.Capture;
+import com.somagochi.pochakfarm.capture.domain.GenerationStatus;
 import com.somagochi.pochakfarm.capture.dto.CaptureTypeCount;
 import jakarta.persistence.LockModeType;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -31,4 +33,11 @@ public interface CaptureRepository extends JpaRepository<Capture, Long> {
           + "and c.gameStatus = com.somagochi.pochakfarm.capture.domain.GameStatus.SUCCEEDED "
           + "group by c.cardType")
   List<CaptureTypeCount> countSucceededByCardType(@Param("userId") Long userId);
+
+  @Query(
+      "select c.id from Capture c "
+          + "where c.generationStatus = :processingStatus and c.processingStartedAt < :threshold")
+  List<Long> findStaleProcessingIds(
+      @Param("processingStatus") GenerationStatus processingStatus,
+      @Param("threshold") Instant threshold);
 }
