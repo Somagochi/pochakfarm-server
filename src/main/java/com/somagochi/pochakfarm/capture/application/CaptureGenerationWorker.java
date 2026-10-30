@@ -72,11 +72,11 @@ public class CaptureGenerationWorker {
     } catch (BusinessException exception) {
       outcome = "failure";
       fail(command.captureId(), exception.getCode());
-      log.warn("capture_generation_failed errorCode={}", exception.getCode(), exception);
+      log.error("capture_generation_failed errorCode={}", exception.getCode(), exception);
     } catch (RuntimeException exception) {
       outcome = "failure";
       fail(command.captureId(), ErrorCode.CHARACTERIZATION_FAILED.getCode());
-      log.warn(
+      log.error(
           "capture_generation_failed errorCode={} exception={}",
           ErrorCode.CHARACTERIZATION_FAILED.getCode(),
           exception.getClass().getSimpleName(),

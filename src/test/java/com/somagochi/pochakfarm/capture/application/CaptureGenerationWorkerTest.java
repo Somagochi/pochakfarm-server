@@ -6,6 +6,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.somagochi.pochakfarm.capture.domain.Capture;
 import com.somagochi.pochakfarm.capture.domain.CaptureCharacterizerClient;
 import com.somagochi.pochakfarm.capture.domain.CaptureCharacterizerRequest;
@@ -31,6 +35,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.TransactionStatus;
@@ -123,6 +128,45 @@ class CaptureGenerationWorkerTest {
     assertTimerCount("characterizer", "failure", 1L);
     assertTimerCount("total", "failure", 1L);
     assertNull(MDC.get(CaptureGenerationWorker.CAPTURE_ID_MDC_KEY));
+  }
+
+  @Test
+  void logsUnsupportedImageFailureAsError() {
+    assertEquals(
+        Level.ERROR,
+        failureLogLevel(new BusinessException(ErrorCode.UNSUPPORTED_CHARACTERIZATION_IMAGE)));
+  }
+
+  @Test
+  void logsCharacterizerFailureAsError() {
+    assertEquals(
+        Level.ERROR, failureLogLevel(new BusinessException(ErrorCode.CHARACTERIZATION_FAILED)));
+  }
+
+  @Test
+  void logsUnexpectedFailureAsError() {
+    assertEquals(Level.ERROR, failureLogLevel(new IllegalStateException("boom")));
+  }
+
+  private Level failureLogLevel(RuntimeException exception) {
+    Capture capture = capture();
+    CaptureGenerationWorker worker = worker(capture);
+    stubPresigns();
+    when(captureCharacterizerClient.characterize(any())).thenThrow(exception);
+    Logger logger = (Logger) LoggerFactory.getLogger(CaptureGenerationWorker.class);
+    ListAppender<ILoggingEvent> appender = new ListAppender<>();
+    appender.start();
+    logger.addAppender(appender);
+    try {
+      worker.generate(command(), TimeUnit.MILLISECONDS.toNanos(7));
+    } finally {
+      logger.detachAppender(appender);
+    }
+    return appender.list.stream()
+        .filter(event -> event.getFormattedMessage().startsWith("capture_generation_failed"))
+        .map(ILoggingEvent::getLevel)
+        .findFirst()
+        .orElseThrow();
   }
 
   private CaptureGenerationWorker worker(Capture capture) {
