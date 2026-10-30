@@ -131,9 +131,9 @@ class CaptureGenerationWorkerTest {
   }
 
   @Test
-  void logsUnsupportedImageFailureAsWarn() {
+  void logsUnsupportedImageFailureAsError() {
     assertEquals(
-        Level.WARN,
+        Level.ERROR,
         failureLogLevel(new BusinessException(ErrorCode.UNSUPPORTED_CHARACTERIZATION_IMAGE)));
   }
 
