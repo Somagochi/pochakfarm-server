@@ -19,6 +19,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class CaptureGenerationWorker {
 
   static final String CAPTURE_ID_MDC_KEY = "capture_id";
+  private static final String UNSUPPORTED_IMAGE_CODE =
+      ErrorCode.UNSUPPORTED_CHARACTERIZATION_IMAGE.getCode();
 
   private final CaptureCharacterizerClient captureCharacterizerClient;
   private final ImageUploadService imageUploadService;
@@ -72,11 +74,16 @@ public class CaptureGenerationWorker {
     } catch (BusinessException exception) {
       outcome = "failure";
       fail(command.captureId(), exception.getCode());
-      log.warn("capture_generation_failed errorCode={}", exception.getCode(), exception);
+      // 정책상 처리할 수 없는 이미지는 예상된 실패라 WARN, 나머지는 장애로 보고 ERROR로 남긴다.
+      if (UNSUPPORTED_IMAGE_CODE.equals(exception.getCode())) {
+        log.warn("capture_generation_failed errorCode={}", exception.getCode(), exception);
+      } else {
+        log.error("capture_generation_failed errorCode={}", exception.getCode(), exception);
+      }
     } catch (RuntimeException exception) {
       outcome = "failure";
       fail(command.captureId(), ErrorCode.CHARACTERIZATION_FAILED.getCode());
-      log.warn(
+      log.error(
           "capture_generation_failed errorCode={} exception={}",
           ErrorCode.CHARACTERIZATION_FAILED.getCode(),
           exception.getClass().getSimpleName(),
